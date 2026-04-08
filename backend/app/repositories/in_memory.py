@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from threading import Lock
 
-from backend.app.domain import Session, Task, UploadedFile
+from backend.app.domain import Artifact, Session, Task, UploadedFile
 
 
 class InMemorySessionRepository:
@@ -34,6 +34,23 @@ class InMemoryTaskRepository:
 
     def list_by_session(self, session_id: str) -> list[Task]:
         return [task for task in self._items.values() if task.session_id == session_id]
+
+
+class InMemoryArtifactRepository:
+    def __init__(self) -> None:
+        self._items: dict[str, Artifact] = {}
+        self._lock = Lock()
+
+    def create(self, artifact: Artifact) -> Artifact:
+        with self._lock:
+            self._items[artifact.id] = artifact
+        return artifact
+
+    def get(self, artifact_id: str) -> Artifact | None:
+        return self._items.get(artifact_id)
+
+    def list_by_session(self, session_id: str) -> list[Artifact]:
+        return [artifact for artifact in self._items.values() if artifact.session_id == session_id]
 
 
 class InMemoryUploadedFileRepository:

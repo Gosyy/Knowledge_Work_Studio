@@ -17,7 +17,7 @@ class TaskRouter:
     _ROUTE_MAP = {
         TaskType.DOCX_EDIT: "docx_service",
         TaskType.PDF_SUMMARY: "pdf_service",
-        TaskType.SLIDES_GENERATION: "slides_service",
+        TaskType.SLIDES_GENERATE: "slides_service",
         TaskType.DATA_ANALYSIS: "data_analysis_service",
     }
 

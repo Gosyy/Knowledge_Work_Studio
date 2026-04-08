@@ -8,7 +8,7 @@ from enum import Enum
 class TaskType(str, Enum):
     DOCX_EDIT = "docx_edit"
     PDF_SUMMARY = "pdf_summary"
-    SLIDES_GENERATION = "slides_generation"
+    SLIDES_GENERATE = "slides_generate"
     DATA_ANALYSIS = "data_analysis"
 
 
