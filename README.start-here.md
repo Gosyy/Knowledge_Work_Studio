@@ -6,7 +6,8 @@ This repository is prepared so Codex can start from a structured, non-empty code
 - backend FastAPI bootstrap
 - backend health test
 - docs and Codex guidance
-- empty product directories for orchestrator, services, runtime, frontend, infra, skills, and storage
+- modular-monolith backend package boundaries for domain, orchestrator, services, repositories, integrations, and runtime
+- empty product directories for frontend, infra, skills, and storage
 
 ## First local run
 
