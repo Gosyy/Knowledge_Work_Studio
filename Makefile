@@ -1,0 +1,20 @@
+PYTHON ?= python3
+PIP ?= $(PYTHON) -m pip
+UVICORN ?= $(PYTHON) -m uvicorn
+
+.PHONY: install run test lint create-dirs
+
+install:
+	$(PIP) install -r requirements.txt
+
+run:
+	$(UVICORN) backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+test:
+	pytest -q
+
+lint:
+	$(PYTHON) -m compileall backend
+
+create-dirs:
+	mkdir -p storage/uploads storage/artifacts storage/temp storage/logs
