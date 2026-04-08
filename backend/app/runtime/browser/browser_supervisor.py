@@ -36,6 +36,9 @@ class BrowserSupervisor:
         await self.controller.stop()
 
     async def ensure_healthy(self) -> bool:
+        if not self.config.enabled:
+            return False
+
         healthy = await self.controller.is_healthy()
         if healthy:
             return True

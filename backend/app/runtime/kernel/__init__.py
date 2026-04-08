@@ -1,3 +1,4 @@
+from backend.app.runtime.kernel.interface import KernelRuntimeInterface
 from backend.app.runtime.kernel.kernel_bootstrap import KernelBootstrap, build_kernel_bootstrap
 from backend.app.runtime.kernel.kernel_inspector import KernelInspector, KernelRuntimeSnapshot
 from backend.app.runtime.kernel.kernel_runtime import (
@@ -14,6 +15,7 @@ __all__ = [
     "KernelExecutionResult",
     "KernelInspector",
     "KernelRuntime",
+    "KernelRuntimeInterface",
     "KernelRuntimeSnapshot",
     "KernelServer",
     "KernelServerConfig",

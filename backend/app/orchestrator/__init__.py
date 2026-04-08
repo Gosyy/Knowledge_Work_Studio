@@ -1,5 +1,6 @@
 from backend.app.orchestrator.classifier import TaskClassifier
 from backend.app.orchestrator.coordinator import OrchestrationBundle, OrchestrationCoordinator
+from backend.app.orchestrator.integration import OrchestratorIntegrationSurface
 from backend.app.orchestrator.planner import ExecutionPlan, PlanStep, TaskPlanner
 from backend.app.orchestrator.result_composer import OrchestrationResult, ResultComposer
 from backend.app.orchestrator.router import RoutedTask, TaskRouter
@@ -10,6 +11,7 @@ __all__ = [
     "OrchestrationBundle",
     "OrchestrationCoordinator",
     "OrchestrationResult",
+    "OrchestratorIntegrationSurface",
     "PlanStep",
     "ResultComposer",
     "RoutedTask",
