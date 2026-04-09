@@ -1,0 +1,61 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from fastapi import Request
+
+from backend.app.core.config import Settings, get_settings
+from backend.app.integrations import get_storage_paths
+from backend.app.integrations.file_storage import LocalFileStorage
+from backend.app.repositories import (
+    InMemoryArtifactRepository,
+    InMemorySessionRepository,
+    InMemoryTaskRepository,
+    InMemoryUploadedFileRepository,
+)
+from backend.app.services import ArtifactService, SessionTaskService
+
+
+@dataclass
+class AppContainer:
+    artifact_service: ArtifactService
+    session_task_service: SessionTaskService
+
+
+def get_app_settings() -> Settings:
+    return get_settings()
+
+
+def get_app_container(request: Request) -> AppContainer:
+    if not hasattr(request.app.state, "app_container"):
+        settings = get_app_settings()
+        storage_paths = get_storage_paths(settings)
+        storage = LocalFileStorage(storage_paths)
+
+        sessions = InMemorySessionRepository()
+        tasks = InMemoryTaskRepository()
+        uploads = InMemoryUploadedFileRepository()
+        artifacts = InMemoryArtifactRepository()
+
+        request.app.state.app_container = AppContainer(
+            session_task_service=SessionTaskService(
+                sessions=sessions,
+                tasks=tasks,
+                uploads=uploads,
+                storage=storage,
+            ),
+            artifact_service=ArtifactService(
+                artifacts=artifacts,
+                sessions=sessions,
+                tasks=tasks,
+            ),
+        )
+    return request.app.state.app_container
+
+
+def get_session_task_service(request: Request) -> SessionTaskService:
+    return get_app_container(request).session_task_service
+
+
+def get_artifact_service(request: Request) -> ArtifactService:
+    return get_app_container(request).artifact_service
