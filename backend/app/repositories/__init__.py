@@ -10,6 +10,12 @@ from backend.app.repositories.interfaces import (
     TaskRepository,
     UploadedFileRepository,
 )
+from backend.app.repositories.sqlite import (
+    SQLiteArtifactRepository,
+    SQLiteSessionRepository,
+    SQLiteTaskRepository,
+    SQLiteUploadedFileRepository,
+)
 from backend.app.repositories.storage import FileStorage
 
 __all__ = [
@@ -20,6 +26,10 @@ __all__ = [
     "InMemoryTaskRepository",
     "InMemoryUploadedFileRepository",
     "SessionRepository",
+    "SQLiteArtifactRepository",
+    "SQLiteSessionRepository",
+    "SQLiteTaskRepository",
+    "SQLiteUploadedFileRepository",
     "TaskRepository",
     "UploadedFileRepository",
 ]

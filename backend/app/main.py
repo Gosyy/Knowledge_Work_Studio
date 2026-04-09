@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 import logging
 
 from fastapi import FastAPI
 
 from backend.app.api.routes import get_api_router
+from backend.app.core.config import get_settings
+from backend.app.integrations.database import bootstrap_database
 
 
 logging.basicConfig(
@@ -17,6 +20,12 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting KW Studio backend")
+    settings = get_settings()
+    bootstrap_database(
+        db_path=Path(settings.sqlite_db_path),
+        migrations_dir=Path(settings.sqlite_migrations_dir),
+    )
+    logger.info("Database bootstrap complete")
     yield
     logger.info("Stopping KW Studio backend")
 
