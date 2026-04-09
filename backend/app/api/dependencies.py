@@ -8,6 +8,8 @@ from fastapi import Request
 from backend.app.core.config import Settings, get_settings
 from backend.app.integrations import get_storage_paths
 from backend.app.integrations.database import bootstrap_database
+from backend.app.integrations.database import bootstrap_database
+from backend.app.integrations.database import bootstrap_database
 from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.repositories import (
     SQLiteArtifactRepository,

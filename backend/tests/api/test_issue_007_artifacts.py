@@ -55,6 +55,7 @@ def test_issue_007_get_list_and_download_artifacts(monkeypatch, tmp_path: Path) 
     listed = list_resp.json()
     assert len(listed) == 1
     assert listed[0]["id"] == artifact.id
+    assert listed[0]["storage_path"] == artifact.storage_path
 
     download_resp = client.get(f"/artifacts/{artifact.id}/download")
     assert download_resp.status_code == 200
