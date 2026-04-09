@@ -37,15 +37,25 @@ def test_issue_007_get_and_list_artifacts(monkeypatch, tmp_path: Path) -> None:
         content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
 
+    artifact_path = Path(artifact.storage_path or "")
+    assert artifact.storage_path is not None
+    assert artifact.size_bytes is not None
+    assert artifact.size_bytes > 0
+    assert artifact_path.exists()
+    assert artifact_path.read_bytes().startswith(b"KW Studio artifact placeholder")
+
     get_resp = client.get(f"/artifacts/{artifact.id}")
     assert get_resp.status_code == 200
     assert get_resp.json()["id"] == artifact.id
+    assert get_resp.json()["storage_path"] == artifact.storage_path
+    assert get_resp.json()["size_bytes"] == artifact.size_bytes
 
     list_resp = client.get(f"/sessions/{session_id}/artifacts")
     assert list_resp.status_code == 200
     listed = list_resp.json()
     assert len(listed) == 1
     assert listed[0]["id"] == artifact.id
+    assert listed[0]["storage_path"] == artifact.storage_path
 
 
 def test_issue_007_artifact_endpoints_not_found(monkeypatch, tmp_path: Path) -> None:

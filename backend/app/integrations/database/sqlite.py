@@ -14,13 +14,18 @@ class SQLiteDatabase:
         with sqlite3.connect(self.db_path) as connection:
             connection.execute(
                 """
+<<<<<<< codex/implement-persistent-repositories-for-a1
+=======
 <<<<<<< HEAD
+>>>>>>> Issue_pack
                 CREATE TABLE IF NOT EXISTS schema_migrations (
                     version TEXT PRIMARY KEY,
                     applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
                 """
             )
+<<<<<<< codex/implement-persistent-repositories-for-a1
+=======
 =======
                 CREATE TABLE IF NOT EXISTS sessions (
                     id TEXT PRIMARY KEY,
@@ -82,6 +87,7 @@ class SQLiteDatabase:
                 CREATE INDEX IF NOT EXISTS idx_uploaded_files_session_id ON uploaded_files(session_id)
                 """
             )
+>>>>>>> Issue_pack
 >>>>>>> Issue_pack
             connection.commit()
 

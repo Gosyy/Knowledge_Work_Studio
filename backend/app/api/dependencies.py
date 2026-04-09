@@ -7,10 +7,14 @@ from fastapi import Request
 
 from backend.app.core.config import Settings, get_settings
 from backend.app.integrations import get_storage_paths
+<<<<<<< codex/implement-persistent-repositories-for-a1
+from backend.app.integrations.database import bootstrap_database
+=======
 <<<<<<< HEAD
 from backend.app.integrations.database import bootstrap_database
 =======
 from backend.app.integrations.database import SQLiteDatabase
+>>>>>>> Issue_pack
 >>>>>>> Issue_pack
 from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.repositories import (
@@ -37,13 +41,19 @@ def get_app_container(request: Request) -> AppContainer:
         settings = get_app_settings()
         storage_paths = get_storage_paths(settings)
         storage = LocalFileStorage(storage_paths)
+<<<<<<< codex/implement-persistent-repositories-for-a1
+=======
 <<<<<<< HEAD
+>>>>>>> Issue_pack
         database = bootstrap_database(
             db_path=Path(settings.sqlite_db_path),
             migrations_dir=Path(settings.sqlite_migrations_dir),
         )
+<<<<<<< codex/implement-persistent-repositories-for-a1
+=======
 =======
         database = SQLiteDatabase(db_path=storage_paths.root / "metadata.sqlite3")
+>>>>>>> Issue_pack
 >>>>>>> Issue_pack
 
         sessions = SQLiteSessionRepository(database)
@@ -62,6 +72,7 @@ def get_app_container(request: Request) -> AppContainer:
                 artifacts=artifacts,
                 sessions=sessions,
                 tasks=tasks,
+                storage=storage,
             ),
         )
     return request.app.state.app_container

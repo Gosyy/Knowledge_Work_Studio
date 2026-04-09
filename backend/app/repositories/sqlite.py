@@ -9,11 +9,7 @@ from backend.app.integrations.database import SQLiteDatabase
 class SQLiteSessionRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
-<<<<<<< HEAD
-=======
-        self._database.initialize()
->>>>>>> Issue_pack
-
+        
     def create(self, session: Session) -> Session:
         with self._database.connect() as connection:
             connection.execute(
@@ -37,10 +33,6 @@ class SQLiteSessionRepository:
 class SQLiteTaskRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
-<<<<<<< HEAD
-=======
-        self._database.initialize()
->>>>>>> Issue_pack
 
     def create(self, task: Task) -> Task:
         with self._database.connect() as connection:
@@ -87,17 +79,22 @@ class SQLiteTaskRepository:
 class SQLiteArtifactRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
-<<<<<<< HEAD
-=======
-        self._database.initialize()
->>>>>>> Issue_pack
 
     def create(self, artifact: Artifact) -> Artifact:
         with self._database.connect() as connection:
             connection.execute(
                 """
-                INSERT OR REPLACE INTO artifacts (id, session_id, task_id, filename, content_type, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO artifacts (
+                    id,
+                    session_id,
+                    task_id,
+                    filename,
+                    content_type,
+                    storage_path,
+                    size_bytes,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     artifact.id,
@@ -105,6 +102,8 @@ class SQLiteArtifactRepository:
                     artifact.task_id,
                     artifact.filename,
                     artifact.content_type,
+                    artifact.storage_path,
+                    artifact.size_bytes,
                     artifact.created_at.isoformat(),
                 ),
             )
@@ -115,7 +114,7 @@ class SQLiteArtifactRepository:
         with self._database.connect() as connection:
             row = connection.execute(
                 """
-                SELECT id, session_id, task_id, filename, content_type, created_at
+                SELECT id, session_id, task_id, filename, content_type, storage_path, size_bytes, created_at
                 FROM artifacts
                 WHERE id = ?
                 """,
@@ -129,7 +128,7 @@ class SQLiteArtifactRepository:
         with self._database.connect() as connection:
             rows = connection.execute(
                 """
-                SELECT id, session_id, task_id, filename, content_type, created_at
+                SELECT id, session_id, task_id, filename, content_type, storage_path, size_bytes, created_at
                 FROM artifacts
                 WHERE session_id = ?
                 ORDER BY created_at ASC
@@ -142,9 +141,6 @@ class SQLiteArtifactRepository:
 class SQLiteUploadedFileRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
-<<<<<<< HEAD
-=======
-        self._database.initialize()
 >>>>>>> Issue_pack
 
     def create(self, uploaded_file: UploadedFile) -> UploadedFile:
@@ -218,6 +214,8 @@ def _artifact_from_row(row: dict[str, object]) -> Artifact:
         task_id=str(row["task_id"]),
         filename=str(row["filename"]),
         content_type=str(row["content_type"]),
+        storage_path=str(row["storage_path"]) if row["storage_path"] is not None else None,
+        size_bytes=int(row["size_bytes"]) if row["size_bytes"] is not None else None,
         created_at=datetime.fromisoformat(str(row["created_at"])),
     )
 
