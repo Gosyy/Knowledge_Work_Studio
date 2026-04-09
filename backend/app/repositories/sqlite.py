@@ -9,7 +9,7 @@ from backend.app.integrations.database import SQLiteDatabase
 class SQLiteSessionRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
-
+        
     def create(self, session: Session) -> Session:
         with self._database.connect() as connection:
             connection.execute(
@@ -141,6 +141,7 @@ class SQLiteArtifactRepository:
 class SQLiteUploadedFileRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
+>>>>>>> Issue_pack
 
     def create(self, uploaded_file: UploadedFile) -> UploadedFile:
         with self._database.connect() as connection:
