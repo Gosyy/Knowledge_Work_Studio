@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     postgres_password: str = "kw_studio"
     database_url: str = "postgresql+psycopg://kw_studio:kw_studio@postgres:5432/kw_studio"
 
+    sqlite_db_path: str = "./storage/metadata.sqlite3"
+    sqlite_migrations_dir: str = "./scripts/migrations"
+
     storage_root: str = "./storage"
     uploads_dir: str = "./storage/uploads"
     artifacts_dir: str = "./storage/artifacts"

@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from fastapi import Request
 
 from backend.app.core.config import Settings, get_settings
 from backend.app.integrations import get_storage_paths
+from backend.app.integrations.database import bootstrap_database
 from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.repositories import (
-    InMemoryArtifactRepository,
-    InMemorySessionRepository,
-    InMemoryTaskRepository,
-    InMemoryUploadedFileRepository,
+    SQLiteArtifactRepository,
+    SQLiteSessionRepository,
+    SQLiteTaskRepository,
+    SQLiteUploadedFileRepository,
 )
 from backend.app.services import ArtifactService, SessionTaskService
 
@@ -31,11 +33,15 @@ def get_app_container(request: Request) -> AppContainer:
         settings = get_app_settings()
         storage_paths = get_storage_paths(settings)
         storage = LocalFileStorage(storage_paths)
+        database = bootstrap_database(
+            db_path=Path(settings.sqlite_db_path),
+            migrations_dir=Path(settings.sqlite_migrations_dir),
+        )
 
-        sessions = InMemorySessionRepository()
-        tasks = InMemoryTaskRepository()
-        uploads = InMemoryUploadedFileRepository()
-        artifacts = InMemoryArtifactRepository()
+        sessions = SQLiteSessionRepository(database)
+        tasks = SQLiteTaskRepository(database)
+        uploads = SQLiteUploadedFileRepository(database)
+        artifacts = SQLiteArtifactRepository(database)
 
         request.app.state.app_container = AppContainer(
             session_task_service=SessionTaskService(
