@@ -9,7 +9,10 @@ from backend.app.integrations.database import SQLiteDatabase
 class SQLiteSessionRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
+<<<<<<< HEAD
+=======
         self._database.initialize()
+>>>>>>> Issue_pack
 
     def create(self, session: Session) -> Session:
         with self._database.connect() as connection:
@@ -34,7 +37,10 @@ class SQLiteSessionRepository:
 class SQLiteTaskRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
+<<<<<<< HEAD
+=======
         self._database.initialize()
+>>>>>>> Issue_pack
 
     def create(self, task: Task) -> Task:
         with self._database.connect() as connection:
@@ -81,7 +87,10 @@ class SQLiteTaskRepository:
 class SQLiteArtifactRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
+<<<<<<< HEAD
+=======
         self._database.initialize()
+>>>>>>> Issue_pack
 
     def create(self, artifact: Artifact) -> Artifact:
         with self._database.connect() as connection:
@@ -133,7 +142,10 @@ class SQLiteArtifactRepository:
 class SQLiteUploadedFileRepository:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
+<<<<<<< HEAD
+=======
         self._database.initialize()
+>>>>>>> Issue_pack
 
     def create(self, uploaded_file: UploadedFile) -> UploadedFile:
         with self._database.connect() as connection:

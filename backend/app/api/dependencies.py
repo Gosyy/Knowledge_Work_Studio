@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from fastapi import Request
 
 from backend.app.core.config import Settings, get_settings
 from backend.app.integrations import get_storage_paths
+<<<<<<< HEAD
+from backend.app.integrations.database import bootstrap_database
+=======
 from backend.app.integrations.database import SQLiteDatabase
+>>>>>>> Issue_pack
 from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.repositories import (
     SQLiteArtifactRepository,
@@ -32,7 +37,14 @@ def get_app_container(request: Request) -> AppContainer:
         settings = get_app_settings()
         storage_paths = get_storage_paths(settings)
         storage = LocalFileStorage(storage_paths)
+<<<<<<< HEAD
+        database = bootstrap_database(
+            db_path=Path(settings.sqlite_db_path),
+            migrations_dir=Path(settings.sqlite_migrations_dir),
+        )
+=======
         database = SQLiteDatabase(db_path=storage_paths.root / "metadata.sqlite3")
+>>>>>>> Issue_pack
 
         sessions = SQLiteSessionRepository(database)
         tasks = SQLiteTaskRepository(database)

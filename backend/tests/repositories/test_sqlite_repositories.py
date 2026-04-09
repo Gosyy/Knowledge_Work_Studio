@@ -2,7 +2,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from backend.app.domain import Artifact, Session, Task, TaskStatus, TaskType, UploadedFile
+<<<<<<< HEAD
+from backend.app.integrations.database import bootstrap_database
+=======
 from backend.app.integrations.database import SQLiteDatabase
+>>>>>>> Issue_pack
 from backend.app.repositories.sqlite import (
     SQLiteArtifactRepository,
     SQLiteSessionRepository,
@@ -17,7 +21,12 @@ def _build_repositories(db_path: Path) -> tuple[
     SQLiteArtifactRepository,
     SQLiteUploadedFileRepository,
 ]:
+<<<<<<< HEAD
+    migrations_dir = Path(__file__).resolve().parents[3] / "scripts" / "migrations"
+    database = bootstrap_database(db_path=db_path, migrations_dir=migrations_dir)
+=======
     database = SQLiteDatabase(db_path=db_path)
+>>>>>>> Issue_pack
     return (
         SQLiteSessionRepository(database),
         SQLiteTaskRepository(database),

@@ -14,6 +14,14 @@ class SQLiteDatabase:
         with sqlite3.connect(self.db_path) as connection:
             connection.execute(
                 """
+<<<<<<< HEAD
+                CREATE TABLE IF NOT EXISTS schema_migrations (
+                    version TEXT PRIMARY KEY,
+                    applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+=======
                 CREATE TABLE IF NOT EXISTS sessions (
                     id TEXT PRIMARY KEY,
                     created_at TEXT NOT NULL
@@ -74,6 +82,7 @@ class SQLiteDatabase:
                 CREATE INDEX IF NOT EXISTS idx_uploaded_files_session_id ON uploaded_files(session_id)
                 """
             )
+>>>>>>> Issue_pack
             connection.commit()
 
     def connect(self) -> sqlite3.Connection:
