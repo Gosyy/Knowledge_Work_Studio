@@ -29,6 +29,11 @@ class InMemoryTaskRepository:
             self._items[task.id] = task
         return task
 
+    def update(self, task: Task) -> Task:
+        with self._lock:
+            self._items[task.id] = task
+        return task
+
     def get(self, task_id: str) -> Task | None:
         return self._items.get(task_id)
 

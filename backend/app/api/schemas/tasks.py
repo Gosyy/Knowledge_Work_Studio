@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -15,4 +16,5 @@ class TaskSchema(BaseModel):
     session_id: str
     task_type: TaskType
     status: TaskStatus
+    result_data: dict[str, Any] | None = None
     created_at: datetime

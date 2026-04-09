@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 
 
 class TaskType(str, Enum):
@@ -13,9 +14,9 @@ class TaskType(str, Enum):
 
 
 class TaskStatus(str, Enum):
-    QUEUED = "queued"
+    PENDING = "pending"
     RUNNING = "running"
-    COMPLETED = "completed"
+    SUCCEEDED = "succeeded"
     FAILED = "failed"
 
 
@@ -24,5 +25,6 @@ class Task:
     id: str
     session_id: str
     task_type: TaskType
-    status: TaskStatus = TaskStatus.QUEUED
+    status: TaskStatus = TaskStatus.PENDING
+    result_data: dict[str, Any] | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

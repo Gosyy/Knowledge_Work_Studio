@@ -19,6 +19,8 @@ def test_issue_006_session_upload_task_flow(monkeypatch, tmp_path: Path) -> None
     monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
     monkeypatch.setenv("ARTIFACTS_DIR", str(tmp_path / "artifacts"))
     monkeypatch.setenv("TEMP_DIR", str(tmp_path / "temp"))
+    monkeypatch.setenv("SQLITE_DB_PATH", str(tmp_path / "metadata.sqlite3"))
+    monkeypatch.setenv("SQLITE_MIGRATIONS_DIR", str(Path(__file__).resolve().parents[3] / "scripts" / "migrations"))
     get_settings.cache_clear()
     _reset_app_container()
 
@@ -46,7 +48,7 @@ def test_issue_006_session_upload_task_flow(monkeypatch, tmp_path: Path) -> None
 
     get_task_response = client.get(f"/tasks/{task_id}")
     assert get_task_response.status_code == 200
-    assert get_task_response.json()["status"] == "queued"
+    assert get_task_response.json()["status"] == "pending"
 
     get_session_response = client.get(f"/sessions/{session_id}")
     assert get_session_response.status_code == 200
@@ -59,6 +61,8 @@ def test_issue_006_returns_404_for_missing_resources(monkeypatch, tmp_path: Path
     monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
     monkeypatch.setenv("ARTIFACTS_DIR", str(tmp_path / "artifacts"))
     monkeypatch.setenv("TEMP_DIR", str(tmp_path / "temp"))
+    monkeypatch.setenv("SQLITE_DB_PATH", str(tmp_path / "metadata.sqlite3"))
+    monkeypatch.setenv("SQLITE_MIGRATIONS_DIR", str(Path(__file__).resolve().parents[3] / "scripts" / "migrations"))
     get_settings.cache_clear()
     _reset_app_container()
 
