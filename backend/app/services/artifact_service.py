@@ -29,6 +29,17 @@ class ArtifactService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
         return self.artifacts.list_by_session(session_id)
 
+    def get_download_payload(self, artifact_id: str) -> tuple[Artifact, bytes]:
+        artifact = self.get_artifact(artifact_id)
+        if artifact.storage_path is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Artifact file not found")
+
+        artifact_path = Path(artifact.storage_path)
+        if not artifact_path.exists() or not artifact_path.is_file():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Artifact file not found")
+
+        return artifact, self.storage.read_bytes(artifact_path)
+
     def create_placeholder_artifact(
         self,
         *,
