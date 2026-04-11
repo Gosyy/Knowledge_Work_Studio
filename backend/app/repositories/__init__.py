@@ -4,6 +4,12 @@ from backend.app.repositories.in_memory import (
     InMemoryTaskRepository,
     InMemoryUploadedFileRepository,
 )
+from backend.app.repositories.postgres import (
+    PostgresArtifactRepository,
+    PostgresSessionRepository,
+    PostgresTaskRepository,
+    PostgresUploadedFileRepository,
+)
 from backend.app.repositories.interfaces import (
     ArtifactRepository,
     SessionRepository,
@@ -25,6 +31,10 @@ __all__ = [
     "InMemorySessionRepository",
     "InMemoryTaskRepository",
     "InMemoryUploadedFileRepository",
+    "PostgresArtifactRepository",
+    "PostgresSessionRepository",
+    "PostgresTaskRepository",
+    "PostgresUploadedFileRepository",
     "SessionRepository",
     "SqliteArtifactRepository",
     "SqliteSessionRepository",

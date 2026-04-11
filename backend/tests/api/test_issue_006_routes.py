@@ -15,6 +15,8 @@ def _reset_app_container() -> None:
 
 
 def test_issue_006_session_upload_task_flow(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("METADATA_BACKEND", "sqlite")
+    monkeypatch.setenv("SQLITE_RUNTIME_ALLOWED", "true")
     monkeypatch.setenv("STORAGE_ROOT", str(tmp_path))
     monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
     monkeypatch.setenv("ARTIFACTS_DIR", str(tmp_path / "artifacts"))
@@ -56,6 +58,8 @@ def test_issue_006_session_upload_task_flow(monkeypatch, tmp_path: Path) -> None
 
 
 def test_issue_006_returns_404_for_missing_resources(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("METADATA_BACKEND", "sqlite")
+    monkeypatch.setenv("SQLITE_RUNTIME_ALLOWED", "true")
     monkeypatch.setenv("STORAGE_ROOT", str(tmp_path))
     monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
     monkeypatch.setenv("ARTIFACTS_DIR", str(tmp_path / "artifacts"))
@@ -72,6 +76,8 @@ def test_issue_006_returns_404_for_missing_resources(monkeypatch, tmp_path: Path
 
 
 def test_issue_006_data_persists_after_container_reset(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("METADATA_BACKEND", "sqlite")
+    monkeypatch.setenv("SQLITE_RUNTIME_ALLOWED", "true")
     monkeypatch.setenv("STORAGE_ROOT", str(tmp_path))
     monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
     monkeypatch.setenv("ARTIFACTS_DIR", str(tmp_path / "artifacts"))
