@@ -141,17 +141,41 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
                     task_id TEXT NOT NULL,
                     filename TEXT NOT NULL,
                     content_type TEXT NOT NULL,
+                    storage_path TEXT NOT NULL DEFAULT '',
+                    size_bytes INTEGER NOT NULL DEFAULT 0,
                     created_at TEXT NOT NULL
                 )
                 """
             )
+            self._ensure_column(
+                connection=connection,
+                table="artifacts",
+                column="storage_path",
+                definition="TEXT NOT NULL DEFAULT ''",
+            )
+            self._ensure_column(
+                connection=connection,
+                table="artifacts",
+                column="size_bytes",
+                definition="INTEGER NOT NULL DEFAULT 0",
+            )
+
+    @staticmethod
+    def _ensure_column(*, connection: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+        existing_columns = {
+            row[1]
+            for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
+        }
+        if column not in existing_columns:
+            connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def create(self, artifact: Artifact) -> Artifact:
         with self._lock, self._connect() as connection:
             connection.execute(
                 """
-                INSERT OR REPLACE INTO artifacts (id, session_id, task_id, filename, content_type, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO artifacts
+                (id, session_id, task_id, filename, content_type, storage_path, size_bytes, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     artifact.id,
@@ -159,6 +183,8 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
                     artifact.task_id,
                     artifact.filename,
                     artifact.content_type,
+                    artifact.storage_path,
+                    artifact.size_bytes,
                     artifact.created_at.isoformat(),
                 ),
             )
@@ -168,7 +194,7 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
         with self._connect() as connection:
             row = connection.execute(
                 """
-                SELECT id, session_id, task_id, filename, content_type, created_at
+                SELECT id, session_id, task_id, filename, content_type, storage_path, size_bytes, created_at
                 FROM artifacts
                 WHERE id = ?
                 """,
@@ -182,6 +208,8 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
             task_id=row["task_id"],
             filename=row["filename"],
             content_type=row["content_type"],
+            storage_path=row["storage_path"],
+            size_bytes=row["size_bytes"],
             created_at=_parse_datetime(row["created_at"]),
         )
 
@@ -189,7 +217,7 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT id, session_id, task_id, filename, content_type, created_at
+                SELECT id, session_id, task_id, filename, content_type, storage_path, size_bytes, created_at
                 FROM artifacts
                 WHERE session_id = ?
                 ORDER BY created_at ASC
@@ -203,6 +231,8 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
                 task_id=row["task_id"],
                 filename=row["filename"],
                 content_type=row["content_type"],
+                storage_path=row["storage_path"],
+                size_bytes=row["size_bytes"],
                 created_at=_parse_datetime(row["created_at"]),
             )
             for row in rows

@@ -23,6 +23,8 @@ def test_sqlite_repositories_persist_across_instances(tmp_path) -> None:
         task_id=task.id,
         filename="summary.txt",
         content_type="text/plain",
+        storage_path="/tmp/storage/artifacts/ses_1/task_1/art_1-summary.txt",
+        size_bytes=12,
     )
     upload = UploadedFile(
         id="upl_1",

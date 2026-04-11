@@ -9,4 +9,6 @@ class ArtifactSchema(BaseModel):
     task_id: str
     filename: str
     content_type: str
+    storage_path: str
+    size_bytes: int
     created_at: datetime

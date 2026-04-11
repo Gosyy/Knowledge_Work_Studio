@@ -6,7 +6,7 @@ from uuid import uuid4
 from fastapi import HTTPException, status
 
 from backend.app.domain import Artifact
-from backend.app.repositories import ArtifactRepository, SessionRepository, TaskRepository
+from backend.app.repositories import ArtifactRepository, FileStorage, SessionRepository, TaskRepository
 
 
 @dataclass
@@ -14,6 +14,7 @@ class ArtifactService:
     artifacts: ArtifactRepository
     sessions: SessionRepository
     tasks: TaskRepository
+    storage: FileStorage
 
     def get_artifact(self, artifact_id: str) -> Artifact:
         artifact = self.artifacts.get(artifact_id)
@@ -40,11 +41,22 @@ class ArtifactService:
         if self.tasks.get(task_id) is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
+        artifact_id = f"art_{uuid4().hex}"
+        stored_path = self.storage.save_artifact(
+            session_id=session_id,
+            task_id=task_id,
+            artifact_id=artifact_id,
+            original_filename=filename,
+            content=b"",
+        )
+
         artifact = Artifact(
-            id=f"art_{uuid4().hex}",
+            id=artifact_id,
             session_id=session_id,
             task_id=task_id,
             filename=filename,
             content_type=content_type,
+            storage_path=str(stored_path),
+            size_bytes=0,
         )
         return self.artifacts.create(artifact)

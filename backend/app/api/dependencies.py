@@ -48,6 +48,7 @@ def get_app_container(request: Request) -> AppContainer:
                 artifacts=artifacts,
                 sessions=sessions,
                 tasks=tasks,
+                storage=storage,
             ),
         )
     return request.app.state.app_container

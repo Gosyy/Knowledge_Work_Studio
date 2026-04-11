@@ -38,13 +38,17 @@ def test_issue_007_get_and_list_artifacts(monkeypatch, tmp_path: Path) -> None:
 
     get_resp = client.get(f"/artifacts/{artifact.id}")
     assert get_resp.status_code == 200
-    assert get_resp.json()["id"] == artifact.id
+    get_payload = get_resp.json()
+    assert get_payload["id"] == artifact.id
+    assert Path(get_payload["storage_path"]).exists()
+    assert get_payload["size_bytes"] == 0
 
     list_resp = client.get(f"/sessions/{session_id}/artifacts")
     assert list_resp.status_code == 200
     listed = list_resp.json()
     assert len(listed) == 1
     assert listed[0]["id"] == artifact.id
+    assert Path(listed[0]["storage_path"]).exists()
 
 
 def test_issue_007_artifact_endpoints_not_found(monkeypatch, tmp_path: Path) -> None:
@@ -89,4 +93,7 @@ def test_issue_007_artifacts_persist_after_container_reset(monkeypatch, tmp_path
 
     get_resp = client.get(f"/artifacts/{artifact.id}")
     assert get_resp.status_code == 200
-    assert get_resp.json()["id"] == artifact.id
+    payload = get_resp.json()
+    assert payload["id"] == artifact.id
+    assert payload["storage_path"].endswith(f"{artifact.id}-edited.docx")
+    assert payload["size_bytes"] == 0
