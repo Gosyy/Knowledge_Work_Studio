@@ -82,6 +82,7 @@ class OrchestratorExecutionCoordinator:
                 output_text=result.summary,
                 filename="summary.txt",
                 content_type="text/plain",
+                artifact_content=result.artifact_content,
             )
 
         if task_type is TaskType.DATA_ANALYSIS:

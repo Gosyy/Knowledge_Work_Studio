@@ -13,7 +13,9 @@ class PdfSummaryRequest:
 
 @dataclass(frozen=True)
 class PdfSummaryResult:
+    extracted_text: str
     summary: str
+    artifact_content: bytes
 
 
 @dataclass
@@ -21,5 +23,9 @@ class PdfServiceEntrypoint:
     service: PdfService
 
     def summarize(self, request: PdfSummaryRequest) -> PdfSummaryResult:
-        summary = self.service.summarize(request.content, max_sentences=request.max_sentences)
-        return PdfSummaryResult(summary=summary)
+        transformed = self.service.transform_pdf(request.content, max_sentences=request.max_sentences)
+        return PdfSummaryResult(
+            extracted_text=transformed.extracted_text,
+            summary=transformed.summary,
+            artifact_content=transformed.artifact_content,
+        )
