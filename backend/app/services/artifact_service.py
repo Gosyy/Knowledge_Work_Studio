@@ -68,3 +68,36 @@ class ArtifactService:
             size_bytes=0,
         )
         return self.artifacts.create(artifact)
+
+    def create_artifact_from_bytes(
+        self,
+        *,
+        session_id: str,
+        task_id: str,
+        filename: str,
+        content_type: str,
+        content: bytes,
+    ) -> Artifact:
+        if self.sessions.get(session_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        if self.tasks.get(task_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+        artifact_id = f"art_{uuid4().hex}"
+        stored_path = self.storage.save_artifact(
+            session_id=session_id,
+            task_id=task_id,
+            artifact_id=artifact_id,
+            original_filename=filename,
+            content=content,
+        )
+        artifact = Artifact(
+            id=artifact_id,
+            session_id=session_id,
+            task_id=task_id,
+            filename=filename,
+            content_type=content_type,
+            storage_path=str(stored_path),
+            size_bytes=len(content),
+        )
+        return self.artifacts.create(artifact)

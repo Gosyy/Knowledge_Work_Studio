@@ -14,6 +14,7 @@ class ServiceExecutionResult:
     output_text: str
     filename: str
     content_type: str
+    artifact_content: bytes | None = None
 
 
 class OrchestratorExecutionCoordinator:
@@ -41,12 +42,21 @@ class OrchestratorExecutionCoordinator:
         _ = self._task_router.route(task.task_type)
         service_result = self._execute_service(task.task_type, content)
 
-        artifact = self._artifact_service.create_placeholder_artifact(
-            session_id=task.session_id,
-            task_id=task.id,
-            filename=service_result.filename,
-            content_type=service_result.content_type,
-        )
+        if service_result.artifact_content is None:
+            artifact = self._artifact_service.create_placeholder_artifact(
+                session_id=task.session_id,
+                task_id=task.id,
+                filename=service_result.filename,
+                content_type=service_result.content_type,
+            )
+        else:
+            artifact = self._artifact_service.create_artifact_from_bytes(
+                session_id=task.session_id,
+                task_id=task.id,
+                filename=service_result.filename,
+                content_type=service_result.content_type,
+                content=service_result.artifact_content,
+            )
 
         return {
             "task_type": task.task_type.value,
@@ -63,6 +73,7 @@ class OrchestratorExecutionCoordinator:
                 output_text=result.content,
                 filename="edited.docx",
                 content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                artifact_content=result.artifact_content,
             )
 
         if task_type is TaskType.PDF_SUMMARY:

@@ -69,3 +69,7 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
 
     artifact = artifact_service.get_artifact(artifact_ids[0])
     assert Path(artifact.storage_path).exists()
+    if task_type is TaskType.DOCX_EDIT:
+        downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
+        assert downloaded_artifact.size_bytes > 0
+        assert downloaded_bytes.decode("utf-8") == expected_output
