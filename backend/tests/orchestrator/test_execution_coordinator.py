@@ -11,6 +11,7 @@ from backend.app.repositories import InMemoryArtifactRepository, InMemorySession
 from backend.app.services import ArtifactService, DataAnalysisService, SessionTaskService, TaskExecutionService
 from backend.app.services.docx_service import DocxService, DocxServiceEntrypoint
 from backend.app.services.pdf_service import PdfService, PdfServiceEntrypoint
+from backend.app.services.slides_service import SlidesService, SlidesServiceEntrypoint
 
 
 @pytest.mark.parametrize(
@@ -19,7 +20,7 @@ from backend.app.services.pdf_service import PdfService, PdfServiceEntrypoint
         (TaskType.DOCX_EDIT, "draft paragraph", "final paragraph"),
         (TaskType.PDF_SUMMARY, "Alpha. Beta. Gamma.", "Alpha. Beta."),
         (TaskType.DATA_ANALYSIS, "a,b\n1,2", "Rows: 1\nColumns: 2\nNumeric cells: 2\nNumeric mean: 1.5000"),
-        (TaskType.SLIDES_GENERATE, "slide notes", "slides_generate_stub_result"),
+        (TaskType.SLIDES_GENERATE, "Slide one. Slide two.", "Generated 2 slide(s)."),
     ],
 )
 def test_execution_coordinator_routes_to_services_and_persists_artifacts(
@@ -53,6 +54,7 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
         data_service=DataAnalysisService.from_settings(settings),
         docx_service=DocxServiceEntrypoint(service=DocxService()),
         pdf_service=PdfServiceEntrypoint(service=PdfService()),
+        slides_service=SlidesServiceEntrypoint(service=SlidesService()),
     )
 
     session = session_task_service.create_session()
@@ -83,3 +85,7 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
         downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
         assert downloaded_artifact.size_bytes > 0
         assert expected_output.encode("utf-8") == downloaded_bytes
+    if task_type is TaskType.SLIDES_GENERATE:
+        downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
+        assert downloaded_artifact.size_bytes > 0
+        assert downloaded_bytes[:2] == b"PK"

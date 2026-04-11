@@ -7,6 +7,7 @@ from backend.app.orchestrator.router import TaskRouter
 from backend.app.services import ArtifactService, DataAnalysisService, SessionTaskService, TaskExecutionService
 from backend.app.services.docx_service import DocxServiceEntrypoint, DocxTransformRequest
 from backend.app.services.pdf_service import PdfServiceEntrypoint, PdfSummaryRequest
+from backend.app.services.slides_service import SlidesGenerateRequest, SlidesServiceEntrypoint
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,7 @@ class OrchestratorExecutionCoordinator:
         data_service: DataAnalysisService,
         docx_service: DocxServiceEntrypoint,
         pdf_service: PdfServiceEntrypoint,
+        slides_service: SlidesServiceEntrypoint,
     ) -> None:
         self._task_router = task_router
         self._session_task_service = session_task_service
@@ -36,6 +38,7 @@ class OrchestratorExecutionCoordinator:
         self._data_service = data_service
         self._docx_service = docx_service
         self._pdf_service = pdf_service
+        self._slides_service = slides_service
 
     def execute_task(self, task_id: str, *, content: str) -> Task:
         return self._task_execution_service.execute(task_id, lambda task: self._run_task(task, content=content))
@@ -97,10 +100,12 @@ class OrchestratorExecutionCoordinator:
             )
 
         if task_type is TaskType.SLIDES_GENERATE:
+            result = self._slides_service.generate(SlidesGenerateRequest(content=content))
             return ServiceExecutionResult(
-                output_text="slides_generate_stub_result",
-                filename="slides.txt",
-                content_type="text/plain",
+                output_text=result.summary,
+                filename="slides.pptx",
+                content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                artifact_content=result.artifact_content,
             )
 
         raise ValueError(f"Unsupported task type: {task_type}")
