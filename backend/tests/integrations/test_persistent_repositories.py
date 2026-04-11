@@ -16,7 +16,7 @@ def test_sqlite_repositories_persist_across_instances(tmp_path) -> None:
     uploads_writer = SqliteUploadedFileRepository(str(db_path))
 
     session = Session(id="ses_1")
-    task = Task(id="task_1", session_id=session.id, task_type=TaskType.PDF_SUMMARY, status=TaskStatus.QUEUED)
+    task = Task(id="task_1", session_id=session.id, task_type=TaskType.PDF_SUMMARY, status=TaskStatus.PENDING)
     artifact = Artifact(
         id="art_1",
         session_id=session.id,

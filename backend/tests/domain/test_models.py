@@ -19,7 +19,7 @@ def test_domain_models_have_expected_defaults_and_fields() -> None:
         size_bytes=2048,
     )
 
-    assert task.status is TaskStatus.QUEUED
+    assert task.status is TaskStatus.PENDING
     assert artifact.task_id == task.id
     assert artifact.storage_path == ""
     assert artifact.size_bytes == 0

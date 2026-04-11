@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS tasks (
     session_id TEXT NOT NULL,
     task_type TEXT NOT NULL,
     status TEXT NOT NULL,
+    result_json TEXT NOT NULL DEFAULT '{}',
+    error_message TEXT,
+    started_at TEXT,
+    completed_at TEXT,
     created_at TEXT NOT NULL
 );
 

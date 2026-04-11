@@ -47,7 +47,7 @@ def test_issue_006_session_upload_task_flow(monkeypatch, tmp_path: Path) -> None
 
     get_task_response = client.get(f"/tasks/{task_id}")
     assert get_task_response.status_code == 200
-    assert get_task_response.json()["status"] == "queued"
+    assert get_task_response.json()["status"] == "pending"
 
     get_session_response = client.get(f"/sessions/{session_id}")
     assert get_session_response.status_code == 200

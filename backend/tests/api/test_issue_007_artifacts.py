@@ -50,6 +50,7 @@ def test_issue_007_get_and_list_artifacts(monkeypatch, tmp_path: Path) -> None:
     assert listed[0]["id"] == artifact.id
     assert Path(listed[0]["storage_path"]).exists()
 
+
 def test_issue_007_artifact_endpoints_not_found(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setenv("STORAGE_ROOT", str(tmp_path))
     monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
@@ -99,6 +100,7 @@ def test_issue_007_artifacts_persist_after_container_reset(monkeypatch, tmp_path
     assert payload["id"] == artifact.id
     assert payload["storage_path"].endswith(f"{artifact.id}-edited.docx")
     assert payload["size_bytes"] == 0
+
 
 def test_issue_007_download_artifact_returns_file_content(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setenv("STORAGE_ROOT", str(tmp_path))
