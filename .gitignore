@@ -34,3 +34,7 @@ logs/
 # Build artifacts
 *.egg-info/
 build/
+
+# Transitional/bootstrap bundles
+kw_studio_ideal_structure.zip
+*bootstrap*.zip
