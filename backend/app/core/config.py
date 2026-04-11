@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     uploads_dir: str = "./storage/uploads"
     artifacts_dir: str = "./storage/artifacts"
     temp_dir: str = "./storage/temp"
+    repository_db_path: str = "./storage/repositories.sqlite3"
+    migration_baseline_path: str = "./scripts/migrations/0001_repository_baseline.sql"
 
     model_config = SettingsConfigDict(
         env_file=".env",

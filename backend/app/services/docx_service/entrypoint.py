@@ -15,6 +15,7 @@ class DocxTransformRequest:
 @dataclass(frozen=True)
 class DocxTransformResult:
     content: str
+    artifact_content: bytes
 
 
 @dataclass
@@ -22,9 +23,9 @@ class DocxServiceEntrypoint:
     service: DocxService
 
     def transform(self, request: DocxTransformRequest) -> DocxTransformResult:
-        updated = self.service.apply_edit(
+        updated = self.service.transform_document(
             request.content,
             target=request.target,
             replacement=request.replacement,
         )
-        return DocxTransformResult(content=updated)
+        return DocxTransformResult(content=updated.content, artifact_content=updated.artifact_content)

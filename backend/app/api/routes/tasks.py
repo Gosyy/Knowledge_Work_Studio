@@ -18,6 +18,10 @@ def create_task(
         session_id=task.session_id,
         task_type=task.task_type,
         status=task.status,
+        result_data=task.result_data,
+        error_message=task.error_message,
+        started_at=task.started_at,
+        completed_at=task.completed_at,
         created_at=task.created_at,
     )
 
@@ -33,5 +37,9 @@ def get_task(
         session_id=task.session_id,
         task_type=task.task_type,
         status=task.status,
+        result_data=task.result_data,
+        error_message=task.error_message,
+        started_at=task.started_at,
+        completed_at=task.completed_at,
         created_at=task.created_at,
     )
