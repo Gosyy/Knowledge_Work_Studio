@@ -8,7 +8,7 @@ from backend.app.integrations import get_storage_paths
 from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.orchestrator import OrchestratorExecutionCoordinator, TaskRouter
 from backend.app.repositories import InMemoryArtifactRepository, InMemorySessionRepository, InMemoryTaskRepository, InMemoryUploadedFileRepository
-from backend.app.services import ArtifactService, SessionTaskService, TaskExecutionService
+from backend.app.services import ArtifactService, DataAnalysisService, SessionTaskService, TaskExecutionService
 from backend.app.services.docx_service import DocxService, DocxServiceEntrypoint
 from backend.app.services.pdf_service import PdfService, PdfServiceEntrypoint
 
@@ -18,7 +18,7 @@ from backend.app.services.pdf_service import PdfService, PdfServiceEntrypoint
     [
         (TaskType.DOCX_EDIT, "draft paragraph", "final paragraph"),
         (TaskType.PDF_SUMMARY, "Alpha. Beta. Gamma.", "Alpha. Beta."),
-        (TaskType.DATA_ANALYSIS, "a,b\n1,2", "data_analysis_stub_result"),
+        (TaskType.DATA_ANALYSIS, "a,b\n1,2", "Rows: 1\nColumns: 2\nNumeric cells: 2\nNumeric mean: 1.5000"),
         (TaskType.SLIDES_GENERATE, "slide notes", "slides_generate_stub_result"),
     ],
 )
@@ -50,6 +50,7 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
         session_task_service=session_task_service,
         task_execution_service=task_execution_service,
         artifact_service=artifact_service,
+        data_service=DataAnalysisService.from_settings(settings),
         docx_service=DocxServiceEntrypoint(service=DocxService()),
         pdf_service=PdfServiceEntrypoint(service=PdfService()),
     )
@@ -78,3 +79,7 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
         assert downloaded_artifact.size_bytes > 0
         assert b"PDF Summary Report" in downloaded_bytes
         assert expected_output.encode("utf-8") in downloaded_bytes
+    if task_type is TaskType.DATA_ANALYSIS:
+        downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
+        assert downloaded_artifact.size_bytes > 0
+        assert expected_output.encode("utf-8") == downloaded_bytes

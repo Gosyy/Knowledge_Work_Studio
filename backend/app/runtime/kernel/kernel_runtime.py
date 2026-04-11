@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import csv
+import io
+import json
 import logging
 from threading import Lock
 from uuid import uuid4
@@ -20,6 +23,7 @@ class KernelExecutionResult:
     session_id: str
     status: str
     submitted_at: datetime
+    output_text: str | None = None
 
 
 @dataclass
@@ -67,7 +71,49 @@ class KernelRuntime:
             "Kernel execution accepted",
             extra={"session_id": session_id, "timeout_seconds": request.timeout_seconds},
         )
-        return KernelExecutionResult(session_id=session_id, status="accepted", submitted_at=now)
+        output_text = self._execute_code(request.code)
+        return KernelExecutionResult(session_id=session_id, status="accepted", submitted_at=now, output_text=output_text)
+
+    @staticmethod
+    def _execute_code(code: str) -> str | None:
+        if not code.startswith("DATA_ANALYSIS::"):
+            return None
+
+        payload_raw = code.split("DATA_ANALYSIS::", 1)[1]
+        payload = json.loads(payload_raw)
+        content = payload.get("content", "")
+        return KernelRuntime._summarize_tabular_content(content)
+
+    @staticmethod
+    def _summarize_tabular_content(content: str) -> str:
+        reader = csv.reader(io.StringIO(content))
+        rows = list(reader)
+        if not rows:
+            return "No rows detected in dataset."
+
+        header = rows[0]
+        data_rows = rows[1:] if len(rows) > 1 else []
+        column_count = len(header)
+        row_count = len(data_rows)
+
+        numeric_values: list[float] = []
+        for row in data_rows:
+            for value in row:
+                try:
+                    numeric_values.append(float(value))
+                except ValueError:
+                    continue
+
+        numeric_mean_text = "n/a"
+        if numeric_values:
+            numeric_mean_text = f"{sum(numeric_values) / len(numeric_values):.4f}"
+
+        return (
+            f"Rows: {row_count}\n"
+            f"Columns: {column_count}\n"
+            f"Numeric cells: {len(numeric_values)}\n"
+            f"Numeric mean: {numeric_mean_text}"
+        )
 
     def active_session_count(self) -> int:
         return len(self._sessions)

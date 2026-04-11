@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from backend.app.domain import Task, TaskType
 from backend.app.orchestrator.router import TaskRouter
-from backend.app.services import ArtifactService, SessionTaskService, TaskExecutionService
+from backend.app.services import ArtifactService, DataAnalysisService, SessionTaskService, TaskExecutionService
 from backend.app.services.docx_service import DocxServiceEntrypoint, DocxTransformRequest
 from backend.app.services.pdf_service import PdfServiceEntrypoint, PdfSummaryRequest
 
@@ -25,6 +25,7 @@ class OrchestratorExecutionCoordinator:
         session_task_service: SessionTaskService,
         task_execution_service: TaskExecutionService,
         artifact_service: ArtifactService,
+        data_service: DataAnalysisService,
         docx_service: DocxServiceEntrypoint,
         pdf_service: PdfServiceEntrypoint,
     ) -> None:
@@ -32,6 +33,7 @@ class OrchestratorExecutionCoordinator:
         self._session_task_service = session_task_service
         self._task_execution_service = task_execution_service
         self._artifact_service = artifact_service
+        self._data_service = data_service
         self._docx_service = docx_service
         self._pdf_service = pdf_service
 
@@ -86,10 +88,12 @@ class OrchestratorExecutionCoordinator:
             )
 
         if task_type is TaskType.DATA_ANALYSIS:
+            result = self._data_service.analyze_tabular_content(content=content, file_type="csv")
             return ServiceExecutionResult(
-                output_text="data_analysis_stub_result",
+                output_text=result.summary_text,
                 filename="analysis.txt",
                 content_type="text/plain",
+                artifact_content=result.artifact_content,
             )
 
         if task_type is TaskType.SLIDES_GENERATE:
