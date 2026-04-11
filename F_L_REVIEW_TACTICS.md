@@ -18,6 +18,52 @@ This document is meant to be used together with:
 
 ---
 
+## Global rules that apply to every F–L prompt
+
+These rules are part of every issue below even if they are not repeated in full.
+
+### Reality rules
+- Do not ship nominal behavior in place of real behavior.
+- Do not label fake outputs as real outputs.
+- A `.docx` must be a real DOCX package.
+- A `.pptx` must be a real PPTX package.
+- If output is not truly PDF, do not label it PDF.
+
+### Truth-layer rules
+- Postgres is the single metadata truth layer.
+- Storage backend is the binary truth layer.
+- Do not keep SQLite as an accidental production truth path.
+
+### Provider rules
+- GigaChat is the only active deployment provider.
+- Do not mix multiple providers in runtime behavior.
+- Do not leak provider-specific code into business services.
+
+### Scope rules
+- Implement only the requested issue.
+- Do not opportunistically improve adjacent layers.
+- Do not redesign the entire architecture under the cover of a narrow issue.
+- Keep the patch narrow and reviewable.
+
+### Review-output rules
+After coding, always:
+- summarize only the requested issue
+- explicitly confirm which neighboring issues were NOT implemented
+- list commands run
+- report test results
+- call out blockers honestly if the issue could only be partially completed
+
+### Minimum checks
+Run exactly these checks unless the prompt explicitly adds more:
+- `pytest -q`
+- `python -m compileall backend`
+
+If frontend changes:
+- `cd frontend && npm run lint`
+- `cd frontend && npm run build`
+
+---
+
 # 1. Universal review rules
 
 ## Rule 1 — Review behavior, not just structure
