@@ -19,6 +19,7 @@ def test_issue_006_session_upload_task_flow(monkeypatch, tmp_path: Path) -> None
     monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
     monkeypatch.setenv("ARTIFACTS_DIR", str(tmp_path / "artifacts"))
     monkeypatch.setenv("TEMP_DIR", str(tmp_path / "temp"))
+    monkeypatch.setenv("REPOSITORY_DB_PATH", str(tmp_path / "repositories.sqlite3"))
     get_settings.cache_clear()
     _reset_app_container()
 
@@ -59,6 +60,7 @@ def test_issue_006_returns_404_for_missing_resources(monkeypatch, tmp_path: Path
     monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
     monkeypatch.setenv("ARTIFACTS_DIR", str(tmp_path / "artifacts"))
     monkeypatch.setenv("TEMP_DIR", str(tmp_path / "temp"))
+    monkeypatch.setenv("REPOSITORY_DB_PATH", str(tmp_path / "repositories.sqlite3"))
     get_settings.cache_clear()
     _reset_app_container()
 
@@ -67,3 +69,37 @@ def test_issue_006_returns_404_for_missing_resources(monkeypatch, tmp_path: Path
 
     missing_session = client.get("/sessions/ses_missing")
     assert missing_session.status_code == 404
+
+
+def test_issue_006_data_persists_after_container_reset(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("STORAGE_ROOT", str(tmp_path))
+    monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
+    monkeypatch.setenv("ARTIFACTS_DIR", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("TEMP_DIR", str(tmp_path / "temp"))
+    monkeypatch.setenv("REPOSITORY_DB_PATH", str(tmp_path / "repositories.sqlite3"))
+    get_settings.cache_clear()
+    _reset_app_container()
+
+    session_response = client.post("/sessions", json={})
+    session_id = session_response.json()["id"]
+
+    upload_response = client.post(
+        "/uploads",
+        data={"session_id": session_id},
+        files={"file": ("notes.txt", b"hello world", "text/plain")},
+    )
+    upload_id = upload_response.json()["id"]
+
+    task_response = client.post("/tasks", json={"session_id": session_id, "task_type": "pdf_summary"})
+    task_id = task_response.json()["id"]
+
+    _reset_app_container()
+
+    get_session_response = client.get(f"/sessions/{session_id}")
+    assert get_session_response.status_code == 200
+    session_payload = get_session_response.json()
+    assert task_id in session_payload["task_ids"]
+    assert upload_id in session_payload["upload_file_ids"]
+
+    get_task_response = client.get(f"/tasks/{task_id}")
+    assert get_task_response.status_code == 200
