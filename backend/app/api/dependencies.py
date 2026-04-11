@@ -8,10 +8,10 @@ from backend.app.core.config import Settings, get_settings
 from backend.app.integrations import get_storage_paths
 from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.repositories import (
-    InMemoryArtifactRepository,
-    InMemorySessionRepository,
-    InMemoryTaskRepository,
-    InMemoryUploadedFileRepository,
+    SqliteArtifactRepository,
+    SqliteSessionRepository,
+    SqliteTaskRepository,
+    SqliteUploadedFileRepository,
 )
 from backend.app.services import ArtifactService, SessionTaskService
 
@@ -32,10 +32,10 @@ def get_app_container(request: Request) -> AppContainer:
         storage_paths = get_storage_paths(settings)
         storage = LocalFileStorage(storage_paths)
 
-        sessions = InMemorySessionRepository()
-        tasks = InMemoryTaskRepository()
-        uploads = InMemoryUploadedFileRepository()
-        artifacts = InMemoryArtifactRepository()
+        sessions = SqliteSessionRepository(settings.repository_db_path)
+        tasks = SqliteTaskRepository(settings.repository_db_path)
+        uploads = SqliteUploadedFileRepository(settings.repository_db_path)
+        artifacts = SqliteArtifactRepository(settings.repository_db_path)
 
         request.app.state.app_container = AppContainer(
             session_task_service=SessionTaskService(
@@ -48,6 +48,7 @@ def get_app_container(request: Request) -> AppContainer:
                 artifacts=artifacts,
                 sessions=sessions,
                 tasks=tasks,
+                storage=storage,
             ),
         )
     return request.app.state.app_container
