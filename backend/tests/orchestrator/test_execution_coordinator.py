@@ -20,7 +20,7 @@ from backend.app.services.slides_service import SlidesService, SlidesServiceEntr
         (TaskType.DOCX_EDIT, "draft paragraph", "final paragraph"),
         (TaskType.PDF_SUMMARY, "Alpha. Beta. Gamma.", "Alpha. Beta."),
         (TaskType.DATA_ANALYSIS, "a,b\n1,2", "Rows: 1\nColumns: 2\nNumeric cells: 2\nNumeric mean: 1.5000"),
-        (TaskType.SLIDES_GENERATE, "Slide one. Slide two.", "Generated 2 slide(s)."),
+        (TaskType.SLIDES_GENERATE, "Slide one. Slide two.", "Generated 5 slide(s)."),
     ],
 )
 def test_execution_coordinator_routes_to_services_and_persists_artifacts(
