@@ -3,6 +3,8 @@ import logging
 
 from fastapi import FastAPI
 
+from backend.app.core.config import get_settings
+from backend.app.integrations.database import initialize_database
 from backend.app.api.routes import get_api_router
 
 
@@ -17,6 +19,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting KW Studio backend")
+    initialize_database(get_settings())
     yield
     logger.info("Stopping KW Studio backend")
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from backend.app.api.dependencies import get_artifact_service
 from backend.app.api.schemas import ArtifactSchema
@@ -23,3 +23,16 @@ def list_session_artifacts(
 ) -> list[ArtifactSchema]:
     artifacts = service.list_session_artifacts(session_id)
     return [ArtifactSchema(**artifact.__dict__) for artifact in artifacts]
+
+
+@router.get("/artifacts/{artifact_id}/download")
+def download_artifact(
+    artifact_id: str,
+    service: ArtifactService = Depends(get_artifact_service),
+) -> Response:
+    artifact, content = service.get_artifact_download(artifact_id)
+    return Response(
+        content=content,
+        media_type=artifact.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{artifact.filename}"'},
+    )
