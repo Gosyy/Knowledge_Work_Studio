@@ -17,12 +17,27 @@ python3 -m venv .venv
 source .venv/bin/activate
 make install
 make create-dirs
+python scripts/migrations/apply_baseline.py
 make test
 make run
 ```
 
 Health check:
 - http://localhost:8000/health
+
+## Local DB and migration baseline
+
+- Default persistence DB: `./storage/repositories.sqlite3`
+- Default baseline SQL: `./scripts/migrations/0001_repository_baseline.sql`
+- Run baseline manually (idempotent):
+
+```bash
+python scripts/migrations/apply_baseline.py
+```
+
+Environment overrides:
+- `REPOSITORY_DB_PATH`
+- `MIGRATION_BASELINE_PATH`
 
 ## First Codex run
 
