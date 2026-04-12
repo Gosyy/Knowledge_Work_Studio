@@ -2,11 +2,15 @@ from pathlib import Path
 
 from backend.app.core.config import Settings
 from backend.app.integrations import (
+    artifact_storage_key,
     deterministic_artifact_name,
     deterministic_temp_name,
     deterministic_upload_name,
     get_storage_paths,
     sanitize_filename,
+    storage_basename,
+    temp_storage_key,
+    upload_storage_key,
 )
 from backend.app.integrations.file_storage import LocalFileStorage
 
@@ -34,6 +38,17 @@ def test_storage_naming_is_deterministic() -> None:
     assert deterministic_upload_name("upl_123", original_name) == "upl_123-Q1-Report-final-.pdf"
     assert deterministic_artifact_name("art_123", original_name) == "art_123-Q1-Report-final-.pdf"
     assert deterministic_temp_name("tsk_123", original_name) == "tsk_123-Q1-Report-final-.pdf"
+    assert upload_storage_key(session_id="ses_1", upload_id="upl_123", original_filename=original_name).startswith(
+        "uploads/ses_1/upl_123/"
+    )
+    assert artifact_storage_key(
+        session_id="ses_1",
+        task_id="task_1",
+        artifact_id="art_123",
+        filename=original_name,
+    ).startswith("artifacts/ses_1/task_1/art_123/")
+    assert temp_storage_key(task_id="task_1", filename=original_name).startswith("temp/task_1/")
+    assert storage_basename("uploads/ses_1/upl_123/upl_123-Q1.txt") == "upl_123-Q1.txt"
 
 
 def test_local_file_storage_writes_and_reads_files(tmp_path: Path) -> None:
@@ -48,25 +63,21 @@ def test_local_file_storage_writes_and_reads_files(tmp_path: Path) -> None:
 
     storage = LocalFileStorage(paths)
 
-    upload_path = storage.save_upload(
-        session_id="ses_1",
-        upload_id="upl_1",
-        original_filename="notes.txt",
-        content=b"upload-content",
-    )
-    artifact_path = storage.save_artifact(
+    upload_key = upload_storage_key(session_id="ses_1", upload_id="upl_1", original_filename="notes.txt")
+    artifact_key = artifact_storage_key(
         session_id="ses_1",
         task_id="task_1",
         artifact_id="art_1",
-        original_filename="summary.md",
-        content=b"artifact-content",
+        filename="summary.md",
     )
-    temp_path = storage.save_temp(task_id="task_1", filename="scratch.py", content=b"temp")
+    temp_key = temp_storage_key(task_id="task_1", filename="scratch.py")
 
-    assert upload_path == tmp_path / "uploads" / "ses_1" / "upl_1-notes.txt"
-    assert artifact_path == tmp_path / "artifacts" / "ses_1" / "task_1" / "art_1-summary.md"
-    assert temp_path == tmp_path / "temp" / "task_1" / "task_1-scratch.py"
+    assert storage.save_bytes(storage_key=upload_key, content=b"upload-content") == f"local://{upload_key}"
+    assert storage.save_bytes(storage_key=artifact_key, content=b"artifact-content") == f"local://{artifact_key}"
+    assert storage.save_bytes(storage_key=temp_key, content=b"temp") == f"local://{temp_key}"
 
-    assert storage.read_bytes(upload_path) == b"upload-content"
-    assert storage.read_bytes(artifact_path) == b"artifact-content"
-    assert storage.read_bytes(temp_path) == b"temp"
+    assert storage.read_bytes(storage_key=upload_key) == b"upload-content"
+    assert storage.read_bytes(storage_key=artifact_key) == b"artifact-content"
+    assert storage.read_bytes(storage_key=temp_key) == b"temp"
+    assert storage.exists(storage_key=upload_key) is True
+    assert storage.get_size(storage_key=upload_key) == len(b"upload-content")

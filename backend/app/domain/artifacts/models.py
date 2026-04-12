@@ -11,6 +11,8 @@ class Artifact:
     task_id: str
     filename: str
     content_type: str
-    storage_path: str = ""
+    storage_backend: str = "local"
+    storage_key: str = ""
+    storage_uri: str = ""
     size_bytes: int = 0
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

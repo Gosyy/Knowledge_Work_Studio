@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 
 from backend.app.api.dependencies import get_session_task_service
 from backend.app.api.schemas import UploadedFileSchema
+from backend.app.integrations import storage_basename
 from backend.app.services import SessionTaskService
 
 router = APIRouter(tags=["uploads"])
@@ -13,13 +14,16 @@ async def create_upload(
     file: UploadFile = File(...),
     service: SessionTaskService = Depends(get_session_task_service),
 ) -> UploadedFileSchema:
-    uploaded, saved_path = await service.save_upload(session_id=session_id, upload_file=file)
+    uploaded = await service.save_upload(session_id=session_id, upload_file=file)
     return UploadedFileSchema(
         id=uploaded.id,
         session_id=uploaded.session_id,
         original_filename=uploaded.original_filename,
-        stored_filename=saved_path.name,
+        stored_filename=storage_basename(uploaded.storage_key),
         content_type=uploaded.content_type,
         size_bytes=uploaded.size_bytes,
+        storage_backend=uploaded.storage_backend,
+        storage_key=uploaded.storage_key,
+        storage_uri=uploaded.storage_uri,
         created_at=uploaded.created_at,
     )

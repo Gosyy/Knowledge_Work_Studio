@@ -23,7 +23,9 @@ def test_sqlite_repositories_persist_across_instances(tmp_path) -> None:
         task_id=task.id,
         filename="summary.txt",
         content_type="text/plain",
-        storage_path="/tmp/storage/artifacts/ses_1/task_1/art_1-summary.txt",
+        storage_backend="local",
+        storage_key="artifacts/ses_1/task_1/art_1/summary.txt",
+        storage_uri="local://artifacts/ses_1/task_1/art_1/summary.txt",
         size_bytes=12,
     )
     upload = UploadedFile(
@@ -32,6 +34,9 @@ def test_sqlite_repositories_persist_across_instances(tmp_path) -> None:
         original_filename="source.pdf",
         content_type="application/pdf",
         size_bytes=256,
+        storage_backend="local",
+        storage_key="uploads/ses_1/upl_1/source.pdf",
+        storage_uri="local://uploads/ses_1/upl_1/source.pdf",
     )
 
     sessions_writer.create(session)

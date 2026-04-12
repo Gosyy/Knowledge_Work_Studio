@@ -10,4 +10,7 @@ class UploadedFileSchema(BaseModel):
     stored_filename: str
     content_type: str
     size_bytes: int
+    storage_backend: str
+    storage_key: str
+    storage_uri: str
     created_at: datetime

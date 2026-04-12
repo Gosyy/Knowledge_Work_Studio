@@ -11,4 +11,7 @@ class UploadedFile:
     original_filename: str
     content_type: str
     size_bytes: int
+    storage_backend: str = "local"
+    storage_key: str = ""
+    storage_uri: str = ""
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
