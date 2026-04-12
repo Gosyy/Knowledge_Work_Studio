@@ -71,7 +71,8 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
     assert len(artifact_ids) == 1
 
     artifact = artifact_service.get_artifact(artifact_ids[0])
-    assert Path(artifact.storage_path).exists()
+    assert artifact.storage_backend == "local"
+    assert artifact.storage_key.startswith(f"artifacts/{session.id}/{task.id}/{artifact.id}/")
     if task_type is TaskType.DOCX_EDIT:
         downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
         assert downloaded_artifact.size_bytes > 0

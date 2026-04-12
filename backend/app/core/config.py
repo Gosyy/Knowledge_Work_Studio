@@ -10,6 +10,8 @@ class Settings(BaseSettings):
 
     secret_key: str = "change-me"
     kernel_server_auth_token: str = ""
+    metadata_backend: str = "postgres"
+    sqlite_runtime_allowed: bool = False
 
     postgres_db: str = "kw_studio"
     postgres_user: str = "kw_studio"

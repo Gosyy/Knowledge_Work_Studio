@@ -2,7 +2,19 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from backend.app.domain import Artifact, Session, Task, UploadedFile
+from backend.app.domain import (
+    Artifact,
+    ArtifactSource,
+    DerivedContent,
+    Document,
+    DocumentVersion,
+    Presentation,
+    PresentationVersion,
+    Session,
+    StoredFile,
+    Task,
+    UploadedFile,
+)
 
 
 class SessionRepository(Protocol):
@@ -35,3 +47,51 @@ class UploadedFileRepository(Protocol):
     def get(self, file_id: str) -> UploadedFile | None: ...
 
     def list_by_session(self, session_id: str) -> list[UploadedFile]: ...
+
+
+class StoredFileRepository(Protocol):
+    def create(self, stored_file: StoredFile) -> StoredFile: ...
+
+    def get(self, stored_file_id: str) -> StoredFile | None: ...
+
+    def list_by_session(self, session_id: str) -> list[StoredFile]: ...
+
+
+class DocumentRepository(Protocol):
+    def create(self, document: Document) -> Document: ...
+
+    def get(self, document_id: str) -> Document | None: ...
+
+    def list_by_session(self, session_id: str) -> list[Document]: ...
+
+
+class DocumentVersionRepository(Protocol):
+    def create(self, document_version: DocumentVersion) -> DocumentVersion: ...
+
+    def list_by_document(self, document_id: str) -> list[DocumentVersion]: ...
+
+
+class PresentationRepository(Protocol):
+    def create(self, presentation: Presentation) -> Presentation: ...
+
+    def get(self, presentation_id: str) -> Presentation | None: ...
+
+    def list_by_session(self, session_id: str) -> list[Presentation]: ...
+
+
+class PresentationVersionRepository(Protocol):
+    def create(self, presentation_version: PresentationVersion) -> PresentationVersion: ...
+
+    def list_by_presentation(self, presentation_id: str) -> list[PresentationVersion]: ...
+
+
+class ArtifactSourceRepository(Protocol):
+    def create(self, artifact_source: ArtifactSource) -> ArtifactSource: ...
+
+    def list_by_artifact(self, artifact_id: str) -> list[ArtifactSource]: ...
+
+
+class DerivedContentRepository(Protocol):
+    def create(self, derived_content: DerivedContent) -> DerivedContent: ...
+
+    def list_by_file(self, file_id: str) -> list[DerivedContent]: ...

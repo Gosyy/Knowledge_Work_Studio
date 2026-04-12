@@ -34,3 +34,6 @@ logs/
 # Build artifacts
 *.egg-info/
 build/
+
+# Transitional packaging artifacts
+kw_studio_ideal_structure*.zip

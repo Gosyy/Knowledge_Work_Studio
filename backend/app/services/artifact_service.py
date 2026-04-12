@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from uuid import uuid4
 
 from fastapi import HTTPException, status
 
 from backend.app.domain import Artifact
+from backend.app.integrations.storage import artifact_storage_key
 from backend.app.repositories import ArtifactRepository, FileStorage, SessionRepository, TaskRepository
 
 
@@ -31,10 +31,9 @@ class ArtifactService:
 
     def get_artifact_download(self, artifact_id: str) -> tuple[Artifact, bytes]:
         artifact = self.get_artifact(artifact_id)
-        artifact_path = Path(artifact.storage_path)
-        if not artifact_path.exists():
+        if not self.storage.exists(storage_key=artifact.storage_key):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Artifact file not found")
-        return artifact, self.storage.read_bytes(artifact_path)
+        return artifact, self.storage.read_bytes(storage_key=artifact.storage_key)
 
     def create_placeholder_artifact(
         self,
@@ -50,11 +49,14 @@ class ArtifactService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
         artifact_id = f"art_{uuid4().hex}"
-        stored_path = self.storage.save_artifact(
+        storage_key = artifact_storage_key(
             session_id=session_id,
             task_id=task_id,
             artifact_id=artifact_id,
-            original_filename=filename,
+            filename=filename,
+        )
+        storage_uri = self.storage.save_bytes(
+            storage_key=storage_key,
             content=b"",
         )
 
@@ -64,7 +66,9 @@ class ArtifactService:
             task_id=task_id,
             filename=filename,
             content_type=content_type,
-            storage_path=str(stored_path),
+            storage_backend=self.storage.backend_name,
+            storage_key=storage_key,
+            storage_uri=storage_uri,
             size_bytes=0,
         )
         return self.artifacts.create(artifact)
@@ -84,11 +88,14 @@ class ArtifactService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
         artifact_id = f"art_{uuid4().hex}"
-        stored_path = self.storage.save_artifact(
+        storage_key = artifact_storage_key(
             session_id=session_id,
             task_id=task_id,
             artifact_id=artifact_id,
-            original_filename=filename,
+            filename=filename,
+        )
+        storage_uri = self.storage.save_bytes(
+            storage_key=storage_key,
             content=content,
         )
         artifact = Artifact(
@@ -97,7 +104,9 @@ class ArtifactService:
             task_id=task_id,
             filename=filename,
             content_type=content_type,
-            storage_path=str(stored_path),
+            storage_backend=self.storage.backend_name,
+            storage_key=storage_key,
+            storage_uri=storage_uri,
             size_bytes=len(content),
         )
         return self.artifacts.create(artifact)
