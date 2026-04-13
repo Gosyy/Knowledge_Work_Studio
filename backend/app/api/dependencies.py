@@ -18,8 +18,7 @@ from backend.app.repositories import (
     SqliteTaskRepository,
     SqliteUploadedFileRepository,
 )
-from backend.app.services import ArtifactService, SessionTaskService
-
+from backend.app.services import ArtifactService, LLMTextService, SessionTaskService
 
 @dataclass
 class AppContainer:
@@ -98,8 +97,15 @@ def get_session_task_service(request: Request) -> SessionTaskService:
 def get_artifact_service(request: Request) -> ArtifactService:
     return get_app_container(request).artifact_service
 
-
 def get_llm_provider(request: Request) -> LLMProvider:
     if not hasattr(request.app.state, "llm_provider"):
         request.app.state.llm_provider = build_llm_provider(get_app_settings())
     return request.app.state.llm_provider
+
+
+def get_llm_text_service(request: Request) -> LLMTextService:
+    if not hasattr(request.app.state, "llm_text_service"):
+        request.app.state.llm_text_service = LLMTextService(
+            provider=get_llm_provider(request)
+        )
+    return request.app.state.llm_text_service

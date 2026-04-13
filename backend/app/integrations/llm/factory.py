@@ -6,7 +6,7 @@ from backend.app.integrations.llm.providers import FakeLLMProvider, GigaChatProv
 
 
 def build_llm_provider(settings: Settings) -> LLMProvider:
-    provider = settings.llm_provider.lower()
+    provider = settings.llm_provider.strip().lower()
 
     if provider == "gigachat":
         return GigaChatProvider(
