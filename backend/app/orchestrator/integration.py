@@ -1,3 +1,9 @@
+"""Transitional preview-only integration surface.
+
+This module is kept for narrow integration tests and does not represent the
+official public execution flow after G1-G3.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,10 +23,7 @@ class OrchestratorIntegrationSurface:
     browser: BrowserRuntimeInterface
 
     def preview_task_execution(self, task_type: TaskType, content: str) -> str:
-        """Minimal integration hook for orchestrator wiring tests.
-
-        This intentionally avoids full workflow execution.
-        """
+        """Minimal integration hook for orchestration wiring tests only."""
         if task_type is TaskType.DOCX_EDIT:
             result = self.docx.transform(DocxTransformRequest(content=content, target="draft", replacement="final"))
             return result.content

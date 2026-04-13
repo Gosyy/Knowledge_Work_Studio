@@ -1,3 +1,9 @@
+"""Transitional planning surface kept outside the official execution path.
+
+This module remains available for narrow tests around classification/planning,
+but it is not the main supported runtime entrypoint after G1-G3.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

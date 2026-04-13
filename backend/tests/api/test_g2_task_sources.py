@@ -17,7 +17,11 @@ client = TestClient(app)
 
 
 def _reset_app_state() -> None:
-    for attribute in ("app_container", "g1_execution_coordinator"):
+    for attribute in (
+        "app_container",
+        "g1_execution_coordinator",
+        "official_execution_coordinator",
+    ):
         if hasattr(app.state, attribute):
             delattr(app.state, attribute)
 

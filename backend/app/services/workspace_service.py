@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from backend.app.domain import TaskType
-from backend.app.orchestrator import TaskRouter
+from backend.app.orchestrator.router import TaskRouter
 
 
 @dataclass

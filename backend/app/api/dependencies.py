@@ -8,6 +8,8 @@ from backend.app.core.config import Settings, get_settings
 from backend.app.integrations import get_storage_paths
 from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.integrations.llm import LLMProvider, build_llm_provider
+from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
+from backend.app.orchestrator.router import TaskRouter
 from backend.app.repositories import (
     PostgresArtifactRepository,
     PostgresArtifactSourceRepository,
@@ -28,7 +30,19 @@ from backend.app.repositories.sqlite import (
     SqlitePresentationRepository,
     SqliteStoredFileRepository,
 )
-from backend.app.services import ArtifactService, LLMTextService, SessionTaskService
+from backend.app.services import (
+    ArtifactService,
+    DataAnalysisService,
+    DocxService,
+    LLMTextService,
+    PdfService,
+    SessionTaskService,
+    SlidesService,
+    TaskExecutionService,
+)
+from backend.app.services.docx_service import DocxServiceEntrypoint
+from backend.app.services.pdf_service import PdfServiceEntrypoint
+from backend.app.services.slides_service import SlidesServiceEntrypoint
 from backend.app.services.task_source_service import TaskSourceService
 
 @dataclass
@@ -139,6 +153,25 @@ def get_artifact_service(request: Request) -> ArtifactService:
 
 def get_task_source_service(request: Request) -> TaskSourceService:
     return get_app_container(request).task_source_service
+
+
+def get_official_execution_coordinator(request: Request) -> OrchestratorExecutionCoordinator:
+    if not hasattr(request.app.state, "official_execution_coordinator"):
+        container = get_app_container(request)
+        settings = get_app_settings()
+        request.app.state.official_execution_coordinator = OrchestratorExecutionCoordinator(
+            task_router=TaskRouter(),
+            session_task_service=container.session_task_service,
+            task_execution_service=TaskExecutionService(
+                session_task_service=container.session_task_service
+            ),
+            artifact_service=container.artifact_service,
+            data_service=DataAnalysisService.from_settings(settings),
+            docx_service=DocxServiceEntrypoint(service=DocxService()),
+            pdf_service=PdfServiceEntrypoint(service=PdfService()),
+            slides_service=SlidesServiceEntrypoint(service=SlidesService()),
+        )
+    return request.app.state.official_execution_coordinator
 
 
 def get_llm_provider(request: Request) -> LLMProvider:

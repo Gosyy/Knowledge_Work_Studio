@@ -1,25 +1,17 @@
-from backend.app.orchestrator.classifier import TaskClassifier
-from backend.app.orchestrator.coordinator import OrchestrationBundle, OrchestrationCoordinator
+"""Official orchestrator package surface for the current runtime path.
+
+After G1-G3, the supported public execution flow is centered on
+`OrchestratorExecutionCoordinator` plus the API task execution route.
+Older planning/preview surfaces remain available through their direct modules
+for focused tests, but are intentionally not re-exported here.
+"""
+
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator, ServiceExecutionResult
-from backend.app.orchestrator.integration import OrchestratorIntegrationSurface
-from backend.app.orchestrator.planner import ExecutionPlan, PlanStep, TaskPlanner
-from backend.app.orchestrator.result_composer import OrchestrationResult, ResultComposer
 from backend.app.orchestrator.router import RoutedTask, TaskRouter
-from backend.app.orchestrator.tool_router import ToolRouter
 
 __all__ = [
-    "ExecutionPlan",
-    "OrchestrationBundle",
-    "OrchestrationCoordinator",
     "OrchestratorExecutionCoordinator",
-    "OrchestrationResult",
-    "OrchestratorIntegrationSurface",
-    "PlanStep",
-    "ResultComposer",
     "RoutedTask",
     "ServiceExecutionResult",
-    "TaskClassifier",
-    "TaskPlanner",
     "TaskRouter",
-    "ToolRouter",
 ]

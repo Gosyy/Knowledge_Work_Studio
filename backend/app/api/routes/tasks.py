@@ -1,25 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.app.api.dependencies import (
-    get_app_container,
-    get_app_settings,
+    get_official_execution_coordinator,
     get_session_task_service,
     get_task_source_service,
 )
 from backend.app.api.schemas import TaskCreateRequest, TaskExecuteRequest, TaskSchema
 from backend.app.domain import Task, TaskStatus, TaskType
-from backend.app.orchestrator import OrchestratorExecutionCoordinator, TaskRouter
-from backend.app.services import (
-    DataAnalysisService,
-    DocxService,
-    PdfService,
-    SessionTaskService,
-    SlidesService,
-    TaskExecutionService,
-)
-from backend.app.services.docx_service import DocxServiceEntrypoint
-from backend.app.services.pdf_service import PdfServiceEntrypoint
-from backend.app.services.slides_service import SlidesServiceEntrypoint
+from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
+from backend.app.services import SessionTaskService
 from backend.app.services.task_source_service import TaskSourceService
 
 router = APIRouter(tags=["tasks"])
@@ -39,25 +28,6 @@ def _task_to_schema(task: Task) -> TaskSchema:
         completed_at=task.completed_at,
         created_at=task.created_at,
     )
-
-
-def _get_execution_coordinator(request: Request) -> OrchestratorExecutionCoordinator:
-    if not hasattr(request.app.state, "g1_execution_coordinator"):
-        container = get_app_container(request)
-        settings = get_app_settings()
-        request.app.state.g1_execution_coordinator = OrchestratorExecutionCoordinator(
-            task_router=TaskRouter(),
-            session_task_service=container.session_task_service,
-            task_execution_service=TaskExecutionService(
-                session_task_service=container.session_task_service
-            ),
-            artifact_service=container.artifact_service,
-            data_service=DataAnalysisService.from_settings(settings),
-            docx_service=DocxServiceEntrypoint(service=DocxService()),
-            pdf_service=PdfServiceEntrypoint(service=PdfService()),
-            slides_service=SlidesServiceEntrypoint(service=SlidesService()),
-        )
-    return request.app.state.g1_execution_coordinator
 
 
 def _ensure_g1_supported_task_type(task: Task) -> None:
@@ -85,9 +55,9 @@ def create_task(
 def execute_task(
     task_id: str,
     execute_request: TaskExecuteRequest,
-    request: Request,
     service: SessionTaskService = Depends(get_session_task_service),
     task_source_service: TaskSourceService = Depends(get_task_source_service),
+    coordinator: OrchestratorExecutionCoordinator = Depends(get_official_execution_coordinator),
 ) -> TaskSchema:
     task = service.get_task(task_id)
     _ensure_g1_supported_task_type(task)
@@ -101,7 +71,6 @@ def execute_task(
         presentation_ids=execute_request.presentation_ids,
     )
 
-    coordinator = _get_execution_coordinator(request)
     executed_task = coordinator.execute_task(task_id, content=resolved_input.content)
 
     if executed_task.status is not TaskStatus.SUCCEEDED:

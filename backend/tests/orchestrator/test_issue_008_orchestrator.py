@@ -1,13 +1,11 @@
 import pytest
 
 from backend.app.domain import TaskType
-from backend.app.orchestrator import (
-    OrchestrationCoordinator,
-    ResultComposer,
-    TaskClassifier,
-    TaskPlanner,
-    ToolRouter,
-)
+from backend.app.orchestrator.classifier import TaskClassifier
+from backend.app.orchestrator.coordinator import OrchestrationCoordinator
+from backend.app.orchestrator.planner import TaskPlanner
+from backend.app.orchestrator.result_composer import ResultComposer
+from backend.app.orchestrator.tool_router import ToolRouter
 
 
 @pytest.mark.parametrize(

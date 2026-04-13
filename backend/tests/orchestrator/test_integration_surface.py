@@ -2,7 +2,7 @@ import asyncio
 
 from backend.app.core.config import Settings
 from backend.app.domain import TaskType
-from backend.app.orchestrator import OrchestratorIntegrationSurface
+from backend.app.orchestrator.integration import OrchestratorIntegrationSurface
 from backend.app.runtime.browser.interface import BrowserRuntimeInterface
 from backend.app.runtime.browser.utils import BrowserRuntimeConfig
 from backend.app.runtime.browser.browser_supervisor import BrowserSupervisor
