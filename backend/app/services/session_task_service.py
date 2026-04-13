@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile, status
 
 from backend.app.domain import Session, Task, TaskStatus, TaskType, UploadedFile
+from backend.app.integrations.storage import upload_storage_key
 from backend.app.repositories import FileStorage, SessionRepository, TaskRepository, UploadedFileRepository
 
 
@@ -93,22 +93,29 @@ class SessionTaskService:
     def get_session_upload_ids(self, session_id: str) -> list[str]:
         return [upload.id for upload in self.uploads.list_by_session(session_id)]
 
-    async def save_upload(self, session_id: str, upload_file: UploadFile) -> tuple[UploadedFile, Path]:
+    async def save_upload(self, session_id: str, upload_file: UploadFile) -> UploadedFile:
         self.get_session(session_id)
         file_bytes = await upload_file.read()
         file_id = f"upl_{uuid4().hex}"
-        saved_path = self.storage.save_upload(
+        original_filename = upload_file.filename or "upload.bin"
+        storage_key = upload_storage_key(
             session_id=session_id,
             upload_id=file_id,
-            original_filename=upload_file.filename or "upload.bin",
+            original_filename=original_filename,
+        )
+        storage_uri = self.storage.save_bytes(
+            storage_key=storage_key,
             content=file_bytes,
         )
 
         uploaded = UploadedFile(
             id=file_id,
             session_id=session_id,
-            original_filename=upload_file.filename or "upload.bin",
+            original_filename=original_filename,
             content_type=upload_file.content_type or "application/octet-stream",
             size_bytes=len(file_bytes),
+            storage_backend=self.storage.backend_name,
+            storage_key=storage_key,
+            storage_uri=storage_uri,
         )
-        return self.uploads.create(uploaded), saved_path
+        return self.uploads.create(uploaded)

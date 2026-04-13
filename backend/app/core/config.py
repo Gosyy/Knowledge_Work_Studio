@@ -10,6 +10,8 @@ class Settings(BaseSettings):
 
     secret_key: str = "change-me"
     kernel_server_auth_token: str = ""
+    metadata_backend: str = "postgres"
+    sqlite_runtime_allowed: bool = False
 
     postgres_db: str = "kw_studio"
     postgres_user: str = "kw_studio"
@@ -22,6 +24,12 @@ class Settings(BaseSettings):
     temp_dir: str = "./storage/temp"
     repository_db_path: str = "./storage/repositories.sqlite3"
     migration_baseline_path: str = "./scripts/migrations/0001_repository_baseline.sql"
+    llm_provider: str = "gigachat"
+    gigachat_api_base_url: str = "https://gigachat.example.local"
+    gigachat_model: str = "GigaChat-Pro"
+    gigachat_client_id: str = ""
+    gigachat_client_secret: str = ""
+    fake_llm_response: str = "NOOP_LLM_RESPONSE"
 
     model_config = SettingsConfigDict(
         env_file=".env",

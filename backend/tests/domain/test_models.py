@@ -21,7 +21,9 @@ def test_domain_models_have_expected_defaults_and_fields() -> None:
 
     assert task.status is TaskStatus.PENDING
     assert artifact.task_id == task.id
-    assert artifact.storage_path == ""
+    assert artifact.storage_backend == "local"
+    assert artifact.storage_key == ""
+    assert artifact.storage_uri == ""
     assert artifact.size_bytes == 0
     assert uploaded_file.size_bytes == 2048
     assert session.created_at.tzinfo is not None

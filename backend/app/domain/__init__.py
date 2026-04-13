@@ -1,3 +1,31 @@
-from backend.app.domain.models import Artifact, Session, Task, TaskStatus, TaskType, UploadedFile
+from backend.app.domain.models import (
+    Artifact,
+    ArtifactSource,
+    DerivedContent,
+    Document,
+    DocumentVersion,
+    Presentation,
+    PresentationVersion,
+    Session,
+    StoredFile,
+    Task,
+    TaskStatus,
+    TaskType,
+    UploadedFile,
+)
 
-__all__ = ["Artifact", "Session", "Task", "TaskStatus", "TaskType", "UploadedFile"]
+__all__ = [
+    "Artifact",
+    "ArtifactSource",
+    "DerivedContent",
+    "Document",
+    "DocumentVersion",
+    "Presentation",
+    "PresentationVersion",
+    "Session",
+    "StoredFile",
+    "Task",
+    "TaskStatus",
+    "TaskType",
+    "UploadedFile",
+]

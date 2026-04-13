@@ -4,16 +4,24 @@ from backend.app.services import SessionTaskService, TaskExecutionService
 
 
 class _NoopStorage:
-    def save_upload(self, *, session_id: str, upload_id: str, original_filename: str, content: bytes):
+    backend_name = "test"
+
+    def save_bytes(self, *, storage_key: str, content: bytes, content_type: str | None = None):
         raise NotImplementedError
 
-    def save_artifact(self, *, session_id: str, task_id: str, artifact_id: str, original_filename: str, content: bytes):
+    def read_bytes(self, *, storage_key: str):
         raise NotImplementedError
 
-    def save_temp(self, *, task_id: str, filename: str, content: bytes):
+    def exists(self, *, storage_key: str) -> bool:
         raise NotImplementedError
 
-    def read_bytes(self, path):
+    def delete(self, *, storage_key: str) -> None:
+        raise NotImplementedError
+
+    def get_size(self, *, storage_key: str) -> int | None:
+        raise NotImplementedError
+
+    def make_uri(self, *, storage_key: str) -> str:
         raise NotImplementedError
 
 
