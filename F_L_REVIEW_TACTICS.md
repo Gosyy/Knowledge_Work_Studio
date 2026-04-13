@@ -45,6 +45,25 @@ These rules are part of every issue below even if they are not repeated in full.
 - Do not redesign the entire architecture under the cover of a narrow issue.
 - Keep the patch narrow and reviewable.
 
+
+### Current-branch-state rules
+- Review the patch against the CURRENT branch state, not an assumed earlier snapshot.
+- If a touched file had already changed in an earlier accepted issue, verify the patch against the live file shape.
+- Reject or narrow patches that were clearly generated against stale file contents.
+- Prefer additive changes over broad rewrites when a shared file has already drifted through accepted work.
+
+### Patch-compatibility rules
+- Treat patch applicability as a review concern, not merely a tooling concern.
+- If a patch cannot apply cleanly because it assumes an outdated file shape, the patch should be narrowed or regenerated against the live branch state.
+- Do not accept broad rewrites of shared files when the issue could be completed through a smaller compatible change.
+
+### Pre-change verification rules
+Before producing or reviewing a patch, verify:
+- the current branch name
+- current uncommitted state
+- current diff/stat
+- the live contents of every file the issue plans to modify
+
 ### Review-output rules
 After coding, always:
 - summarize only the requested issue
@@ -99,7 +118,18 @@ The review must preserve:
 
 ---
 
-# 2. Standard post-prompt command checklist
+# 2. Standard command checklist
+
+Run these before every issue:
+
+```bash
+git status --short
+git rev-parse --abbrev-ref HEAD
+git diff --stat
+git diff
+```
+
+Also inspect the live contents of every file the issue plans to modify.
 
 Run these after every issue:
 
@@ -145,6 +175,7 @@ Ask:
 - Did Codex implement only the requested issue?
 - Did it touch neighboring issues?
 - Did it introduce opportunistic refactors outside scope?
+- Did it stay aligned with the current live branch state rather than an outdated earlier snapshot?
 
 ## B. Architecture review
 Ask:
@@ -213,7 +244,13 @@ Examples:
 - direct GigaChat SDK/API calls scattered through services
 - provider-specific logic bypassing `LLMProvider`
 
-## Red flag 6 — Architecture inflation
+## Red flag 6 — Stale branch-state patching
+Examples:
+- patch hunks clearly target an older file shape
+- shared wiring files are rewritten against stale context
+- patch conflicts show the implementation was not regenerated against the live branch state
+
+## Red flag 7 — Architecture inflation
 Examples:
 - giant abstractions added “for future use”
 - broad refactors unrelated to the current issue
@@ -232,6 +269,7 @@ Accept an issue only if all are true:
 5. no fake artifacts are introduced
 6. the implementation is genuinely real for the requested behavior
 7. architecture is cleaner or more capable, not just larger
+8. the patch is compatible with the current live branch state or has been honestly narrowed to fit it
 
 ---
 
@@ -247,10 +285,12 @@ Implement only the requested issue.
 Do not touch adjacent phases unless strictly required for compatibility.
 Do not refactor unrelated modules.
 Keep the patch narrow and reviewable.
+Work against the current live branch state, not an earlier remembered file shape.
 
 Before coding:
 - list only the files strictly required for this issue
 - explain why each file is necessary
+- inspect the live contents of each target file before producing the patch
 
 After coding:
 - explicitly confirm which neighboring issues were NOT implemented
@@ -344,11 +384,13 @@ Can this schema support real source-driven generation with provenance?
 - `Noop/FakeProvider` exists
 - GigaChat-first provider bootstrap exists
 - business services remain provider-agnostic
+- shared DI/composition files are changed only as narrowly as required
 
 ### Reject if
 - GigaChat calls leak directly into services
 - multiple active providers appear in deployment logic
 - abstraction is huge and unnecessary for this stage
+- shared wiring files such as `api/dependencies.py` are broadly rewritten when a smaller additive change would satisfy F5
 
 ### Key review question
 Can the app depend on a provider contract instead of provider-specific logic?
@@ -361,11 +403,13 @@ Can the app depend on a provider contract instead of provider-specific logic?
   - get updated task
   - get artifact
 - this is not only an internal helper path
+- task types whose output pipelines are still fake or format-misleading are not silently promoted into the official public flow
 
 ### Reject if
 - execution remains internal-only
 - task lifecycle is still incomplete in the public flow
 - Codex drifts into later execution or provider phases
+- fake DOCX/PPTX/PDF behavior is exposed as if it were part of the official G1 runtime path
 
 ### Key review question
 Can a client now really run the official end-to-end execution flow?

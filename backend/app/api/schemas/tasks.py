@@ -11,6 +11,10 @@ class TaskCreateRequest(BaseModel):
     task_type: TaskType
 
 
+class TaskExecuteRequest(BaseModel):
+    content: str
+
+
 class TaskSchema(BaseModel):
     id: str
     session_id: str

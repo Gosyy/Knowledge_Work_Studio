@@ -1,7 +1,7 @@
 from backend.app.api.schemas.artifacts import ArtifactSchema
 from backend.app.api.schemas.files import UploadedFileSchema
 from backend.app.api.schemas.sessions import SessionCreateRequest, SessionDetailSchema, SessionSchema
-from backend.app.api.schemas.tasks import TaskCreateRequest, TaskSchema
+from backend.app.api.schemas.tasks import TaskCreateRequest, TaskExecuteRequest, TaskSchema
 
 __all__ = [
     "ArtifactSchema",
@@ -9,6 +9,7 @@ __all__ = [
     "SessionDetailSchema",
     "SessionSchema",
     "TaskCreateRequest",
+    "TaskExecuteRequest",
     "TaskSchema",
     "UploadedFileSchema",
 ]
