@@ -2,14 +2,30 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile, status
 
-from backend.app.domain import Session, Task, TaskStatus, TaskType, UploadedFile
+from backend.app.domain import Session, StoredFile, Task, TaskStatus, TaskType, UploadedFile
 from backend.app.integrations.storage import upload_storage_key
-from backend.app.repositories import FileStorage, SessionRepository, TaskRepository, UploadedFileRepository
+from backend.app.repositories import (
+    FileStorage,
+    SessionRepository,
+    StoredFileRepository,
+    TaskRepository,
+    UploadedFileRepository,
+)
+
+
+def _infer_file_type(*, original_filename: str, content_type: str) -> str:
+    suffix = Path(original_filename).suffix.lower().lstrip(".")
+    if suffix:
+        return suffix
+    if "/" in content_type:
+        return content_type.rsplit("/", 1)[-1].lower()
+    return "bin"
 
 
 @dataclass
@@ -18,6 +34,7 @@ class SessionTaskService:
     tasks: TaskRepository
     uploads: UploadedFileRepository
     storage: FileStorage
+    stored_files: StoredFileRepository | None = None
 
     def create_session(self) -> Session:
         session = Session(id=f"ses_{uuid4().hex}")
@@ -98,6 +115,7 @@ class SessionTaskService:
         file_bytes = await upload_file.read()
         file_id = f"upl_{uuid4().hex}"
         original_filename = upload_file.filename or "upload.bin"
+        content_type = upload_file.content_type or "application/octet-stream"
         storage_key = upload_storage_key(
             session_id=session_id,
             upload_id=file_id,
@@ -112,10 +130,34 @@ class SessionTaskService:
             id=file_id,
             session_id=session_id,
             original_filename=original_filename,
-            content_type=upload_file.content_type or "application/octet-stream",
+            content_type=content_type,
             size_bytes=len(file_bytes),
             storage_backend=self.storage.backend_name,
             storage_key=storage_key,
             storage_uri=storage_uri,
         )
-        return self.uploads.create(uploaded)
+        created_upload = self.uploads.create(uploaded)
+
+        if self.stored_files is not None:
+            self.stored_files.create(
+                StoredFile(
+                    id=file_id,
+                    session_id=session_id,
+                    task_id=None,
+                    kind="uploaded_source",
+                    file_type=_infer_file_type(
+                        original_filename=original_filename,
+                        content_type=content_type,
+                    ),
+                    mime_type=content_type,
+                    title=original_filename,
+                    original_filename=original_filename,
+                    storage_backend=self.storage.backend_name,
+                    storage_key=storage_key,
+                    storage_uri=storage_uri,
+                    checksum_sha256=None,
+                    size_bytes=len(file_bytes),
+                )
+            )
+
+        return created_upload

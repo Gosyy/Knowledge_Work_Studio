@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.app.domain import TaskStatus, TaskType
 
@@ -12,7 +12,11 @@ class TaskCreateRequest(BaseModel):
 
 
 class TaskExecuteRequest(BaseModel):
-    content: str
+    content: str | None = None
+    uploaded_file_ids: list[str] = Field(default_factory=list)
+    stored_file_ids: list[str] = Field(default_factory=list)
+    document_ids: list[str] = Field(default_factory=list)
+    presentation_ids: list[str] = Field(default_factory=list)
 
 
 class TaskSchema(BaseModel):

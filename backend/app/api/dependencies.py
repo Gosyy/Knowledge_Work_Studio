@@ -10,7 +10,11 @@ from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.integrations.llm import LLMProvider, build_llm_provider
 from backend.app.repositories import (
     PostgresArtifactRepository,
+    PostgresArtifactSourceRepository,
+    PostgresDocumentRepository,
+    PostgresPresentationRepository,
     PostgresSessionRepository,
+    PostgresStoredFileRepository,
     PostgresTaskRepository,
     PostgresUploadedFileRepository,
     SqliteArtifactRepository,
@@ -18,12 +22,20 @@ from backend.app.repositories import (
     SqliteTaskRepository,
     SqliteUploadedFileRepository,
 )
+from backend.app.repositories.sqlite import (
+    SqliteArtifactSourceRepository,
+    SqliteDocumentRepository,
+    SqlitePresentationRepository,
+    SqliteStoredFileRepository,
+)
 from backend.app.services import ArtifactService, LLMTextService, SessionTaskService
+from backend.app.services.task_source_service import TaskSourceService
 
 @dataclass
 class AppContainer:
     artifact_service: ArtifactService
     session_task_service: SessionTaskService
+    task_source_service: TaskSourceService
 
 
 def get_app_settings() -> Settings:
@@ -65,6 +77,23 @@ def _build_repositories(settings: Settings):
     )
 
 
+def _build_source_repositories(settings: Settings):
+    backend = _resolve_metadata_backend(settings)
+    if backend == "postgres":
+        return (
+            PostgresStoredFileRepository(settings.database_url),
+            PostgresDocumentRepository(settings.database_url),
+            PostgresPresentationRepository(settings.database_url),
+            PostgresArtifactSourceRepository(settings.database_url),
+        )
+    return (
+        SqliteStoredFileRepository(settings.repository_db_path),
+        SqliteDocumentRepository(settings.repository_db_path),
+        SqlitePresentationRepository(settings.repository_db_path),
+        SqliteArtifactSourceRepository(settings.repository_db_path),
+    )
+
+
 def get_app_container(request: Request) -> AppContainer:
     if not hasattr(request.app.state, "app_container"):
         settings = get_app_settings()
@@ -72,6 +101,7 @@ def get_app_container(request: Request) -> AppContainer:
         storage = LocalFileStorage(storage_paths)
 
         sessions, tasks, uploads, artifacts = _build_repositories(settings)
+        stored_files, documents, presentations, artifact_sources = _build_source_repositories(settings)
 
         request.app.state.app_container = AppContainer(
             session_task_service=SessionTaskService(
@@ -79,11 +109,20 @@ def get_app_container(request: Request) -> AppContainer:
                 tasks=tasks,
                 uploads=uploads,
                 storage=storage,
+                stored_files=stored_files,
             ),
             artifact_service=ArtifactService(
                 artifacts=artifacts,
                 sessions=sessions,
                 tasks=tasks,
+                storage=storage,
+            ),
+            task_source_service=TaskSourceService(
+                uploads=uploads,
+                stored_files=stored_files,
+                documents=documents,
+                presentations=presentations,
+                artifact_sources=artifact_sources,
                 storage=storage,
             ),
         )
@@ -96,6 +135,11 @@ def get_session_task_service(request: Request) -> SessionTaskService:
 
 def get_artifact_service(request: Request) -> ArtifactService:
     return get_app_container(request).artifact_service
+
+
+def get_task_source_service(request: Request) -> TaskSourceService:
+    return get_app_container(request).task_source_service
+
 
 def get_llm_provider(request: Request) -> LLMProvider:
     if not hasattr(request.app.state, "llm_provider"):

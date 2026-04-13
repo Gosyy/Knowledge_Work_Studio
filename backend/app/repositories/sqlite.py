@@ -6,7 +6,18 @@ from datetime import datetime
 from pathlib import Path
 from threading import Lock
 
-from backend.app.domain import Artifact, Session, Task, TaskStatus, TaskType, UploadedFile
+from backend.app.domain import (
+    Artifact,
+    ArtifactSource,
+    Document,
+    Presentation,
+    Session,
+    StoredFile,
+    Task,
+    TaskStatus,
+    TaskType,
+    UploadedFile,
+)
 
 
 def _parse_datetime(value: str) -> datetime:
@@ -430,6 +441,333 @@ class SqliteUploadedFileRepository(_SqliteRepositoryBase):
                 storage_backend=row["storage_backend"],
                 storage_key=row["storage_key"],
                 storage_uri=row["storage_uri"],
+                created_at=_parse_datetime(row["created_at"]),
+            )
+            for row in rows
+        ]
+
+
+class SqliteStoredFileRepository(_SqliteRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS stored_files (
+                    id TEXT PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    task_id TEXT,
+                    kind TEXT NOT NULL,
+                    file_type TEXT NOT NULL,
+                    mime_type TEXT NOT NULL,
+                    title TEXT,
+                    original_filename TEXT,
+                    storage_backend TEXT NOT NULL,
+                    storage_key TEXT NOT NULL,
+                    storage_uri TEXT NOT NULL,
+                    checksum_sha256 TEXT,
+                    size_bytes INTEGER,
+                    is_remote INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+
+    def create(self, stored_file: StoredFile) -> StoredFile:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO stored_files
+                (id, session_id, task_id, kind, file_type, mime_type, title, original_filename,
+                 storage_backend, storage_key, storage_uri, checksum_sha256, size_bytes, is_remote, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    stored_file.id,
+                    stored_file.session_id,
+                    stored_file.task_id,
+                    stored_file.kind,
+                    stored_file.file_type,
+                    stored_file.mime_type,
+                    stored_file.title,
+                    stored_file.original_filename,
+                    stored_file.storage_backend,
+                    stored_file.storage_key,
+                    stored_file.storage_uri,
+                    stored_file.checksum_sha256,
+                    stored_file.size_bytes,
+                    1 if stored_file.is_remote else 0,
+                    stored_file.created_at.isoformat(),
+                    stored_file.updated_at.isoformat(),
+                ),
+            )
+        return stored_file
+
+    def get(self, stored_file_id: str) -> StoredFile | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM stored_files WHERE id = ?",
+                (stored_file_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return StoredFile(
+            id=row["id"],
+            session_id=row["session_id"],
+            task_id=row["task_id"],
+            kind=row["kind"],
+            file_type=row["file_type"],
+            mime_type=row["mime_type"],
+            title=row["title"],
+            original_filename=row["original_filename"],
+            storage_backend=row["storage_backend"],
+            storage_key=row["storage_key"],
+            storage_uri=row["storage_uri"],
+            checksum_sha256=row["checksum_sha256"],
+            size_bytes=row["size_bytes"],
+            is_remote=bool(row["is_remote"]),
+            created_at=_parse_datetime(row["created_at"]),
+            updated_at=_parse_datetime(row["updated_at"]),
+        )
+
+    def list_by_session(self, session_id: str) -> list[StoredFile]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM stored_files WHERE session_id = ? ORDER BY created_at ASC",
+                (session_id,),
+            ).fetchall()
+        return [
+            StoredFile(
+                id=row["id"],
+                session_id=row["session_id"],
+                task_id=row["task_id"],
+                kind=row["kind"],
+                file_type=row["file_type"],
+                mime_type=row["mime_type"],
+                title=row["title"],
+                original_filename=row["original_filename"],
+                storage_backend=row["storage_backend"],
+                storage_key=row["storage_key"],
+                storage_uri=row["storage_uri"],
+                checksum_sha256=row["checksum_sha256"],
+                size_bytes=row["size_bytes"],
+                is_remote=bool(row["is_remote"]),
+                created_at=_parse_datetime(row["created_at"]),
+                updated_at=_parse_datetime(row["updated_at"]),
+            )
+            for row in rows
+        ]
+
+
+class SqliteDocumentRepository(_SqliteRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS documents (
+                    id TEXT PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    current_file_id TEXT,
+                    document_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+
+    def create(self, document: Document) -> Document:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO documents
+                (id, session_id, current_file_id, document_type, title, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    document.id,
+                    document.session_id,
+                    document.current_file_id,
+                    document.document_type,
+                    document.title,
+                    document.status,
+                    document.created_at.isoformat(),
+                    document.updated_at.isoformat(),
+                ),
+            )
+        return document
+
+    def get(self, document_id: str) -> Document | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM documents WHERE id = ?",
+                (document_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return Document(
+            id=row["id"],
+            session_id=row["session_id"],
+            current_file_id=row["current_file_id"],
+            document_type=row["document_type"],
+            title=row["title"],
+            status=row["status"],
+            created_at=_parse_datetime(row["created_at"]),
+            updated_at=_parse_datetime(row["updated_at"]),
+        )
+
+    def list_by_session(self, session_id: str) -> list[Document]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM documents WHERE session_id = ? ORDER BY created_at ASC",
+                (session_id,),
+            ).fetchall()
+        return [
+            Document(
+                id=row["id"],
+                session_id=row["session_id"],
+                current_file_id=row["current_file_id"],
+                document_type=row["document_type"],
+                title=row["title"],
+                status=row["status"],
+                created_at=_parse_datetime(row["created_at"]),
+                updated_at=_parse_datetime(row["updated_at"]),
+            )
+            for row in rows
+        ]
+
+
+class SqlitePresentationRepository(_SqliteRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS presentations (
+                    id TEXT PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    current_file_id TEXT,
+                    presentation_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+
+    def create(self, presentation: Presentation) -> Presentation:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO presentations
+                (id, session_id, current_file_id, presentation_type, title, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    presentation.id,
+                    presentation.session_id,
+                    presentation.current_file_id,
+                    presentation.presentation_type,
+                    presentation.title,
+                    presentation.status,
+                    presentation.created_at.isoformat(),
+                    presentation.updated_at.isoformat(),
+                ),
+            )
+        return presentation
+
+    def get(self, presentation_id: str) -> Presentation | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM presentations WHERE id = ?",
+                (presentation_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return Presentation(
+            id=row["id"],
+            session_id=row["session_id"],
+            current_file_id=row["current_file_id"],
+            presentation_type=row["presentation_type"],
+            title=row["title"],
+            status=row["status"],
+            created_at=_parse_datetime(row["created_at"]),
+            updated_at=_parse_datetime(row["updated_at"]),
+        )
+
+    def list_by_session(self, session_id: str) -> list[Presentation]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM presentations WHERE session_id = ? ORDER BY created_at ASC",
+                (session_id,),
+            ).fetchall()
+        return [
+            Presentation(
+                id=row["id"],
+                session_id=row["session_id"],
+                current_file_id=row["current_file_id"],
+                presentation_type=row["presentation_type"],
+                title=row["title"],
+                status=row["status"],
+                created_at=_parse_datetime(row["created_at"]),
+                updated_at=_parse_datetime(row["updated_at"]),
+            )
+            for row in rows
+        ]
+
+
+class SqliteArtifactSourceRepository(_SqliteRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS artifact_sources (
+                    id TEXT PRIMARY KEY,
+                    artifact_id TEXT NOT NULL,
+                    source_file_id TEXT,
+                    source_document_id TEXT,
+                    source_presentation_id TEXT,
+                    role TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+
+    def create(self, artifact_source: ArtifactSource) -> ArtifactSource:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO artifact_sources
+                (id, artifact_id, source_file_id, source_document_id, source_presentation_id, role, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    artifact_source.id,
+                    artifact_source.artifact_id,
+                    artifact_source.source_file_id,
+                    artifact_source.source_document_id,
+                    artifact_source.source_presentation_id,
+                    artifact_source.role,
+                    artifact_source.created_at.isoformat(),
+                ),
+            )
+        return artifact_source
+
+    def list_by_artifact(self, artifact_id: str) -> list[ArtifactSource]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM artifact_sources WHERE artifact_id = ? ORDER BY created_at ASC",
+                (artifact_id,),
+            ).fetchall()
+        return [
+            ArtifactSource(
+                id=row["id"],
+                artifact_id=row["artifact_id"],
+                source_file_id=row["source_file_id"],
+                source_document_id=row["source_document_id"],
+                source_presentation_id=row["source_presentation_id"],
+                role=row["role"],
                 created_at=_parse_datetime(row["created_at"]),
             )
             for row in rows
