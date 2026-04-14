@@ -23,7 +23,7 @@ def test_kernel_runtime_session_execute_shutdown_flow() -> None:
     inspector = KernelInspector(bootstrap.runtime)
 
     assert result.session_id == session.id
-    assert result.status == "accepted"
+    assert result.status == "succeeded"
     assert inspector.snapshot_dict() == {"active_sessions": 1}
 
     assert bootstrap.server.shutdown_session(session_id=session.id, auth_token="secret-token") is True
@@ -40,7 +40,7 @@ def test_kernel_runtime_returns_real_data_analysis_output() -> None:
         timeout_seconds=10,
     )
 
-    assert result.status == "accepted"
+    assert result.status == "succeeded"
     assert result.output_text is not None
     assert "Rows: 2" in result.output_text
     assert "Columns: 2" in result.output_text

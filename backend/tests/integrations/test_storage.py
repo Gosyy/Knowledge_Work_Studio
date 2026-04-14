@@ -25,10 +25,10 @@ def test_get_storage_paths_uses_settings_values() -> None:
 
     paths = get_storage_paths(settings)
 
-    assert str(paths.root) == "/tmp/kw-storage"
-    assert str(paths.uploads) == "/tmp/kw-storage/uploads"
-    assert str(paths.artifacts) == "/tmp/kw-storage/artifacts"
-    assert str(paths.temp) == "/tmp/kw-storage/temp"
+    assert paths.root == Path("/tmp/kw-storage")
+    assert paths.uploads == Path("/tmp/kw-storage/uploads")
+    assert paths.artifacts == Path("/tmp/kw-storage/artifacts")
+    assert paths.temp == Path("/tmp/kw-storage/temp")
 
 
 def test_storage_naming_is_deterministic() -> None:
