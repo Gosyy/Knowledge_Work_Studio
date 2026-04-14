@@ -9,6 +9,7 @@ from backend.app.domain import (
     Document,
     DocumentVersion,
     ExecutionRun,
+    LLMRun,
     Presentation,
     PresentationVersion,
     Session,
@@ -107,3 +108,13 @@ class ExecutionRunRepository(Protocol):
     def get(self, execution_run_id: str) -> ExecutionRun | None: ...
 
     def list_by_task(self, task_id: str) -> list[ExecutionRun]: ...
+
+
+class LLMRunRepository(Protocol):
+    def create(self, llm_run: LLMRun) -> LLMRun: ...
+
+    def get(self, llm_run_id: str) -> LLMRun | None: ...
+
+    def list_by_task(self, task_id: str) -> list[LLMRun]: ...
+
+    def list_by_workflow(self, workflow: str) -> list[LLMRun]: ...

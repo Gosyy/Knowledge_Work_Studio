@@ -15,6 +15,7 @@ from backend.app.repositories import (
     PostgresArtifactSourceRepository,
     PostgresDocumentRepository,
     PostgresExecutionRunRepository,
+    PostgresLLMRunRepository,
     PostgresPresentationRepository,
     PostgresSessionRepository,
     PostgresStoredFileRepository,
@@ -22,6 +23,7 @@ from backend.app.repositories import (
     PostgresUploadedFileRepository,
     SqliteArtifactRepository,
     SqliteExecutionRunRepository,
+    SqliteLLMRunRepository,
     SqliteSessionRepository,
     SqliteTaskRepository,
     SqliteUploadedFileRepository,
@@ -117,6 +119,13 @@ def _build_execution_run_repository(settings: Settings):
     return SqliteExecutionRunRepository(settings.repository_db_path)
 
 
+def _build_llm_run_repository(settings: Settings):
+    backend = _resolve_metadata_backend(settings)
+    if backend == "postgres":
+        return PostgresLLMRunRepository(settings.database_url)
+    return SqliteLLMRunRepository(settings.repository_db_path)
+
+
 def get_app_container(request: Request) -> AppContainer:
     if not hasattr(request.app.state, "app_container"):
         settings = get_app_settings()
@@ -193,6 +202,7 @@ def get_llm_provider(request: Request) -> LLMProvider:
 def get_llm_text_service(request: Request) -> LLMTextService:
     if not hasattr(request.app.state, "llm_text_service"):
         request.app.state.llm_text_service = LLMTextService(
-            provider=get_llm_provider(request)
+            provider=get_llm_provider(request),
+            llm_runs=_build_llm_run_repository(get_app_settings()),
         )
     return request.app.state.llm_text_service

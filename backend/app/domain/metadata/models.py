@@ -109,3 +109,20 @@ class ExecutionRun:
     error_message: str | None
     started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: datetime | None = None
+
+
+@dataclass(frozen=True)
+class LLMRun:
+    id: str
+    task_id: str | None
+    workflow: str
+    provider: str
+    model: str
+    prompt: str
+    system_prompt: str | None
+    response_text: str
+    status: str
+    error_message: str | None
+    raw_json: dict[str, Any] | None
+    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    completed_at: datetime | None = None

@@ -35,11 +35,17 @@ def test_get_llm_provider_caches_instance_on_app_state(monkeypatch) -> None:
     assert result.text == "cached-response"
 
 
-def test_get_llm_text_service_uses_cached_provider(monkeypatch) -> None:
+def test_get_llm_text_service_uses_cached_provider(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(
         dependencies,
         "get_app_settings",
-        lambda: Settings(llm_provider="fake", fake_llm_response="service-response"),
+        lambda: Settings(
+            llm_provider="fake",
+            fake_llm_response="service-response",
+            metadata_backend="sqlite",
+            sqlite_runtime_allowed=True,
+            repository_db_path=str(tmp_path / "repositories.sqlite3"),
+        ),
     )
     request = build_request()
 
@@ -47,3 +53,17 @@ def test_get_llm_text_service_uses_cached_provider(monkeypatch) -> None:
     assert service is dependencies.get_llm_text_service(request)
     assert service.provider is dependencies.get_llm_provider(request)
     assert service.complete_prompt("hello") == "service-response"
+
+
+def test_get_llm_text_service_wires_llm_run_repository(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("METADATA_BACKEND", "sqlite")
+    monkeypatch.setenv("SQLITE_RUNTIME_ALLOWED", "true")
+    monkeypatch.setenv("REPOSITORY_DB_PATH", str(tmp_path / "repositories.sqlite3"))
+    from backend.app.core.config import get_settings
+
+    get_settings.cache_clear()
+    request = build_request()
+
+    service = dependencies.get_llm_text_service(request)
+
+    assert service.llm_runs is not None
