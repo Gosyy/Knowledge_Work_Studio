@@ -25,10 +25,14 @@ class Settings(BaseSettings):
     repository_db_path: str = "./storage/repositories.sqlite3"
     migration_baseline_path: str = "./scripts/migrations/0001_repository_baseline.sql"
     llm_provider: str = "gigachat"
-    gigachat_api_base_url: str = "https://gigachat.example.local"
+    gigachat_api_base_url: str = "https://gigachat.devices.sberbank.ru/api/v1"
+    gigachat_auth_url: str = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
+    gigachat_scope: str = "GIGACHAT_API_PERS"
     gigachat_model: str = "GigaChat-Pro"
     gigachat_client_id: str = ""
     gigachat_client_secret: str = ""
+    gigachat_timeout_seconds: float = 30.0
+    gigachat_verify_ssl: bool = True
     fake_llm_response: str = "NOOP_LLM_RESPONSE"
 
     model_config = SettingsConfigDict(
