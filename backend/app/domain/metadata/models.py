@@ -95,3 +95,17 @@ class DerivedContent:
     language: str | None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(frozen=True)
+class ExecutionRun:
+    id: str
+    task_id: str
+    engine_type: str
+    status: str
+    stdout_text: str
+    stderr_text: str
+    result_json: dict[str, Any] | None
+    error_message: str | None
+    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    completed_at: datetime | None = None

@@ -17,12 +17,17 @@ from backend.app.repositories.postgres import (
     PostgresTaskRepository,
     PostgresUploadedFileRepository,
 )
+from backend.app.repositories.execution_runs import (
+    PostgresExecutionRunRepository,
+    SqliteExecutionRunRepository,
+)
 from backend.app.repositories.interfaces import (
     ArtifactRepository,
     ArtifactSourceRepository,
     DerivedContentRepository,
     DocumentRepository,
     DocumentVersionRepository,
+    ExecutionRunRepository,
     PresentationRepository,
     PresentationVersionRepository,
     SessionRepository,
@@ -44,6 +49,7 @@ __all__ = [
     "DerivedContentRepository",
     "DocumentRepository",
     "DocumentVersionRepository",
+    "ExecutionRunRepository",
     "FileStorage",
     "InMemoryArtifactRepository",
     "InMemorySessionRepository",
@@ -54,6 +60,7 @@ __all__ = [
     "PostgresDerivedContentRepository",
     "PostgresDocumentRepository",
     "PostgresDocumentVersionRepository",
+    "PostgresExecutionRunRepository",
     "PostgresPresentationRepository",
     "PostgresPresentationVersionRepository",
     "PostgresSessionRepository",
@@ -64,6 +71,7 @@ __all__ = [
     "PresentationVersionRepository",
     "SessionRepository",
     "SqliteArtifactRepository",
+    "SqliteExecutionRunRepository",
     "SqliteSessionRepository",
     "SqliteTaskRepository",
     "SqliteUploadedFileRepository",

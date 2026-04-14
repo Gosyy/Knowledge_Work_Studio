@@ -14,12 +14,14 @@ from backend.app.repositories import (
     PostgresArtifactRepository,
     PostgresArtifactSourceRepository,
     PostgresDocumentRepository,
+    PostgresExecutionRunRepository,
     PostgresPresentationRepository,
     PostgresSessionRepository,
     PostgresStoredFileRepository,
     PostgresTaskRepository,
     PostgresUploadedFileRepository,
     SqliteArtifactRepository,
+    SqliteExecutionRunRepository,
     SqliteSessionRepository,
     SqliteTaskRepository,
     SqliteUploadedFileRepository,
@@ -108,6 +110,13 @@ def _build_source_repositories(settings: Settings):
     )
 
 
+def _build_execution_run_repository(settings: Settings):
+    backend = _resolve_metadata_backend(settings)
+    if backend == "postgres":
+        return PostgresExecutionRunRepository(settings.database_url)
+    return SqliteExecutionRunRepository(settings.repository_db_path)
+
+
 def get_app_container(request: Request) -> AppContainer:
     if not hasattr(request.app.state, "app_container"):
         settings = get_app_settings()
@@ -163,7 +172,8 @@ def get_official_execution_coordinator(request: Request) -> OrchestratorExecutio
             task_router=TaskRouter(),
             session_task_service=container.session_task_service,
             task_execution_service=TaskExecutionService(
-                session_task_service=container.session_task_service
+                session_task_service=container.session_task_service,
+                execution_runs=_build_execution_run_repository(settings),
             ),
             artifact_service=container.artifact_service,
             data_service=DataAnalysisService.from_settings(settings),

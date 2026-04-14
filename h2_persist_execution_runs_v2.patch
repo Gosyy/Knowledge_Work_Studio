@@ -1,0 +1,655 @@
+diff --git a/backend/app/api/dependencies.py b/backend/app/api/dependencies.py
+--- a/backend/app/api/dependencies.py
++++ b/backend/app/api/dependencies.py
+@@ -14,12 +14,14 @@
+     PostgresArtifactRepository,
+     PostgresArtifactSourceRepository,
+     PostgresDocumentRepository,
++    PostgresExecutionRunRepository,
+     PostgresPresentationRepository,
+     PostgresSessionRepository,
+     PostgresStoredFileRepository,
+     PostgresTaskRepository,
+     PostgresUploadedFileRepository,
+     SqliteArtifactRepository,
++    SqliteExecutionRunRepository,
+     SqliteSessionRepository,
+     SqliteTaskRepository,
+     SqliteUploadedFileRepository,
+@@ -108,6 +110,13 @@
+     )
+ 
+ 
++def _build_execution_run_repository(settings: Settings):
++    backend = _resolve_metadata_backend(settings)
++    if backend == "postgres":
++        return PostgresExecutionRunRepository(settings.database_url)
++    return SqliteExecutionRunRepository(settings.repository_db_path)
++
++
+ def get_app_container(request: Request) -> AppContainer:
+     if not hasattr(request.app.state, "app_container"):
+         settings = get_app_settings()
+@@ -163,7 +172,8 @@
+             task_router=TaskRouter(),
+             session_task_service=container.session_task_service,
+             task_execution_service=TaskExecutionService(
+-                session_task_service=container.session_task_service
++                session_task_service=container.session_task_service,
++                execution_runs=_build_execution_run_repository(settings),
+             ),
+             artifact_service=container.artifact_service,
+             data_service=DataAnalysisService.from_settings(settings),
+diff --git a/backend/app/domain/__init__.py b/backend/app/domain/__init__.py
+--- a/backend/app/domain/__init__.py
++++ b/backend/app/domain/__init__.py
+@@ -4,6 +4,7 @@
+     DerivedContent,
+     Document,
+     DocumentVersion,
++    ExecutionRun,
+     Presentation,
+     PresentationVersion,
+     Session,
+@@ -20,6 +21,7 @@
+     "DerivedContent",
+     "Document",
+     "DocumentVersion",
++    "ExecutionRun",
+     "Presentation",
+     "PresentationVersion",
+     "Session",
+diff --git a/backend/app/domain/metadata/models.py b/backend/app/domain/metadata/models.py
+--- a/backend/app/domain/metadata/models.py
++++ b/backend/app/domain/metadata/models.py
+@@ -95,3 +95,17 @@
+     language: str | None
+     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
++
++
++@dataclass(frozen=True)
++class ExecutionRun:
++    id: str
++    task_id: str
++    engine_type: str
++    status: str
++    stdout_text: str
++    stderr_text: str
++    result_json: dict[str, Any] | None
++    error_message: str | None
++    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
++    completed_at: datetime | None = None
+diff --git a/backend/app/domain/models.py b/backend/app/domain/models.py
+--- a/backend/app/domain/models.py
++++ b/backend/app/domain/models.py
+@@ -5,6 +5,7 @@
+     DerivedContent,
+     Document,
+     DocumentVersion,
++    ExecutionRun,
+     Presentation,
+     PresentationVersion,
+     StoredFile,
+@@ -18,6 +19,7 @@
+     "DerivedContent",
+     "Document",
+     "DocumentVersion",
++    "ExecutionRun",
+     "Presentation",
+     "PresentationVersion",
+     "Session",
+diff --git a/backend/app/repositories/__init__.py b/backend/app/repositories/__init__.py
+--- a/backend/app/repositories/__init__.py
++++ b/backend/app/repositories/__init__.py
+@@ -17,12 +17,17 @@
+     PostgresTaskRepository,
+     PostgresUploadedFileRepository,
+ )
++from backend.app.repositories.execution_runs import (
++    PostgresExecutionRunRepository,
++    SqliteExecutionRunRepository,
++)
+ from backend.app.repositories.interfaces import (
+     ArtifactRepository,
+     ArtifactSourceRepository,
+     DerivedContentRepository,
+     DocumentRepository,
+     DocumentVersionRepository,
++    ExecutionRunRepository,
+     PresentationRepository,
+     PresentationVersionRepository,
+     SessionRepository,
+@@ -44,6 +49,7 @@
+     "DerivedContentRepository",
+     "DocumentRepository",
+     "DocumentVersionRepository",
++    "ExecutionRunRepository",
+     "FileStorage",
+     "InMemoryArtifactRepository",
+     "InMemorySessionRepository",
+@@ -54,6 +60,7 @@
+     "PostgresDerivedContentRepository",
+     "PostgresDocumentRepository",
+     "PostgresDocumentVersionRepository",
++    "PostgresExecutionRunRepository",
+     "PostgresPresentationRepository",
+     "PostgresPresentationVersionRepository",
+     "PostgresSessionRepository",
+@@ -64,6 +71,7 @@
+     "PresentationVersionRepository",
+     "SessionRepository",
+     "SqliteArtifactRepository",
++    "SqliteExecutionRunRepository",
+     "SqliteSessionRepository",
+     "SqliteTaskRepository",
+     "SqliteUploadedFileRepository",
+diff --git a/backend/app/repositories/execution_runs.py b/backend/app/repositories/execution_runs.py
+new file mode 100644
+--- /dev/null
++++ b/backend/app/repositories/execution_runs.py
+@@ -0,0 +1,210 @@
++from __future__ import annotations
++
++import json
++import sqlite3
++from datetime import datetime
++from pathlib import Path
++from threading import Lock
++from typing import Any
++
++from backend.app.domain import ExecutionRun
++
++
++def _parse_datetime(value: str) -> datetime:
++    return datetime.fromisoformat(value)
++
++
++def _normalize_database_url(database_url: str) -> str:
++    return database_url.replace("postgresql+psycopg://", "postgresql://", 1)
++
++
++def _require_psycopg() -> tuple[Any, Any]:
++    try:
++        import psycopg
++        from psycopg.rows import dict_row
++    except ImportError as exc:
++        raise RuntimeError(
++            "psycopg is required for metadata_backend=postgres. "
++            "Install psycopg or use explicit sqlite test mode "
++            "(METADATA_BACKEND=sqlite and SQLITE_RUNTIME_ALLOWED=true)."
++        ) from exc
++    return psycopg, dict_row
++
++
++class SqliteExecutionRunRepository:
++    def __init__(self, db_path: str) -> None:
++        self._db_path = Path(db_path)
++        self._db_path.parent.mkdir(parents=True, exist_ok=True)
++        self._lock = Lock()
++        self._initialize_schema()
++
++    def _connect(self) -> sqlite3.Connection:
++        connection = sqlite3.connect(self._db_path)
++        connection.row_factory = sqlite3.Row
++        return connection
++
++    def _initialize_schema(self) -> None:
++        with self._connect() as connection:
++            connection.execute(
++                """
++                CREATE TABLE IF NOT EXISTS execution_runs (
++                    id TEXT PRIMARY KEY,
++                    task_id TEXT NOT NULL,
++                    engine_type TEXT NOT NULL,
++                    status TEXT NOT NULL,
++                    stdout_text TEXT NOT NULL DEFAULT '',
++                    stderr_text TEXT NOT NULL DEFAULT '',
++                    result_json TEXT,
++                    error_message TEXT,
++                    started_at TEXT NOT NULL,
++                    completed_at TEXT
++                )
++                """
++            )
++
++    def create(self, execution_run: ExecutionRun) -> ExecutionRun:
++        return self._upsert(execution_run)
++
++    def update(self, execution_run: ExecutionRun) -> ExecutionRun:
++        return self._upsert(execution_run)
++
++    def _upsert(self, execution_run: ExecutionRun) -> ExecutionRun:
++        with self._lock, self._connect() as connection:
++            connection.execute(
++                """
++                INSERT OR REPLACE INTO execution_runs
++                (id, task_id, engine_type, status, stdout_text, stderr_text, result_json, error_message, started_at, completed_at)
++                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
++                """,
++                (
++                    execution_run.id,
++                    execution_run.task_id,
++                    execution_run.engine_type,
++                    execution_run.status,
++                    execution_run.stdout_text,
++                    execution_run.stderr_text,
++                    json.dumps(execution_run.result_json) if execution_run.result_json is not None else None,
++                    execution_run.error_message,
++                    execution_run.started_at.isoformat(),
++                    execution_run.completed_at.isoformat() if execution_run.completed_at else None,
++                ),
++            )
++        return execution_run
++
++    def get(self, execution_run_id: str) -> ExecutionRun | None:
++        with self._connect() as connection:
++            row = connection.execute(
++                "SELECT * FROM execution_runs WHERE id = ?",
++                (execution_run_id,),
++            ).fetchone()
++        if row is None:
++            return None
++        return self._row_to_execution_run(row)
++
++    def list_by_task(self, task_id: str) -> list[ExecutionRun]:
++        with self._connect() as connection:
++            rows = connection.execute(
++                "SELECT * FROM execution_runs WHERE task_id = ? ORDER BY started_at ASC",
++                (task_id,),
++            ).fetchall()
++        return [self._row_to_execution_run(row) for row in rows]
++
++    @staticmethod
++    def _row_to_execution_run(row: sqlite3.Row) -> ExecutionRun:
++        return ExecutionRun(
++            id=row["id"],
++            task_id=row["task_id"],
++            engine_type=row["engine_type"],
++            status=row["status"],
++            stdout_text=row["stdout_text"],
++            stderr_text=row["stderr_text"],
++            result_json=json.loads(row["result_json"]) if row["result_json"] else None,
++            error_message=row["error_message"],
++            started_at=_parse_datetime(row["started_at"]),
++            completed_at=_parse_datetime(row["completed_at"]) if row["completed_at"] else None,
++        )
++
++
++class PostgresExecutionRunRepository:
++    def __init__(self, database_url: str) -> None:
++        self._database_url = _normalize_database_url(database_url)
++        self._lock = Lock()
++        self._initialize_schema()
++
++    def _connect(self):
++        psycopg, dict_row = _require_psycopg()
++        return psycopg.connect(self._database_url, row_factory=dict_row)
++
++    def _initialize_schema(self) -> None:
++        with self._connect() as connection, connection.cursor() as cursor:
++            cursor.execute(
++                """
++                CREATE TABLE IF NOT EXISTS execution_runs (
++                    id TEXT PRIMARY KEY,
++                    task_id TEXT NOT NULL,
++                    engine_type TEXT NOT NULL,
++                    status TEXT NOT NULL,
++                    stdout_text TEXT NOT NULL DEFAULT '',
++                    stderr_text TEXT NOT NULL DEFAULT '',
++                    result_json JSONB,
++                    error_message TEXT,
++                    started_at TIMESTAMPTZ NOT NULL,
++                    completed_at TIMESTAMPTZ
++                )
++                """
++            )
++            connection.commit()
++
++    def create(self, execution_run: ExecutionRun) -> ExecutionRun:
++        return self._upsert(execution_run)
++
++    def update(self, execution_run: ExecutionRun) -> ExecutionRun:
++        return self._upsert(execution_run)
++
++    def _upsert(self, execution_run: ExecutionRun) -> ExecutionRun:
++        with self._lock, self._connect() as connection, connection.cursor() as cursor:
++            cursor.execute(
++                """
++                INSERT INTO execution_runs
++                (id, task_id, engine_type, status, stdout_text, stderr_text, result_json, error_message, started_at, completed_at)
++                VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s)
++                ON CONFLICT (id) DO UPDATE SET
++                    task_id = EXCLUDED.task_id,
++                    engine_type = EXCLUDED.engine_type,
++                    status = EXCLUDED.status,
++                    stdout_text = EXCLUDED.stdout_text,
++                    stderr_text = EXCLUDED.stderr_text,
++                    result_json = EXCLUDED.result_json,
++                    error_message = EXCLUDED.error_message,
++                    started_at = EXCLUDED.started_at,
++                    completed_at = EXCLUDED.completed_at
++                """,
++                (
++                    execution_run.id,
++                    execution_run.task_id,
++                    execution_run.engine_type,
++                    execution_run.status,
++                    execution_run.stdout_text,
++                    execution_run.stderr_text,
++                    json.dumps(execution_run.result_json) if execution_run.result_json is not None else None,
++                    execution_run.error_message,
++                    execution_run.started_at,
++                    execution_run.completed_at,
++                ),
++            )
++            connection.commit()
++        return execution_run
++
++    def get(self, execution_run_id: str) -> ExecutionRun | None:
++        with self._connect() as connection, connection.cursor() as cursor:
++            cursor.execute("SELECT * FROM execution_runs WHERE id = %s", (execution_run_id,))
++            row = cursor.fetchone()
++        if row is None:
++            return None
++        return ExecutionRun(**row)
++
++    def list_by_task(self, task_id: str) -> list[ExecutionRun]:
++        with self._connect() as connection, connection.cursor() as cursor:
++            cursor.execute("SELECT * FROM execution_runs WHERE task_id = %s ORDER BY started_at ASC", (task_id,))
++            rows = cursor.fetchall()
++        return [ExecutionRun(**row) for row in rows]
+diff --git a/backend/app/repositories/interfaces.py b/backend/app/repositories/interfaces.py
+--- a/backend/app/repositories/interfaces.py
++++ b/backend/app/repositories/interfaces.py
+@@ -8,6 +8,7 @@
+     DerivedContent,
+     Document,
+     DocumentVersion,
++    ExecutionRun,
+     Presentation,
+     PresentationVersion,
+     Session,
+@@ -95,3 +96,14 @@
+     def create(self, derived_content: DerivedContent) -> DerivedContent: ...
+ 
+     def list_by_file(self, file_id: str) -> list[DerivedContent]: ...
++
++
++
++class ExecutionRunRepository(Protocol):
++    def create(self, execution_run: ExecutionRun) -> ExecutionRun: ...
++
++    def update(self, execution_run: ExecutionRun) -> ExecutionRun: ...
++
++    def get(self, execution_run_id: str) -> ExecutionRun | None: ...
++
++    def list_by_task(self, task_id: str) -> list[ExecutionRun]: ...
+diff --git a/backend/app/services/task_execution_service.py b/backend/app/services/task_execution_service.py
+--- a/backend/app/services/task_execution_service.py
++++ b/backend/app/services/task_execution_service.py
+@@ -1,20 +1,88 @@
+ from __future__ import annotations
+ 
+ from dataclasses import dataclass
++from datetime import datetime, timezone
+ from typing import Any, Callable
++from uuid import uuid4
+ 
+-from backend.app.domain import Task
++from backend.app.domain import ExecutionRun, Task
++from backend.app.repositories import ExecutionRunRepository
+ from backend.app.services.session_task_service import SessionTaskService
+ 
+ 
+ @dataclass
+ class TaskExecutionService:
+     session_task_service: SessionTaskService
++    execution_runs: ExecutionRunRepository | None = None
++    engine_type: str = "official_task_execution"
+ 
+     def execute(self, task_id: str, runner: Callable[[Task], dict[str, Any]]) -> Task:
+         running_task = self.session_task_service.mark_task_running(task_id)
++        execution_run = self._start_execution_run(running_task)
+         try:
+             result_data = runner(running_task)
+         except Exception as exc:  # deliberately captures runner failures with explicit lifecycle handling
+-            return self.session_task_service.mark_task_failed(task_id, error_message=str(exc))
++            self._finish_execution_run(
++                execution_run=execution_run,
++                status="failed",
++                result_json=None,
++                error_message=str(exc),
++            )
++            failed_result_data = {"execution_run_id": execution_run.id} if execution_run else None
++            return self.session_task_service.mark_task_failed(
++                task_id,
++                error_message=str(exc),
++                result_data=failed_result_data,
++            )
++
++        self._finish_execution_run(
++            execution_run=execution_run,
++            status="succeeded",
++            result_json=result_data,
++            error_message=None,
++        )
++        if execution_run is not None:
++            result_data = {**result_data, "execution_run_id": execution_run.id}
+         return self.session_task_service.mark_task_succeeded(task_id, result_data=result_data)
++
++    def _start_execution_run(self, task: Task) -> ExecutionRun | None:
++        if self.execution_runs is None:
++            return None
++        execution_run = ExecutionRun(
++            id=f"exec_{uuid4().hex}",
++            task_id=task.id,
++            engine_type=self.engine_type,
++            status="running",
++            stdout_text="",
++            stderr_text="",
++            result_json=None,
++            error_message=None,
++            started_at=task.started_at or datetime.now(timezone.utc),
++            completed_at=None,
++        )
++        return self.execution_runs.create(execution_run)
++
++    def _finish_execution_run(
++        self,
++        *,
++        execution_run: ExecutionRun | None,
++        status: str,
++        result_json: dict[str, Any] | None,
++        error_message: str | None,
++    ) -> None:
++        if self.execution_runs is None or execution_run is None:
++            return
++        self.execution_runs.update(
++            ExecutionRun(
++                id=execution_run.id,
++                task_id=execution_run.task_id,
++                engine_type=execution_run.engine_type,
++                status=status,
++                stdout_text=execution_run.stdout_text,
++                stderr_text=execution_run.stderr_text,
++                result_json=result_json,
++                error_message=error_message,
++                started_at=execution_run.started_at,
++                completed_at=datetime.now(timezone.utc),
++            )
++        )
+diff --git a/backend/tests/api/test_h2_execution_runs.py b/backend/tests/api/test_h2_execution_runs.py
+new file mode 100644
+--- /dev/null
++++ b/backend/tests/api/test_h2_execution_runs.py
+@@ -0,0 +1,73 @@
++from pathlib import Path
++
++import pytest
++from fastapi.testclient import TestClient
++
++from backend.app.core.config import get_settings
++from backend.app.main import app
++from backend.app.repositories import SqliteExecutionRunRepository
++
++client = TestClient(app)
++
++
++def _reset_app_state() -> None:
++    for attribute in (
++        "app_container",
++        "g1_execution_coordinator",
++        "official_execution_coordinator",
++    ):
++        if hasattr(app.state, attribute):
++            delattr(app.state, attribute)
++
++
++def _configure_sqlite_test_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> str:
++    repository_db_path = str(tmp_path / "repositories.sqlite3")
++    monkeypatch.setenv("METADATA_BACKEND", "sqlite")
++    monkeypatch.setenv("SQLITE_RUNTIME_ALLOWED", "true")
++    monkeypatch.setenv("STORAGE_ROOT", str(tmp_path))
++    monkeypatch.setenv("UPLOADS_DIR", str(tmp_path / "uploads"))
++    monkeypatch.setenv("ARTIFACTS_DIR", str(tmp_path / "artifacts"))
++    monkeypatch.setenv("TEMP_DIR", str(tmp_path / "temp"))
++    monkeypatch.setenv("REPOSITORY_DB_PATH", repository_db_path)
++    get_settings.cache_clear()
++    _reset_app_state()
++    return repository_db_path
++
++
++def test_h2_official_execution_flow_persists_execution_run_trace(
++    monkeypatch: pytest.MonkeyPatch,
++    tmp_path: Path,
++) -> None:
++    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
++
++    session_response = client.post("/sessions", json={})
++    assert session_response.status_code == 201
++    session_id = session_response.json()["id"]
++
++    task_response = client.post(
++        "/tasks",
++        json={"session_id": session_id, "task_type": "pdf_summary"},
++    )
++    assert task_response.status_code == 201
++    task_id = task_response.json()["id"]
++
++    execute_response = client.post(
++        f"/tasks/{task_id}/execute",
++        json={"content": "Alpha. Beta. Gamma."},
++    )
++    assert execute_response.status_code == 200
++    executed_task = execute_response.json()
++
++    execution_run_id = executed_task["result_data"]["execution_run_id"]
++    execution_runs = SqliteExecutionRunRepository(repository_db_path).list_by_task(task_id)
++
++    assert len(execution_runs) == 1
++    assert execution_runs[0].id == execution_run_id
++    assert execution_runs[0].task_id == task_id
++    assert execution_runs[0].engine_type == "official_task_execution"
++    assert execution_runs[0].status == "succeeded"
++    assert execution_runs[0].result_json is not None
++    assert execution_runs[0].result_json["task_type"] == "pdf_summary"
++    assert execution_runs[0].result_json["output_text"] == "Alpha. Beta."
++    assert execution_runs[0].started_at is not None
++    assert execution_runs[0].completed_at is not None
+diff --git a/backend/tests/services/test_task_execution_service.py b/backend/tests/services/test_task_execution_service.py
+--- a/backend/tests/services/test_task_execution_service.py
++++ b/backend/tests/services/test_task_execution_service.py
+@@ -1,4 +1,4 @@
+-from backend.app.domain import TaskStatus, TaskType
++from backend.app.domain import ExecutionRun, TaskStatus, TaskType
+ from backend.app.repositories import InMemorySessionRepository, InMemoryTaskRepository, InMemoryUploadedFileRepository
+ from backend.app.services import SessionTaskService, TaskExecutionService
+ 
+@@ -25,6 +25,25 @@
+         raise NotImplementedError
+ 
+ 
++class _RecordingExecutionRunRepository:
++    def __init__(self) -> None:
++        self.runs: dict[str, ExecutionRun] = {}
++
++    def create(self, execution_run: ExecutionRun) -> ExecutionRun:
++        self.runs[execution_run.id] = execution_run
++        return execution_run
++
++    def update(self, execution_run: ExecutionRun) -> ExecutionRun:
++        self.runs[execution_run.id] = execution_run
++        return execution_run
++
++    def get(self, execution_run_id: str) -> ExecutionRun | None:
++        return self.runs.get(execution_run_id)
++
++    def list_by_task(self, task_id: str) -> list[ExecutionRun]:
++        return [run for run in self.runs.values() if run.task_id == task_id]
++
++
+ def test_task_execution_service_marks_running_then_succeeded_with_result() -> None:
+     sessions = InMemorySessionRepository()
+     tasks = InMemoryTaskRepository()
+@@ -69,3 +88,60 @@
+     persisted = session_task_service.get_task(task.id)
+     assert persisted.status is TaskStatus.FAILED
+     assert persisted.error_message == "execution exploded"
++
++
++def test_h2_task_execution_service_persists_success_execution_run_trace() -> None:
++    sessions = InMemorySessionRepository()
++    tasks = InMemoryTaskRepository()
++    uploads = InMemoryUploadedFileRepository()
++    execution_runs = _RecordingExecutionRunRepository()
++    session_task_service = SessionTaskService(sessions=sessions, tasks=tasks, uploads=uploads, storage=_NoopStorage())
++
++    session = session_task_service.create_session()
++    task = session_task_service.create_task(session_id=session.id, task_type=TaskType.PDF_SUMMARY)
++
++    execution_service = TaskExecutionService(
++        session_task_service=session_task_service,
++        execution_runs=execution_runs,
++    )
++
++    completed = execution_service.execute(task.id, lambda _: {"summary": "done"})
++
++    execution_run_id = completed.result_data["execution_run_id"]
++    persisted_runs = execution_runs.list_by_task(task.id)
++    assert len(persisted_runs) == 1
++    assert persisted_runs[0].id == execution_run_id
++    assert persisted_runs[0].task_id == task.id
++    assert persisted_runs[0].engine_type == "official_task_execution"
++    assert persisted_runs[0].status == "succeeded"
++    assert persisted_runs[0].result_json == {"summary": "done"}
++    assert persisted_runs[0].error_message is None
++    assert persisted_runs[0].started_at is not None
++    assert persisted_runs[0].completed_at is not None
++
++
++def test_h2_task_execution_service_persists_failed_execution_run_trace() -> None:
++    sessions = InMemorySessionRepository()
++    tasks = InMemoryTaskRepository()
++    uploads = InMemoryUploadedFileRepository()
++    execution_runs = _RecordingExecutionRunRepository()
++    session_task_service = SessionTaskService(sessions=sessions, tasks=tasks, uploads=uploads, storage=_NoopStorage())
++
++    session = session_task_service.create_session()
++    task = session_task_service.create_task(session_id=session.id, task_type=TaskType.PDF_SUMMARY)
++
++    execution_service = TaskExecutionService(
++        session_task_service=session_task_service,
++        execution_runs=execution_runs,
++    )
++
++    failed = execution_service.execute(task.id, lambda _: (_ for _ in ()).throw(RuntimeError("boom")))
++
++    execution_run_id = failed.result_data["execution_run_id"]
++    persisted_runs = execution_runs.list_by_task(task.id)
++    assert len(persisted_runs) == 1
++    assert persisted_runs[0].id == execution_run_id
++    assert persisted_runs[0].status == "failed"
++    assert persisted_runs[0].result_json is None
++    assert persisted_runs[0].error_message == "boom"
++    assert persisted_runs[0].completed_at is not None

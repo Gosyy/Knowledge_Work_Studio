@@ -8,6 +8,7 @@ from backend.app.domain import (
     DerivedContent,
     Document,
     DocumentVersion,
+    ExecutionRun,
     Presentation,
     PresentationVersion,
     Session,
@@ -95,3 +96,14 @@ class DerivedContentRepository(Protocol):
     def create(self, derived_content: DerivedContent) -> DerivedContent: ...
 
     def list_by_file(self, file_id: str) -> list[DerivedContent]: ...
+
+
+
+class ExecutionRunRepository(Protocol):
+    def create(self, execution_run: ExecutionRun) -> ExecutionRun: ...
+
+    def update(self, execution_run: ExecutionRun) -> ExecutionRun: ...
+
+    def get(self, execution_run_id: str) -> ExecutionRun | None: ...
+
+    def list_by_task(self, task_id: str) -> list[ExecutionRun]: ...
