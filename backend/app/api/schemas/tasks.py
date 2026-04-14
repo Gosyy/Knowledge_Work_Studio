@@ -19,6 +19,14 @@ class TaskExecuteRequest(BaseModel):
     presentation_ids: list[str] = Field(default_factory=list)
 
 
+class TaskSemanticExecuteRequest(TaskExecuteRequest):
+    workflow: str = Field(
+        default="summarization",
+        description="Semantic workflow: classification, summarization, rewriting, or outline_generation.",
+    )
+    instruction: str | None = None
+
+
 class TaskSchema(BaseModel):
     id: str
     session_id: str

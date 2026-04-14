@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.app.api.dependencies import (
+    get_llm_text_service,
     get_official_execution_coordinator,
     get_session_task_service,
     get_task_source_service,
 )
-from backend.app.api.schemas import TaskCreateRequest, TaskExecuteRequest, TaskSchema
+from backend.app.api.schemas import TaskCreateRequest, TaskExecuteRequest, TaskSemanticExecuteRequest, TaskSchema
 from backend.app.domain import Task, TaskStatus, TaskType
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
-from backend.app.services import SessionTaskService
+from backend.app.services import LLMTextService, SessionTaskService
 from backend.app.services.task_source_service import TaskSourceService
 
 router = APIRouter(tags=["tasks"])
@@ -93,6 +94,97 @@ def execute_task(
     }
     finalized_task = service.mark_task_succeeded(task_id, result_data=updated_result_data)
     return _task_to_schema(finalized_task)
+
+
+_SUPPORTED_SEMANTIC_WORKFLOWS = {
+    "classification",
+    "summarization",
+    "rewriting",
+    "outline_generation",
+}
+
+
+def _run_semantic_workflow(
+    *,
+    workflow: str,
+    llm_text_service: LLMTextService,
+    content: str,
+    instruction: str | None,
+    task_id: str,
+) -> str:
+    normalized_workflow = workflow.strip().lower()
+    if normalized_workflow not in _SUPPORTED_SEMANTIC_WORKFLOWS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Unsupported semantic workflow. Expected one of: "
+                + ", ".join(sorted(_SUPPORTED_SEMANTIC_WORKFLOWS))
+            ),
+        )
+
+    if normalized_workflow == "classification":
+        return llm_text_service.classify_task(content, task_id=task_id)
+    if normalized_workflow == "summarization":
+        return llm_text_service.summarize_text(content, task_id=task_id)
+    if normalized_workflow == "rewriting":
+        return llm_text_service.rewrite_text(
+            content,
+            instruction=instruction or "Improve clarity while preserving meaning.",
+            task_id=task_id,
+        )
+    return llm_text_service.generate_outline(content, task_id=task_id)
+
+
+@router.post("/tasks/{task_id}/semantic", response_model=TaskSchema)
+def execute_semantic_task(
+    task_id: str,
+    semantic_request: TaskSemanticExecuteRequest,
+    service: SessionTaskService = Depends(get_session_task_service),
+    task_source_service: TaskSourceService = Depends(get_task_source_service),
+    llm_text_service: LLMTextService = Depends(get_llm_text_service),
+) -> TaskSchema:
+    task = service.get_task(task_id)
+    resolved_input = task_source_service.build_execution_input(
+        session_id=task.session_id,
+        prompt_content=semantic_request.content,
+        uploaded_file_ids=semantic_request.uploaded_file_ids,
+        stored_file_ids=semantic_request.stored_file_ids,
+        document_ids=semantic_request.document_ids,
+        presentation_ids=semantic_request.presentation_ids,
+    )
+
+    service.mark_task_running(task_id)
+    try:
+        output_text = _run_semantic_workflow(
+            workflow=semantic_request.workflow,
+            llm_text_service=llm_text_service,
+            content=resolved_input.content,
+            instruction=semantic_request.instruction,
+            task_id=task_id,
+        )
+    except Exception as exc:
+        failed = service.mark_task_failed(
+            task_id,
+            error_message=str(exc),
+            result_data={
+                "semantic_workflow": semantic_request.workflow,
+                "source_mode": resolved_input.source_mode,
+                "source_refs": resolved_input.as_result_refs(),
+            },
+        )
+        return _task_to_schema(failed)
+
+    completed = service.mark_task_succeeded(
+        task_id,
+        result_data={
+            "task_type": task.task_type.value,
+            "semantic_workflow": semantic_request.workflow,
+            "output_text": output_text,
+            "source_mode": resolved_input.source_mode,
+            "source_refs": resolved_input.as_result_refs(),
+        },
+    )
+    return _task_to_schema(completed)
 
 
 @router.get("/tasks/{task_id}", response_model=TaskSchema)
