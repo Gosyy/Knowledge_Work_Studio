@@ -67,3 +67,31 @@ def test_get_llm_text_service_wires_llm_run_repository(monkeypatch, tmp_path) ->
     service = dependencies.get_llm_text_service(request)
 
     assert service.llm_runs is not None
+
+
+def test_l1_dependencies_module_delegates_container_building(monkeypatch, tmp_path) -> None:
+    settings = Settings(
+        metadata_backend="sqlite",
+        sqlite_runtime_allowed=True,
+        repository_db_path=str(tmp_path / "repositories.sqlite3"),
+        storage_root=str(tmp_path / "storage"),
+        uploads_dir=str(tmp_path / "storage" / "uploads"),
+        artifacts_dir=str(tmp_path / "storage" / "artifacts"),
+        temp_dir=str(tmp_path / "storage" / "temp"),
+    )
+    calls = []
+
+    def fake_build_app_container(received_settings):
+        calls.append(received_settings)
+        return dependencies.AppContainer(
+            artifact_service=object(),
+            session_task_service=object(),
+            task_source_service=object(),
+        )
+
+    monkeypatch.setattr(dependencies, "get_app_settings", lambda: settings)
+    monkeypatch.setattr(dependencies, "build_app_container", fake_build_app_container)
+    request = build_request()
+
+    assert dependencies.get_app_container(request) is dependencies.get_app_container(request)
+    assert calls == [settings]
