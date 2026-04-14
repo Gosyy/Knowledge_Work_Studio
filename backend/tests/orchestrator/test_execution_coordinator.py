@@ -86,7 +86,10 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
     if task_type is TaskType.PDF_SUMMARY:
         downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
         assert downloaded_artifact.size_bytes > 0
-        assert b"PDF Summary Report" in downloaded_bytes
+        assert downloaded_bytes.startswith(b"Summary Report\n")
+        assert b"Format: text/plain" in downloaded_bytes
+        assert b"not a PDF binary" in downloaded_bytes
+        assert not downloaded_bytes.startswith(b"%PDF")
         assert expected_output.encode("utf-8") in downloaded_bytes
     if task_type is TaskType.DATA_ANALYSIS:
         downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)

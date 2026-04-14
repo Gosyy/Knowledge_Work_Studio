@@ -28,7 +28,7 @@ def test_docx_service_wraps_skill_edit_logic_and_builds_valid_docx() -> None:
     assert "Status: final" in document_xml
 
 
-def test_pdf_service_wraps_skill_summary_logic() -> None:
+def test_pdf_service_produces_honest_text_summary_report() -> None:
     service = PdfService()
 
     result = service.transform_pdf(
@@ -38,4 +38,7 @@ def test_pdf_service_wraps_skill_summary_logic() -> None:
 
     assert result.extracted_text == "First finding is stable. Second finding requires follow-up. Third finding is optional."
     assert result.summary == "First finding is stable. Second finding requires follow-up."
-    assert b"PDF Summary Report" in result.artifact_content
+    assert result.artifact_content.startswith(b"Summary Report\n")
+    assert b"Format: text/plain" in result.artifact_content
+    assert b"not a PDF binary" in result.artifact_content
+    assert not result.artifact_content.startswith(b"%PDF")

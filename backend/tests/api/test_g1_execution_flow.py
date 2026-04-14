@@ -79,6 +79,9 @@ def test_g1_official_execution_flow_creates_task_result_and_artifact(
     download_response = client.get(f"/artifacts/{artifact_ids[0]}/download")
     assert download_response.status_code == 200
     assert download_response.headers["content-type"] == "text/plain; charset=utf-8"
+    assert download_response.content.startswith(b"Summary Report\n")
+    assert b"Format: text/plain" in download_response.content
+    assert b"not a PDF binary" in download_response.content
     assert b"Alpha. Beta." in download_response.content
 
 
