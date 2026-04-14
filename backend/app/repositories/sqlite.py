@@ -9,6 +9,7 @@ from threading import Lock
 from backend.app.domain import (
     Artifact,
     ArtifactSource,
+    DerivedContent,
     Document,
     Presentation,
     Session,
@@ -769,6 +770,69 @@ class SqliteArtifactSourceRepository(_SqliteRepositoryBase):
                 source_presentation_id=row["source_presentation_id"],
                 role=row["role"],
                 created_at=_parse_datetime(row["created_at"]),
+            )
+            for row in rows
+        ]
+
+
+class SqliteDerivedContentRepository(_SqliteRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS derived_contents (
+                    id TEXT PRIMARY KEY,
+                    file_id TEXT NOT NULL,
+                    content_kind TEXT NOT NULL,
+                    text_content TEXT,
+                    structured_json TEXT,
+                    outline_json TEXT,
+                    language TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+
+    def create(self, derived_content: DerivedContent) -> DerivedContent:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO derived_contents
+                (id, file_id, content_kind, text_content, structured_json, outline_json, language, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    derived_content.id,
+                    derived_content.file_id,
+                    derived_content.content_kind,
+                    derived_content.text_content,
+                    json.dumps(derived_content.structured_json) if derived_content.structured_json is not None else None,
+                    json.dumps(derived_content.outline_json) if derived_content.outline_json is not None else None,
+                    derived_content.language,
+                    derived_content.created_at.isoformat(),
+                    derived_content.updated_at.isoformat(),
+                ),
+            )
+        return derived_content
+
+    def list_by_file(self, file_id: str) -> list[DerivedContent]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM derived_contents WHERE file_id = ? ORDER BY created_at ASC",
+                (file_id,),
+            ).fetchall()
+        return [
+            DerivedContent(
+                id=row["id"],
+                file_id=row["file_id"],
+                content_kind=row["content_kind"],
+                text_content=row["text_content"],
+                structured_json=json.loads(row["structured_json"]) if row["structured_json"] else None,
+                outline_json=json.loads(row["outline_json"]) if row["outline_json"] else None,
+                language=row["language"],
+                created_at=_parse_datetime(row["created_at"]),
+                updated_at=_parse_datetime(row["updated_at"]),
             )
             for row in rows
         ]

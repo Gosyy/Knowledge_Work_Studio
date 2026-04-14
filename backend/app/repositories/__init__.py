@@ -42,6 +42,7 @@ from backend.app.repositories.interfaces import (
 )
 from backend.app.repositories.sqlite import (
     SqliteArtifactRepository,
+    SqliteDerivedContentRepository,
     SqliteSessionRepository,
     SqliteTaskRepository,
     SqliteUploadedFileRepository,
@@ -78,6 +79,7 @@ __all__ = [
     "PresentationVersionRepository",
     "SessionRepository",
     "SqliteArtifactRepository",
+    "SqliteDerivedContentRepository",
     "SqliteExecutionRunRepository",
     "SqliteLLMRunRepository",
     "SqliteSessionRepository",

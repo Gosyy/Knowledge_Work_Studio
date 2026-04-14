@@ -5,9 +5,10 @@ from uuid import uuid4
 
 from fastapi import HTTPException, status
 
-from backend.app.domain import ArtifactSource, Document, Presentation, StoredFile, UploadedFile
+from backend.app.domain import ArtifactSource, DerivedContent, Document, Presentation, StoredFile, UploadedFile
 from backend.app.repositories import (
     ArtifactSourceRepository,
+    DerivedContentRepository,
     DocumentRepository,
     FileStorage,
     PresentationRepository,
@@ -53,6 +54,7 @@ class TaskSourceService:
     documents: DocumentRepository
     presentations: PresentationRepository
     artifact_sources: ArtifactSourceRepository
+    derived_contents: DerivedContentRepository
     storage: FileStorage
 
     def build_execution_input(
@@ -153,10 +155,8 @@ class TaskSourceService:
                 ),
             )
 
-        content = self._read_text_content(
-            storage_key=uploaded.storage_key,
-            file_type=mirrored_stored_file.file_type,
-            mime_type=uploaded.content_type,
+        content = self._content_from_stored_file(
+            stored_file=mirrored_stored_file,
             source_label=f"uploaded source '{upload_id}'",
         )
         return ResolvedSource(
@@ -266,12 +266,37 @@ class TaskSourceService:
         stored_file: StoredFile,
         source_label: str,
     ) -> str:
-        return self._read_text_content(
+        cached_text = self._get_cached_extracted_text(stored_file.id)
+        if cached_text is not None:
+            return cached_text
+
+        content = self._read_text_content(
             storage_key=stored_file.storage_key,
             file_type=stored_file.file_type,
             mime_type=stored_file.mime_type,
             source_label=source_label,
         )
+        self.derived_contents.create(
+            DerivedContent(
+                id=f"dcon_{uuid4().hex}",
+                file_id=stored_file.id,
+                content_kind="extracted_text",
+                text_content=content,
+                structured_json=None,
+                outline_json=None,
+                language=None,
+            )
+        )
+        return content
+
+    def _get_cached_extracted_text(self, file_id: str) -> str | None:
+        for derived_content in self.derived_contents.list_by_file(file_id):
+            if (
+                derived_content.content_kind == "extracted_text"
+                and derived_content.text_content is not None
+            ):
+                return derived_content.text_content
+        return None
 
     def _read_text_content(
         self,

@@ -13,6 +13,7 @@ from backend.app.orchestrator.router import TaskRouter
 from backend.app.repositories import (
     PostgresArtifactRepository,
     PostgresArtifactSourceRepository,
+    PostgresDerivedContentRepository,
     PostgresDocumentRepository,
     PostgresExecutionRunRepository,
     PostgresLLMRunRepository,
@@ -30,6 +31,7 @@ from backend.app.repositories import (
 )
 from backend.app.repositories.sqlite import (
     SqliteArtifactSourceRepository,
+    SqliteDerivedContentRepository,
     SqliteDocumentRepository,
     SqlitePresentationRepository,
     SqliteStoredFileRepository,
@@ -103,12 +105,14 @@ def _build_source_repositories(settings: Settings):
             PostgresDocumentRepository(settings.database_url),
             PostgresPresentationRepository(settings.database_url),
             PostgresArtifactSourceRepository(settings.database_url),
+            PostgresDerivedContentRepository(settings.database_url),
         )
     return (
         SqliteStoredFileRepository(settings.repository_db_path),
         SqliteDocumentRepository(settings.repository_db_path),
         SqlitePresentationRepository(settings.repository_db_path),
         SqliteArtifactSourceRepository(settings.repository_db_path),
+        SqliteDerivedContentRepository(settings.repository_db_path),
     )
 
 
@@ -133,7 +137,7 @@ def get_app_container(request: Request) -> AppContainer:
         storage = LocalFileStorage(storage_paths)
 
         sessions, tasks, uploads, artifacts = _build_repositories(settings)
-        stored_files, documents, presentations, artifact_sources = _build_source_repositories(settings)
+        stored_files, documents, presentations, artifact_sources, derived_contents = _build_source_repositories(settings)
 
         request.app.state.app_container = AppContainer(
             session_task_service=SessionTaskService(
@@ -155,6 +159,7 @@ def get_app_container(request: Request) -> AppContainer:
                 documents=documents,
                 presentations=presentations,
                 artifact_sources=artifact_sources,
+                derived_contents=derived_contents,
                 storage=storage,
             ),
         )
