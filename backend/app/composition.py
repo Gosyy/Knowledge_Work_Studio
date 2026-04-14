@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from backend.app.core.config import Settings
 from backend.app.integrations import get_storage_paths
 from backend.app.integrations.file_storage import LocalFileStorage
+from backend.app.repositories.storage import FileStorage
 from backend.app.integrations.llm import LLMProvider
 from backend.app.integrations.llm import build_llm_provider as build_provider_from_settings
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
@@ -143,8 +144,22 @@ def build_llm_run_repository(settings: Settings):
     return SqliteLLMRunRepository(settings.repository_db_path)
 
 
-def build_storage(settings: Settings) -> LocalFileStorage:
-    return LocalFileStorage(get_storage_paths(settings))
+def resolve_storage_backend(settings: Settings) -> str:
+    backend = settings.storage_backend.strip().lower()
+    if backend not in {"local", "remote_object_storage", "minio", "s3"}:
+        raise ValueError(f"Unsupported storage backend: {settings.storage_backend}")
+    return backend
+
+
+def build_storage(settings: Settings) -> FileStorage:
+    backend = resolve_storage_backend(settings)
+    if backend == "local":
+        return LocalFileStorage(get_storage_paths(settings))
+    raise NotImplementedError(
+        f"Storage backend '{backend}' is configured, but no production adapter is wired yet. "
+        "L3 blocks silent fallback to local storage; configure STORAGE_BACKEND=local with a "
+        "mounted internal storage volume or add a real remote storage adapter."
+    )
 
 
 def build_app_container(settings: Settings) -> AppContainer:
