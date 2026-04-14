@@ -11,6 +11,7 @@ def test_slides_service_generates_valid_openxml_pptx_payload() -> None:
 
     assert result.slide_count == 5
     assert result.summary_text == "Generated 5 slide(s)."
+    assert result.outline[0].title.startswith("Slide 1:")
     assert result.artifact_content[:2] == b"PK"
 
     with zipfile.ZipFile(BytesIO(result.artifact_content), "r") as pptx_zip:

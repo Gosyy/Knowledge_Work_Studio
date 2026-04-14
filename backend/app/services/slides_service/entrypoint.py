@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from backend.app.services.slides_service.outline import SlideOutlineItem
 from backend.app.services.slides_service.service import SlidesService
 
 
@@ -15,6 +16,7 @@ class SlidesGenerateResult:
     slide_count: int
     summary: str
     artifact_content: bytes
+    outline: tuple[SlideOutlineItem, ...]
 
 
 @dataclass
@@ -27,4 +29,5 @@ class SlidesServiceEntrypoint:
             slide_count=output.slide_count,
             summary=output.summary_text,
             artifact_content=output.artifact_content,
+            outline=output.outline,
         )

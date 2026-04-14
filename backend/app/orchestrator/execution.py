@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from backend.app.domain import Task, TaskType
 from backend.app.orchestrator.router import TaskRouter
@@ -16,6 +16,7 @@ class ServiceExecutionResult:
     filename: str
     content_type: str
     artifact_content: bytes | None = None
+    result_metadata: dict[str, object] = field(default_factory=dict)
 
 
 class OrchestratorExecutionCoordinator:
@@ -67,6 +68,7 @@ class OrchestratorExecutionCoordinator:
             "task_type": task.task_type.value,
             "output_text": service_result.output_text,
             "artifact_ids": [artifact.id],
+            **service_result.result_metadata,
         }
 
     def _execute_service(self, task_type: TaskType, content: str) -> ServiceExecutionResult:
@@ -106,6 +108,12 @@ class OrchestratorExecutionCoordinator:
                 filename="slides.pptx",
                 content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 artifact_content=result.artifact_content,
+                result_metadata={
+                    "outline": [
+                        {"title": item.title, "bullets": list(item.bullets)}
+                        for item in result.outline
+                    ],
+                },
             )
 
         raise ValueError(f"Unsupported task type: {task_type}")
