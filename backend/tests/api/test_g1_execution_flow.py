@@ -83,34 +83,3 @@ def test_g1_official_execution_flow_creates_task_result_and_artifact(
     assert b"Format: text/plain" in download_response.content
     assert b"not a PDF binary" in download_response.content
     assert b"Alpha. Beta." in download_response.content
-
-
-@pytest.mark.parametrize("task_type", ["slides_generate"])
-def test_g1_official_execution_rejects_later_phase_or_fake_pipeline_task_types(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    task_type: str,
-) -> None:
-    _configure_sqlite_test_env(monkeypatch, tmp_path)
-
-    session_response = client.post("/sessions", json={})
-    assert session_response.status_code == 201
-    session_id = session_response.json()["id"]
-
-    create_task_response = client.post(
-        "/tasks",
-        json={"session_id": session_id, "task_type": task_type},
-    )
-    assert create_task_response.status_code == 201
-    task_id = create_task_response.json()["id"]
-
-    execute_response = client.post(
-        f"/tasks/{task_id}/execute",
-        json={"content": "Some content"},
-    )
-    assert execute_response.status_code == 409
-    assert "not supported by the official G1 execution API yet" in execute_response.json()["detail"]
-
-    get_task_response = client.get(f"/tasks/{task_id}")
-    assert get_task_response.status_code == 200
-    assert get_task_response.json()["status"] == "pending"

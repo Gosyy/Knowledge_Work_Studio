@@ -98,4 +98,10 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
     if task_type is TaskType.SLIDES_GENERATE:
         downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
         assert downloaded_artifact.size_bytes > 0
-        assert downloaded_bytes[:2] == b"PK"
+        assert is_zipfile(BytesIO(downloaded_bytes))
+        with ZipFile(BytesIO(downloaded_bytes)) as pptx:
+            names = set(pptx.namelist())
+            assert "ppt/presentation.xml" in names
+            assert "ppt/slides/slide1.xml" in names
+            assert "ppt/slideMasters/slideMaster1.xml" in names
+            assert not any(name.endswith(".txt") for name in names)
