@@ -1,4 +1,6 @@
+from io import BytesIO
 from pathlib import Path
+from zipfile import ZipFile, is_zipfile
 
 import pytest
 
@@ -76,7 +78,11 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
     if task_type is TaskType.DOCX_EDIT:
         downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
         assert downloaded_artifact.size_bytes > 0
-        assert downloaded_bytes.decode("utf-8") == expected_output
+        assert is_zipfile(BytesIO(downloaded_bytes))
+        with ZipFile(BytesIO(downloaded_bytes)) as docx:
+            assert "word/document.xml" in set(docx.namelist())
+            document_xml = docx.read("word/document.xml").decode("utf-8")
+        assert expected_output in document_xml
     if task_type is TaskType.PDF_SUMMARY:
         downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
         assert downloaded_artifact.size_bytes > 0

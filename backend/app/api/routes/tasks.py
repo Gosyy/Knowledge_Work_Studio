@@ -14,7 +14,7 @@ from backend.app.services.task_source_service import TaskSourceService
 
 router = APIRouter(tags=["tasks"])
 
-_OFFICIAL_G1_SUPPORTED_TASK_TYPES = {TaskType.PDF_SUMMARY, TaskType.DATA_ANALYSIS}
+_OFFICIAL_G1_SUPPORTED_TASK_TYPES = {TaskType.PDF_SUMMARY, TaskType.DATA_ANALYSIS, TaskType.DOCX_EDIT}
 
 
 def _task_to_schema(task: Task) -> TaskSchema:

@@ -82,7 +82,7 @@ def test_g1_official_execution_flow_creates_task_result_and_artifact(
     assert b"Alpha. Beta." in download_response.content
 
 
-@pytest.mark.parametrize("task_type", ["docx_edit", "slides_generate"])
+@pytest.mark.parametrize("task_type", ["slides_generate"])
 def test_g1_official_execution_rejects_later_phase_or_fake_pipeline_task_types(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
