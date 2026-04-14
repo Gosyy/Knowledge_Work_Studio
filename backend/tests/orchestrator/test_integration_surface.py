@@ -54,7 +54,7 @@ def test_runtime_interfaces_are_callable_for_internal_wiring() -> None:
     kernel = KernelRuntimeInterface.from_settings(Settings(kernel_server_auth_token=""))
     session_id = kernel.create_session()
 
-    assert kernel.execute(session_id=session_id, code="1+1") == "accepted"
+    assert kernel.execute(session_id=session_id, code="1 + 1") == "succeeded"
     assert kernel.active_sessions() == 1
     assert kernel.shutdown_session(session_id) is True
 
