@@ -16,7 +16,18 @@ from backend.app.domain import (
     StoredFile,
     Task,
     UploadedFile,
+    User,
 )
+
+
+class UserRepository(Protocol):
+    def create(self, user: User) -> User: ...
+
+    def get(self, user_id: str) -> User | None: ...
+
+    def get_by_email(self, email: str) -> User | None: ...
+
+    def list(self) -> list[User]: ...
 
 
 class SessionRepository(Protocol):

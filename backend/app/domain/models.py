@@ -13,6 +13,7 @@ from backend.app.domain.metadata.models import (
 )
 from backend.app.domain.sessions.models import Session
 from backend.app.domain.tasks.models import Task, TaskStatus, TaskType
+from backend.app.domain.users.models import User
 
 __all__ = [
     "Artifact",
@@ -30,4 +31,5 @@ __all__ = [
     "TaskStatus",
     "TaskType",
     "UploadedFile",
+    "User",
 ]

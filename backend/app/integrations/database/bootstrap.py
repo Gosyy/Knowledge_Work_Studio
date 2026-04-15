@@ -83,6 +83,20 @@ def apply_postgres_baseline(database_url: str, version: str = BASELINE_VERSION) 
 
         cursor.execute(
             """
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                display_name TEXT,
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                is_superuser BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at TIMESTAMPTZ NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL
+            )
+            """
+        )
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS sessions (
                 id TEXT PRIMARY KEY,
                 created_at TIMESTAMPTZ NOT NULL

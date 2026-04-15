@@ -18,6 +18,7 @@ from backend.app.domain import (
     TaskStatus,
     TaskType,
     UploadedFile,
+    User,
 )
 
 
@@ -39,6 +40,115 @@ class _SqliteRepositoryBase:
 
     def _initialize_schema(self) -> None:
         raise NotImplementedError
+
+
+class SqliteUserRepository(_SqliteRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    email TEXT NOT NULL UNIQUE,
+                    password_hash TEXT NOT NULL,
+                    display_name TEXT,
+                    is_active INTEGER NOT NULL DEFAULT 1,
+                    is_superuser INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+
+    def create(self, user: User) -> User:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO users
+                (id, email, password_hash, display_name, is_active, is_superuser, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    user.id,
+                    user.email,
+                    user.password_hash,
+                    user.display_name,
+                    1 if user.is_active else 0,
+                    1 if user.is_superuser else 0,
+                    user.created_at.isoformat(),
+                    user.updated_at.isoformat(),
+                ),
+            )
+        return user
+
+    def get(self, user_id: str) -> User | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT id, email, password_hash, display_name, is_active, is_superuser, created_at, updated_at
+                FROM users
+                WHERE id = ?
+                """,
+                (user_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return User(
+            id=row["id"],
+            email=row["email"],
+            password_hash=row["password_hash"],
+            display_name=row["display_name"],
+            is_active=bool(row["is_active"]),
+            is_superuser=bool(row["is_superuser"]),
+            created_at=_parse_datetime(row["created_at"]),
+            updated_at=_parse_datetime(row["updated_at"]),
+        )
+
+    def get_by_email(self, email: str) -> User | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT id, email, password_hash, display_name, is_active, is_superuser, created_at, updated_at
+                FROM users
+                WHERE email = ?
+                """,
+                (email.strip().lower(),),
+            ).fetchone()
+        if row is None:
+            return None
+        return User(
+            id=row["id"],
+            email=row["email"],
+            password_hash=row["password_hash"],
+            display_name=row["display_name"],
+            is_active=bool(row["is_active"]),
+            is_superuser=bool(row["is_superuser"]),
+            created_at=_parse_datetime(row["created_at"]),
+            updated_at=_parse_datetime(row["updated_at"]),
+        )
+
+    def list(self) -> list[User]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT id, email, password_hash, display_name, is_active, is_superuser, created_at, updated_at
+                FROM users
+                ORDER BY created_at ASC
+                """
+            ).fetchall()
+        return [
+            User(
+                id=row["id"],
+                email=row["email"],
+                password_hash=row["password_hash"],
+                display_name=row["display_name"],
+                is_active=bool(row["is_active"]),
+                is_superuser=bool(row["is_superuser"]),
+                created_at=_parse_datetime(row["created_at"]),
+                updated_at=_parse_datetime(row["updated_at"]),
+            )
+            for row in rows
+        ]
 
 
 class SqliteSessionRepository(_SqliteRepositoryBase):

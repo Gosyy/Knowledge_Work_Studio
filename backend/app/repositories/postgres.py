@@ -19,6 +19,7 @@ from backend.app.domain import (
     TaskStatus,
     TaskType,
     UploadedFile,
+    User,
 )
 
 
@@ -55,6 +56,128 @@ class _PostgresRepositoryBase:
 
     def _initialize_schema(self) -> None:
         raise NotImplementedError
+
+
+class PostgresUserRepository(_PostgresRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    email TEXT NOT NULL UNIQUE,
+                    password_hash TEXT NOT NULL,
+                    display_name TEXT,
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    is_superuser BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at TIMESTAMPTZ NOT NULL,
+                    updated_at TIMESTAMPTZ NOT NULL
+                )
+                """
+            )
+            connection.commit()
+
+    def create(self, user: User) -> User:
+        with self._lock, self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO users
+                (id, email, password_hash, display_name, is_active, is_superuser, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    email = EXCLUDED.email,
+                    password_hash = EXCLUDED.password_hash,
+                    display_name = EXCLUDED.display_name,
+                    is_active = EXCLUDED.is_active,
+                    is_superuser = EXCLUDED.is_superuser,
+                    created_at = EXCLUDED.created_at,
+                    updated_at = EXCLUDED.updated_at
+                """,
+                (
+                    user.id,
+                    user.email,
+                    user.password_hash,
+                    user.display_name,
+                    user.is_active,
+                    user.is_superuser,
+                    user.created_at,
+                    user.updated_at,
+                ),
+            )
+            connection.commit()
+        return user
+
+    def get(self, user_id: str) -> User | None:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, email, password_hash, display_name, is_active, is_superuser, created_at, updated_at
+                FROM users
+                WHERE id = %s
+                """,
+                (user_id,),
+            )
+            row = cursor.fetchone()
+        if row is None:
+            return None
+        return User(
+            id=row["id"],
+            email=row["email"],
+            password_hash=row["password_hash"],
+            display_name=row["display_name"],
+            is_active=row["is_active"],
+            is_superuser=row["is_superuser"],
+            created_at=_parse_datetime(row["created_at"]),
+            updated_at=_parse_datetime(row["updated_at"]),
+        )
+
+    def get_by_email(self, email: str) -> User | None:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, email, password_hash, display_name, is_active, is_superuser, created_at, updated_at
+                FROM users
+                WHERE email = %s
+                """,
+                (email.strip().lower(),),
+            )
+            row = cursor.fetchone()
+        if row is None:
+            return None
+        return User(
+            id=row["id"],
+            email=row["email"],
+            password_hash=row["password_hash"],
+            display_name=row["display_name"],
+            is_active=row["is_active"],
+            is_superuser=row["is_superuser"],
+            created_at=_parse_datetime(row["created_at"]),
+            updated_at=_parse_datetime(row["updated_at"]),
+        )
+
+    def list(self) -> list[User]:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, email, password_hash, display_name, is_active, is_superuser, created_at, updated_at
+                FROM users
+                ORDER BY created_at ASC
+                """
+            )
+            rows = cursor.fetchall()
+        return [
+            User(
+                id=row["id"],
+                email=row["email"],
+                password_hash=row["password_hash"],
+                display_name=row["display_name"],
+                is_active=row["is_active"],
+                is_superuser=row["is_superuser"],
+                created_at=_parse_datetime(row["created_at"]),
+                updated_at=_parse_datetime(row["updated_at"]),
+            )
+            for row in rows
+        ]
 
 
 class PostgresSessionRepository(_PostgresRepositoryBase):

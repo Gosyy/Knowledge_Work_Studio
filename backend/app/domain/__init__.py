@@ -14,6 +14,7 @@ from backend.app.domain.models import (
     TaskStatus,
     TaskType,
     UploadedFile,
+    User,
 )
 
 __all__ = [
@@ -32,4 +33,5 @@ __all__ = [
     "TaskStatus",
     "TaskType",
     "UploadedFile",
+    "User",
 ]

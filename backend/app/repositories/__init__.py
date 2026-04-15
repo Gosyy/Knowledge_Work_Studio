@@ -16,6 +16,7 @@ from backend.app.repositories.postgres import (
     PostgresStoredFileRepository,
     PostgresTaskRepository,
     PostgresUploadedFileRepository,
+    PostgresUserRepository,
 )
 from backend.app.repositories.execution_runs import (
     PostgresExecutionRunRepository,
@@ -39,6 +40,7 @@ from backend.app.repositories.interfaces import (
     StoredFileRepository,
     TaskRepository,
     UploadedFileRepository,
+    UserRepository,
 )
 from backend.app.repositories.sqlite import (
     SqliteArtifactRepository,
@@ -46,6 +48,7 @@ from backend.app.repositories.sqlite import (
     SqliteSessionRepository,
     SqliteTaskRepository,
     SqliteUploadedFileRepository,
+    SqliteUserRepository,
 )
 from backend.app.repositories.storage import FileStorage
 
@@ -75,6 +78,7 @@ __all__ = [
     "PostgresStoredFileRepository",
     "PostgresTaskRepository",
     "PostgresUploadedFileRepository",
+    "PostgresUserRepository",
     "PresentationRepository",
     "PresentationVersionRepository",
     "SessionRepository",
@@ -85,7 +89,9 @@ __all__ = [
     "SqliteSessionRepository",
     "SqliteTaskRepository",
     "SqliteUploadedFileRepository",
+    "SqliteUserRepository",
     "StoredFileRepository",
     "TaskRepository",
     "UploadedFileRepository",
+    "UserRepository",
 ]
