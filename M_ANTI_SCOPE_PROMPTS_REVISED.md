@@ -1,4 +1,4 @@
-# M_SELF_CONTAINED_CODEX_PROMPTS_REVISED.md
+# M_ANTI_SCOPE_PROMPTS_REVISED.md
 
 Каждый prompt ниже самодостаточный: его можно копировать в Codex целиком без дополнительного global-блока.
 
