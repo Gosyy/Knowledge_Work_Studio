@@ -6,6 +6,7 @@ from backend.app.services.pdf_service import PdfService
 from backend.app.services.session_task_service import SessionTaskService
 from backend.app.services.slides_service import SlidesService
 from backend.app.services.task_execution_service import TaskExecutionService
+from backend.app.services.task_queue_service import TaskQueueService
 from backend.app.services.workspace_service import WorkspaceService
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "SessionTaskService",
     "SlidesService",
     "TaskExecutionService",
+    "TaskQueueService",
     "WorkspaceService",
 ]

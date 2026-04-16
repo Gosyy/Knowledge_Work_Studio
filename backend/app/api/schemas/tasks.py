@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from backend.app.domain import TaskStatus, TaskType
+from backend.app.domain import TaskJobStatus, TaskStatus, TaskType
 
 
 class TaskCreateRequest(BaseModel):
@@ -37,3 +37,16 @@ class TaskSchema(BaseModel):
     started_at: datetime | None
     completed_at: datetime | None
     created_at: datetime
+
+
+class TaskExecutionJobSchema(BaseModel):
+    id: str
+    task_id: str
+    owner_user_id: str
+    status: TaskJobStatus
+    payload: dict[str, Any]
+    error_message: str | None
+    result_task_id: str | None
+    created_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None

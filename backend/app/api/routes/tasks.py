@@ -5,12 +5,19 @@ from backend.app.api.dependencies import (
     get_llm_text_service,
     get_official_execution_coordinator,
     get_session_task_service,
+    get_task_queue_service,
     get_task_source_service,
 )
-from backend.app.api.schemas import TaskCreateRequest, TaskExecuteRequest, TaskSemanticExecuteRequest, TaskSchema
-from backend.app.domain import Task, TaskStatus, TaskType
+from backend.app.api.schemas import (
+    TaskCreateRequest,
+    TaskExecuteRequest,
+    TaskExecutionJobSchema,
+    TaskSchema,
+    TaskSemanticExecuteRequest,
+)
+from backend.app.domain import Task, TaskExecutionJob, TaskStatus, TaskType
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
-from backend.app.services import LLMTextService, SessionTaskService
+from backend.app.services import LLMTextService, SessionTaskService, TaskQueueService
 from backend.app.services.task_source_service import TaskSourceService
 
 router = APIRouter(tags=["tasks"])
@@ -30,6 +37,31 @@ def _task_to_schema(task: Task) -> TaskSchema:
         completed_at=task.completed_at,
         created_at=task.created_at,
     )
+
+
+def _job_to_schema(job: TaskExecutionJob) -> TaskExecutionJobSchema:
+    return TaskExecutionJobSchema(
+        id=job.id,
+        task_id=job.task_id,
+        owner_user_id=job.owner_user_id,
+        status=job.status,
+        payload=job.payload,
+        error_message=job.error_message,
+        result_task_id=job.result_task_id,
+        created_at=job.created_at,
+        started_at=job.started_at,
+        completed_at=job.completed_at,
+    )
+
+
+def _execute_request_payload(request: TaskExecuteRequest) -> dict[str, object]:
+    return {
+        "content": request.content,
+        "uploaded_file_ids": list(request.uploaded_file_ids),
+        "stored_file_ids": list(request.stored_file_ids),
+        "document_ids": list(request.document_ids),
+        "presentation_ids": list(request.presentation_ids),
+    }
 
 
 def _ensure_g1_supported_task_type(task: Task) -> None:
@@ -87,6 +119,44 @@ def execute_task(
     updated_result_data = {**executed_task.result_data, "source_mode": resolved_input.source_mode, "source_refs": resolved_input.as_result_refs()}
     finalized_task = service.mark_task_succeeded(task_id, result_data=updated_result_data)
     return _task_to_schema(finalized_task)
+
+
+@router.post("/tasks/{task_id}/enqueue", response_model=TaskExecutionJobSchema, status_code=status.HTTP_202_ACCEPTED)
+def enqueue_task_execution(
+    task_id: str,
+    execute_request: TaskExecuteRequest,
+    current_user_id: str = Depends(get_current_user_id),
+    service: SessionTaskService = Depends(get_session_task_service),
+    queue_service: TaskQueueService = Depends(get_task_queue_service),
+) -> TaskExecutionJobSchema:
+    task = service.get_task_for_user(task_id, current_user_id)
+    _ensure_g1_supported_task_type(task)
+    job = queue_service.enqueue_execution(
+        task_id=task_id,
+        owner_user_id=current_user_id,
+        payload=_execute_request_payload(execute_request),
+    )
+    return _job_to_schema(job)
+
+
+@router.get("/task-jobs/{job_id}", response_model=TaskExecutionJobSchema)
+def get_task_execution_job(
+    job_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+    queue_service: TaskQueueService = Depends(get_task_queue_service),
+) -> TaskExecutionJobSchema:
+    job = queue_service.get_job_for_user(job_id=job_id, owner_user_id=current_user_id)
+    return _job_to_schema(job)
+
+
+@router.post("/task-jobs/{job_id}/run", response_model=TaskExecutionJobSchema)
+def run_task_execution_job(
+    job_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+    queue_service: TaskQueueService = Depends(get_task_queue_service),
+) -> TaskExecutionJobSchema:
+    job = queue_service.process_job_for_user(job_id=job_id, owner_user_id=current_user_id)
+    return _job_to_schema(job)
 
 
 _SUPPORTED_SEMANTIC_WORKFLOWS = {"classification", "summarization", "rewriting", "outline_generation"}

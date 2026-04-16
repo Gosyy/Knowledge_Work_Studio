@@ -7,12 +7,13 @@ from backend.app.composition import (
     build_app_container,
     build_llm_provider,
     build_llm_text_service,
+    build_task_queue_service,
     build_official_execution_coordinator,
 )
 from backend.app.core.config import Settings, get_settings
 from backend.app.integrations.llm import LLMProvider
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
-from backend.app.services import ArtifactService, LLMTextService, SessionTaskService
+from backend.app.services import ArtifactService, LLMTextService, SessionTaskService, TaskQueueService
 from backend.app.services.task_source_service import TaskSourceService
 
 DEFAULT_CURRENT_USER_ID = "user_local_default"
@@ -58,6 +59,15 @@ def get_official_execution_coordinator(request: Request) -> OrchestratorExecutio
             container=get_app_container(request),
         )
     return request.app.state.official_execution_coordinator
+
+
+def get_task_queue_service(request: Request) -> TaskQueueService:
+    if not hasattr(request.app.state, "task_queue_service"):
+        request.app.state.task_queue_service = build_task_queue_service(
+            container=get_app_container(request),
+            coordinator=get_official_execution_coordinator(request),
+        )
+    return request.app.state.task_queue_service
 
 
 def get_llm_provider(request: Request) -> LLMProvider:

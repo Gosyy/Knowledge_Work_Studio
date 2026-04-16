@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from backend.app.core.config import Settings
 from backend.app.integrations import get_storage_paths
 from backend.app.integrations.file_storage import LocalFileStorage
+from backend.app.integrations.queue import InMemoryTaskExecutionQueue, TaskExecutionQueue
 from backend.app.repositories.storage import FileStorage
 from backend.app.integrations.llm import LLMProvider
 from backend.app.integrations.llm import build_llm_provider as build_provider_from_settings
@@ -45,6 +46,7 @@ from backend.app.services import (
     SessionTaskService,
     SlidesService,
     TaskExecutionService,
+    TaskQueueService,
 )
 from backend.app.services.docx_service import DocxServiceEntrypoint
 from backend.app.services.pdf_service import PdfServiceEntrypoint
@@ -213,6 +215,20 @@ def build_official_execution_coordinator(
         docx_service=DocxServiceEntrypoint(service=DocxService()),
         pdf_service=PdfServiceEntrypoint(service=PdfService()),
         slides_service=SlidesServiceEntrypoint(service=SlidesService()),
+    )
+
+
+def build_task_queue_service(
+    *,
+    container: AppContainer,
+    coordinator: OrchestratorExecutionCoordinator,
+    queue: TaskExecutionQueue | None = None,
+) -> TaskQueueService:
+    return TaskQueueService(
+        queue=queue or InMemoryTaskExecutionQueue(),
+        session_task_service=container.session_task_service,
+        task_source_service=container.task_source_service,
+        coordinator=coordinator,
     )
 
 

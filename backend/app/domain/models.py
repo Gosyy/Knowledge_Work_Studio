@@ -12,6 +12,7 @@ from backend.app.domain.metadata.models import (
     StoredFile,
 )
 from backend.app.domain.sessions.models import Session
+from backend.app.domain.tasks.jobs import TaskExecutionJob, TaskJobStatus
 from backend.app.domain.tasks.models import Task, TaskStatus, TaskType
 from backend.app.domain.users.models import User
 
@@ -28,6 +29,8 @@ __all__ = [
     "Session",
     "StoredFile",
     "Task",
+    "TaskExecutionJob",
+    "TaskJobStatus",
     "TaskStatus",
     "TaskType",
     "UploadedFile",
