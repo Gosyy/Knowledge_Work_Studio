@@ -73,9 +73,6 @@ class PostgresUserRepository(_PostgresRepositoryBase):
                     created_at TIMESTAMPTZ NOT NULL,
                     updated_at TIMESTAMPTZ NOT NULL
                 )
-            cursor.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
-            )
                 """
             )
             connection.commit()
@@ -190,12 +187,13 @@ class PostgresSessionRepository(_PostgresRepositoryBase):
                 """
                 CREATE TABLE IF NOT EXISTS sessions (
                     id TEXT PRIMARY KEY,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                     created_at TIMESTAMPTZ NOT NULL
                 )
+                """
+            )
             cursor.execute(
                 "ALTER TABLE sessions ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
-            )
-                """
             )
         connection.commit()
 
@@ -229,6 +227,7 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
                 CREATE TABLE IF NOT EXISTS tasks (
                     id TEXT PRIMARY KEY,
                     session_id TEXT NOT NULL,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                     task_type TEXT NOT NULL,
                     status TEXT NOT NULL,
                     result_json JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -237,10 +236,10 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
                     completed_at TIMESTAMPTZ,
                     created_at TIMESTAMPTZ NOT NULL
                 )
+                """
+            )
             cursor.execute(
                 "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
-            )
-                """
             )
             connection.commit()
 
@@ -346,6 +345,7 @@ class PostgresArtifactRepository(_PostgresRepositoryBase):
                     id TEXT PRIMARY KEY,
                     session_id TEXT NOT NULL,
                     task_id TEXT NOT NULL,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                     filename TEXT NOT NULL,
                     content_type TEXT NOT NULL,
                     storage_backend TEXT NOT NULL DEFAULT 'local',
@@ -354,10 +354,10 @@ class PostgresArtifactRepository(_PostgresRepositoryBase):
                     size_bytes INTEGER NOT NULL DEFAULT 0,
                     created_at TIMESTAMPTZ NOT NULL
                 )
+                """
+            )
             cursor.execute(
                 "ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
-            )
-                """
             )
             connection.commit()
 
@@ -462,6 +462,7 @@ class PostgresUploadedFileRepository(_PostgresRepositoryBase):
                 CREATE TABLE IF NOT EXISTS uploaded_files (
                     id TEXT PRIMARY KEY,
                     session_id TEXT NOT NULL,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                     original_filename TEXT NOT NULL,
                     content_type TEXT NOT NULL,
                     size_bytes INTEGER NOT NULL,
@@ -470,10 +471,10 @@ class PostgresUploadedFileRepository(_PostgresRepositoryBase):
                     storage_uri TEXT NOT NULL DEFAULT '',
                     created_at TIMESTAMPTZ NOT NULL
                 )
+                """
+            )
             cursor.execute(
                 "ALTER TABLE uploaded_files ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
-            )
-                """
             )
             connection.commit()
 
@@ -589,13 +590,14 @@ class PostgresStoredFileRepository(_PostgresRepositoryBase):
                     checksum_sha256 TEXT,
                     size_bytes BIGINT,
                     is_remote BOOLEAN NOT NULL DEFAULT FALSE,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                     created_at TIMESTAMPTZ NOT NULL,
                     updated_at TIMESTAMPTZ NOT NULL
                 )
+                """
+            )
             cursor.execute(
                 "ALTER TABLE stored_files ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
-            )
-                """
             )
             connection.commit()
 
