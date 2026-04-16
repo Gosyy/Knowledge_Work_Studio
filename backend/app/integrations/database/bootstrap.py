@@ -99,6 +99,7 @@ def apply_postgres_baseline(database_url: str, version: str = BASELINE_VERSION) 
             """
             CREATE TABLE IF NOT EXISTS sessions (
                 id TEXT PRIMARY KEY,
+                owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                 created_at TIMESTAMPTZ NOT NULL
             )
             """
@@ -108,6 +109,7 @@ def apply_postgres_baseline(database_url: str, version: str = BASELINE_VERSION) 
             CREATE TABLE IF NOT EXISTS tasks (
                 id TEXT PRIMARY KEY,
                 session_id TEXT NOT NULL,
+                owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                 task_type TEXT NOT NULL,
                 status TEXT NOT NULL,
                 result_json JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -124,6 +126,7 @@ def apply_postgres_baseline(database_url: str, version: str = BASELINE_VERSION) 
                 id TEXT PRIMARY KEY,
                 session_id TEXT NOT NULL,
                 task_id TEXT NOT NULL,
+                owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                 filename TEXT NOT NULL,
                 content_type TEXT NOT NULL,
                 storage_backend TEXT NOT NULL DEFAULT 'local',
@@ -145,6 +148,7 @@ def apply_postgres_baseline(database_url: str, version: str = BASELINE_VERSION) 
             CREATE TABLE IF NOT EXISTS uploaded_files (
                 id TEXT PRIMARY KEY,
                 session_id TEXT NOT NULL,
+                owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                 original_filename TEXT NOT NULL,
                 content_type TEXT NOT NULL,
                 size_bytes INTEGER NOT NULL,
@@ -161,6 +165,7 @@ def apply_postgres_baseline(database_url: str, version: str = BASELINE_VERSION) 
                 id TEXT PRIMARY KEY,
                 session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
                 task_id TEXT REFERENCES tasks(id) ON DELETE SET NULL,
+                owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                 kind TEXT NOT NULL,
                 file_type TEXT NOT NULL,
                 mime_type TEXT NOT NULL,

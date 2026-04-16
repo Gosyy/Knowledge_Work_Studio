@@ -6,6 +6,9 @@ from enum import Enum
 from typing import Any
 
 
+DEFAULT_OWNER_USER_ID = "user_local_default"
+
+
 class TaskType(str, Enum):
     DOCX_EDIT = "docx_edit"
     PDF_SUMMARY = "pdf_summary"
@@ -25,6 +28,7 @@ class Task:
     id: str
     session_id: str
     task_type: TaskType
+    owner_user_id: str = DEFAULT_OWNER_USER_ID
     status: TaskStatus = TaskStatus.PENDING
     result_data: dict[str, Any] = field(default_factory=dict)
     error_message: str | None = None

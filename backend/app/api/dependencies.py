@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import Request
+from fastapi import Header, HTTPException, Request, status
 
 from backend.app.composition import (
     AppContainer,
@@ -14,6 +14,19 @@ from backend.app.integrations.llm import LLMProvider
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
 from backend.app.services import ArtifactService, LLMTextService, SessionTaskService
 from backend.app.services.task_source_service import TaskSourceService
+
+DEFAULT_CURRENT_USER_ID = "user_local_default"
+
+
+def get_current_user_id(x_user_id: str | None = Header(default=None, alias="X-User-Id")) -> str:
+    # M2 does not implement login/OAuth. This deterministic identity input exists
+    # only to enforce and test resource ownership at the API boundary.
+    if x_user_id is None:
+        return DEFAULT_CURRENT_USER_ID
+    normalized = x_user_id.strip()
+    if not normalized:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="X-User-Id must not be empty")
+    return normalized
 
 
 def get_app_settings() -> Settings:

@@ -61,7 +61,8 @@ class TaskSourceService:
         self,
         *,
         session_id: str,
-        prompt_content: str | None,
+        owner_user_id: str = "user_local_default",
+        prompt_content: str | None = None,
         uploaded_file_ids: list[str],
         stored_file_ids: list[str],
         document_ids: list[str],
@@ -92,7 +93,7 @@ class TaskSourceService:
 
         if has_uploaded_sources:
             sources = tuple(
-                self._resolve_uploaded_source(session_id=session_id, upload_id=upload_id)
+                self._resolve_uploaded_source(session_id=session_id, owner_user_id=owner_user_id, upload_id=upload_id)
                 for upload_id in uploaded_file_ids
             )
             return ResolvedTaskInput(
@@ -102,7 +103,7 @@ class TaskSourceService:
             )
 
         sources = [
-            self._resolve_stored_file_source(session_id=session_id, stored_file_id=stored_file_id)
+            self._resolve_stored_file_source(session_id=session_id, owner_user_id=owner_user_id, stored_file_id=stored_file_id)
             for stored_file_id in stored_file_ids
         ]
         sources.extend(
@@ -138,16 +139,16 @@ class TaskSourceService:
                     )
                 )
 
-    def _resolve_uploaded_source(self, *, session_id: str, upload_id: str) -> ResolvedSource:
+    def _resolve_uploaded_source(self, *, session_id: str, owner_user_id: str, upload_id: str) -> ResolvedSource:
         uploaded = self.uploads.get(upload_id)
-        if uploaded is None or uploaded.session_id != session_id:
+        if uploaded is None or uploaded.session_id != session_id or uploaded.owner_user_id != owner_user_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Uploaded source '{upload_id}' not found for this session.",
             )
 
         mirrored_stored_file = self.stored_files.get(upload_id)
-        if mirrored_stored_file is None:
+        if mirrored_stored_file is None or mirrored_stored_file.owner_user_id != owner_user_id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
@@ -167,9 +168,9 @@ class TaskSourceService:
             source_file_id=upload_id,
         )
 
-    def _resolve_stored_file_source(self, *, session_id: str, stored_file_id: str) -> ResolvedSource:
+    def _resolve_stored_file_source(self, *, session_id: str, owner_user_id: str, stored_file_id: str) -> ResolvedSource:
         stored_file = self.stored_files.get(stored_file_id)
-        if stored_file is None or stored_file.session_id != session_id:
+        if stored_file is None or stored_file.session_id != session_id or stored_file.owner_user_id != owner_user_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Stored file source '{stored_file_id}' not found for this session.",

@@ -4,6 +4,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 
+DEFAULT_OWNER_USER_ID = "user_local_default"
+
+
 @dataclass(frozen=True)
 class Artifact:
     id: str
@@ -11,6 +14,7 @@ class Artifact:
     task_id: str
     filename: str
     content_type: str
+    owner_user_id: str = DEFAULT_OWNER_USER_ID
     storage_backend: str = "local"
     storage_key: str = ""
     storage_uri: str = ""

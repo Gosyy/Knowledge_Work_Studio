@@ -20,6 +20,7 @@ class StoredFile:
     storage_uri: str
     checksum_sha256: str | None
     size_bytes: int | None
+    owner_user_id: str = "user_local_default"
     is_remote: bool = False
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

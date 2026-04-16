@@ -73,6 +73,9 @@ class PostgresUserRepository(_PostgresRepositoryBase):
                     created_at TIMESTAMPTZ NOT NULL,
                     updated_at TIMESTAMPTZ NOT NULL
                 )
+            cursor.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
+            )
                 """
             )
             connection.commit()
@@ -189,6 +192,9 @@ class PostgresSessionRepository(_PostgresRepositoryBase):
                     id TEXT PRIMARY KEY,
                     created_at TIMESTAMPTZ NOT NULL
                 )
+            cursor.execute(
+                "ALTER TABLE sessions ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
+            )
                 """
             )
         connection.commit()
@@ -197,22 +203,22 @@ class PostgresSessionRepository(_PostgresRepositoryBase):
         with self._lock, self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO sessions (id, created_at)
-                VALUES (%s, %s)
-                ON CONFLICT (id) DO UPDATE SET created_at = EXCLUDED.created_at
+                INSERT INTO sessions (id, owner_user_id, created_at)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET owner_user_id = EXCLUDED.owner_user_id, created_at = EXCLUDED.created_at
                 """,
-                (session.id, session.created_at),
+                (session.id, session.owner_user_id, session.created_at),
             )
             connection.commit()
         return session
 
     def get(self, session_id: str) -> Session | None:
         with self._connect() as connection, connection.cursor() as cursor:
-            cursor.execute("SELECT id, created_at FROM sessions WHERE id = %s", (session_id,))
+            cursor.execute("SELECT id, owner_user_id, created_at FROM sessions WHERE id = %s", (session_id,))
             row = cursor.fetchone()
         if row is None:
             return None
-        return Session(id=row["id"], created_at=_parse_datetime(row["created_at"]))
+        return Session(id=row["id"], owner_user_id=row["owner_user_id"], created_at=_parse_datetime(row["created_at"]))
 
 
 class PostgresTaskRepository(_PostgresRepositoryBase):
@@ -231,6 +237,9 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
                     completed_at TIMESTAMPTZ,
                     created_at TIMESTAMPTZ NOT NULL
                 )
+            cursor.execute(
+                "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
+            )
                 """
             )
             connection.commit()
@@ -240,10 +249,11 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
             cursor.execute(
                 """
                 INSERT INTO tasks
-                (id, session_id, task_type, status, result_json, error_message, started_at, completed_at, created_at)
-                VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s)
+                (id, session_id, owner_user_id, task_type, status, result_json, error_message, started_at, completed_at, created_at)
+                VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                     session_id = EXCLUDED.session_id,
+                    owner_user_id = EXCLUDED.owner_user_id,
                     task_type = EXCLUDED.task_type,
                     status = EXCLUDED.status,
                     result_json = EXCLUDED.result_json,
@@ -255,6 +265,7 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
                 (
                     task.id,
                     task.session_id,
+                    task.owner_user_id,
                     task.task_type.value,
                     task.status.value,
                     json.dumps(task.result_data),
@@ -274,7 +285,7 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, session_id, task_type, status, result_json, error_message, started_at, completed_at, created_at
+                SELECT id, session_id, owner_user_id, task_type, status, result_json, error_message, started_at, completed_at, created_at
                 FROM tasks
                 WHERE id = %s
                 """,
@@ -286,6 +297,7 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
         return Task(
             id=row["id"],
             session_id=row["session_id"],
+            owner_user_id=row["owner_user_id"],
             task_type=TaskType(row["task_type"]),
             status=TaskStatus(row["status"]),
             result_data=row["result_json"] or {},
@@ -299,7 +311,7 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, session_id, task_type, status, result_json, error_message, started_at, completed_at, created_at
+                SELECT id, session_id, owner_user_id, task_type, status, result_json, error_message, started_at, completed_at, created_at
                 FROM tasks
                 WHERE session_id = %s
                 ORDER BY created_at ASC
@@ -312,6 +324,7 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
             Task(
                 id=row["id"],
                 session_id=row["session_id"],
+                owner_user_id=row["owner_user_id"],
                 task_type=TaskType(row["task_type"]),
                 status=TaskStatus(row["status"]),
                 result_data=row["result_json"] or {},
@@ -341,6 +354,9 @@ class PostgresArtifactRepository(_PostgresRepositoryBase):
                     size_bytes INTEGER NOT NULL DEFAULT 0,
                     created_at TIMESTAMPTZ NOT NULL
                 )
+            cursor.execute(
+                "ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
+            )
                 """
             )
             connection.commit()
@@ -350,11 +366,12 @@ class PostgresArtifactRepository(_PostgresRepositoryBase):
             cursor.execute(
                 """
                 INSERT INTO artifacts
-                (id, session_id, task_id, filename, content_type, storage_backend, storage_key, storage_uri, size_bytes, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (id, session_id, task_id, owner_user_id, filename, content_type, storage_backend, storage_key, storage_uri, size_bytes, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                     session_id = EXCLUDED.session_id,
                     task_id = EXCLUDED.task_id,
+                    owner_user_id = EXCLUDED.owner_user_id,
                     filename = EXCLUDED.filename,
                     content_type = EXCLUDED.content_type,
                     storage_backend = EXCLUDED.storage_backend,
@@ -367,6 +384,7 @@ class PostgresArtifactRepository(_PostgresRepositoryBase):
                     artifact.id,
                     artifact.session_id,
                     artifact.task_id,
+                    artifact.owner_user_id,
                     artifact.filename,
                     artifact.content_type,
                     artifact.storage_backend,
@@ -383,7 +401,7 @@ class PostgresArtifactRepository(_PostgresRepositoryBase):
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, session_id, task_id, filename, content_type, storage_backend, storage_key, storage_uri, size_bytes, created_at
+                SELECT id, session_id, task_id, owner_user_id, filename, content_type, storage_backend, storage_key, storage_uri, size_bytes, created_at
                 FROM artifacts
                 WHERE id = %s
                 """,
@@ -396,6 +414,7 @@ class PostgresArtifactRepository(_PostgresRepositoryBase):
             id=row["id"],
             session_id=row["session_id"],
             task_id=row["task_id"],
+            owner_user_id=row["owner_user_id"],
             filename=row["filename"],
             content_type=row["content_type"],
             storage_backend=row["storage_backend"],
@@ -409,7 +428,7 @@ class PostgresArtifactRepository(_PostgresRepositoryBase):
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, session_id, task_id, filename, content_type, storage_backend, storage_key, storage_uri, size_bytes, created_at
+                SELECT id, session_id, task_id, owner_user_id, filename, content_type, storage_backend, storage_key, storage_uri, size_bytes, created_at
                 FROM artifacts
                 WHERE session_id = %s
                 ORDER BY created_at ASC
@@ -422,6 +441,7 @@ class PostgresArtifactRepository(_PostgresRepositoryBase):
                 id=row["id"],
                 session_id=row["session_id"],
                 task_id=row["task_id"],
+                owner_user_id=row["owner_user_id"],
                 filename=row["filename"],
                 content_type=row["content_type"],
                 storage_backend=row["storage_backend"],
@@ -450,6 +470,9 @@ class PostgresUploadedFileRepository(_PostgresRepositoryBase):
                     storage_uri TEXT NOT NULL DEFAULT '',
                     created_at TIMESTAMPTZ NOT NULL
                 )
+            cursor.execute(
+                "ALTER TABLE uploaded_files ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
+            )
                 """
             )
             connection.commit()
@@ -459,10 +482,11 @@ class PostgresUploadedFileRepository(_PostgresRepositoryBase):
             cursor.execute(
                 """
                 INSERT INTO uploaded_files
-                (id, session_id, original_filename, content_type, size_bytes, storage_backend, storage_key, storage_uri, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (id, session_id, owner_user_id, original_filename, content_type, size_bytes, storage_backend, storage_key, storage_uri, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                     session_id = EXCLUDED.session_id,
+                    owner_user_id = EXCLUDED.owner_user_id,
                     original_filename = EXCLUDED.original_filename,
                     content_type = EXCLUDED.content_type,
                     size_bytes = EXCLUDED.size_bytes,
@@ -474,6 +498,7 @@ class PostgresUploadedFileRepository(_PostgresRepositoryBase):
                 (
                     uploaded_file.id,
                     uploaded_file.session_id,
+                    uploaded_file.owner_user_id,
                     uploaded_file.original_filename,
                     uploaded_file.content_type,
                     uploaded_file.size_bytes,
@@ -490,7 +515,7 @@ class PostgresUploadedFileRepository(_PostgresRepositoryBase):
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, session_id, original_filename, content_type, size_bytes, storage_backend, storage_key, storage_uri, created_at
+                SELECT id, session_id, owner_user_id, original_filename, content_type, size_bytes, storage_backend, storage_key, storage_uri, created_at
                 FROM uploaded_files
                 WHERE id = %s
                 """,
@@ -504,6 +529,7 @@ class PostgresUploadedFileRepository(_PostgresRepositoryBase):
         return UploadedFile(
             id=row["id"],
             session_id=row["session_id"],
+            owner_user_id=row["owner_user_id"],
             original_filename=row["original_filename"],
             content_type=row["content_type"],
             size_bytes=row["size_bytes"],
@@ -517,7 +543,7 @@ class PostgresUploadedFileRepository(_PostgresRepositoryBase):
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, session_id, original_filename, content_type, size_bytes, storage_backend, storage_key, storage_uri, created_at
+                SELECT id, session_id, owner_user_id, original_filename, content_type, size_bytes, storage_backend, storage_key, storage_uri, created_at
                 FROM uploaded_files
                 WHERE session_id = %s
                 ORDER BY created_at ASC
@@ -530,6 +556,7 @@ class PostgresUploadedFileRepository(_PostgresRepositoryBase):
             UploadedFile(
                 id=row["id"],
                 session_id=row["session_id"],
+                owner_user_id=row["owner_user_id"],
                 original_filename=row["original_filename"],
                 content_type=row["content_type"],
                 size_bytes=row["size_bytes"],
@@ -565,6 +592,9 @@ class PostgresStoredFileRepository(_PostgresRepositoryBase):
                     created_at TIMESTAMPTZ NOT NULL,
                     updated_at TIMESTAMPTZ NOT NULL
                 )
+            cursor.execute(
+                "ALTER TABLE stored_files ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
+            )
                 """
             )
             connection.commit()
@@ -575,11 +605,12 @@ class PostgresStoredFileRepository(_PostgresRepositoryBase):
                 """
                 INSERT INTO stored_files
                 (id, session_id, task_id, kind, file_type, mime_type, title, original_filename,
-                 storage_backend, storage_key, storage_uri, checksum_sha256, size_bytes, is_remote, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 storage_backend, storage_key, storage_uri, checksum_sha256, size_bytes, is_remote, created_at, updated_at, owner_user_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                     session_id = EXCLUDED.session_id,
                     task_id = EXCLUDED.task_id,
+                    owner_user_id = EXCLUDED.owner_user_id,
                     kind = EXCLUDED.kind,
                     file_type = EXCLUDED.file_type,
                     mime_type = EXCLUDED.mime_type,
@@ -611,6 +642,7 @@ class PostgresStoredFileRepository(_PostgresRepositoryBase):
                     stored_file.is_remote,
                     stored_file.created_at,
                     stored_file.updated_at,
+                    stored_file.owner_user_id,
                 ),
             )
             connection.commit()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import sqlite3
 import json
+import sqlite3
 from datetime import datetime
 from pathlib import Path
 from threading import Lock
@@ -40,6 +40,15 @@ class _SqliteRepositoryBase:
 
     def _initialize_schema(self) -> None:
         raise NotImplementedError
+
+    @staticmethod
+    def _ensure_column(*, connection: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+        existing_columns = {
+            row[1]
+            for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
+        }
+        if column not in existing_columns:
+            connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 class SqliteUserRepository(_SqliteRepositoryBase):
@@ -158,28 +167,39 @@ class SqliteSessionRepository(_SqliteRepositoryBase):
                 """
                 CREATE TABLE IF NOT EXISTS sessions (
                     id TEXT PRIMARY KEY,
-                    created_at TEXT NOT NULL
+                    created_at TEXT NOT NULL,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'
                 )
                 """
+            )
+            self._ensure_column(
+                connection=connection,
+                table="sessions",
+                column="owner_user_id",
+                definition="TEXT NOT NULL DEFAULT 'user_local_default'",
             )
 
     def create(self, session: Session) -> Session:
         with self._lock, self._connect() as connection:
             connection.execute(
-                "INSERT OR REPLACE INTO sessions (id, created_at) VALUES (?, ?)",
-                (session.id, session.created_at.isoformat()),
+                "INSERT OR REPLACE INTO sessions (id, created_at, owner_user_id) VALUES (?, ?, ?)",
+                (session.id, session.created_at.isoformat(), session.owner_user_id),
             )
         return session
 
     def get(self, session_id: str) -> Session | None:
         with self._connect() as connection:
             row = connection.execute(
-                "SELECT id, created_at FROM sessions WHERE id = ?",
+                "SELECT id, created_at, owner_user_id FROM sessions WHERE id = ?",
                 (session_id,),
             ).fetchone()
         if row is None:
             return None
-        return Session(id=row["id"], created_at=_parse_datetime(row["created_at"]))
+        return Session(
+            id=row["id"],
+            created_at=_parse_datetime(row["created_at"]),
+            owner_user_id=row["owner_user_id"],
+        )
 
 
 class SqliteTaskRepository(_SqliteRepositoryBase):
@@ -191,6 +211,7 @@ class SqliteTaskRepository(_SqliteRepositoryBase):
                     id TEXT PRIMARY KEY,
                     session_id TEXT NOT NULL,
                     task_type TEXT NOT NULL,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                     status TEXT NOT NULL,
                     result_json TEXT NOT NULL DEFAULT '{}',
                     error_message TEXT,
@@ -203,49 +224,27 @@ class SqliteTaskRepository(_SqliteRepositoryBase):
             self._ensure_column(
                 connection=connection,
                 table="tasks",
-                column="result_json",
-                definition="TEXT NOT NULL DEFAULT '{}'",
+                column="owner_user_id",
+                definition="TEXT NOT NULL DEFAULT 'user_local_default'",
             )
-            self._ensure_column(
-                connection=connection,
-                table="tasks",
-                column="error_message",
-                definition="TEXT",
-            )
-            self._ensure_column(
-                connection=connection,
-                table="tasks",
-                column="started_at",
-                definition="TEXT",
-            )
-            self._ensure_column(
-                connection=connection,
-                table="tasks",
-                column="completed_at",
-                definition="TEXT",
-            )
-
-    @staticmethod
-    def _ensure_column(*, connection: sqlite3.Connection, table: str, column: str, definition: str) -> None:
-        existing_columns = {
-            row[1]
-            for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
-        }
-        if column not in existing_columns:
-            connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+            self._ensure_column(connection=connection, table="tasks", column="result_json", definition="TEXT NOT NULL DEFAULT '{}'")
+            self._ensure_column(connection=connection, table="tasks", column="error_message", definition="TEXT")
+            self._ensure_column(connection=connection, table="tasks", column="started_at", definition="TEXT")
+            self._ensure_column(connection=connection, table="tasks", column="completed_at", definition="TEXT")
 
     def create(self, task: Task) -> Task:
         with self._lock, self._connect() as connection:
             connection.execute(
                 """
                 INSERT OR REPLACE INTO tasks
-                (id, session_id, task_type, status, result_json, error_message, started_at, completed_at, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, session_id, task_type, owner_user_id, status, result_json, error_message, started_at, completed_at, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     task.id,
                     task.session_id,
                     task.task_type.value,
+                    task.owner_user_id,
                     task.status.value,
                     json.dumps(task.result_data),
                     task.error_message,
@@ -263,7 +262,7 @@ class SqliteTaskRepository(_SqliteRepositoryBase):
         with self._connect() as connection:
             row = connection.execute(
                 """
-                SELECT id, session_id, task_type, status, result_json, error_message, started_at, completed_at, created_at
+                SELECT id, session_id, task_type, owner_user_id, status, result_json, error_message, started_at, completed_at, created_at
                 FROM tasks
                 WHERE id = ?
                 """,
@@ -275,6 +274,7 @@ class SqliteTaskRepository(_SqliteRepositoryBase):
             id=row["id"],
             session_id=row["session_id"],
             task_type=TaskType(row["task_type"]),
+            owner_user_id=row["owner_user_id"],
             status=TaskStatus(row["status"]),
             result_data=json.loads(row["result_json"] or "{}"),
             error_message=row["error_message"],
@@ -287,7 +287,7 @@ class SqliteTaskRepository(_SqliteRepositoryBase):
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT id, session_id, task_type, status, result_json, error_message, started_at, completed_at, created_at
+                SELECT id, session_id, task_type, owner_user_id, status, result_json, error_message, started_at, completed_at, created_at
                 FROM tasks
                 WHERE session_id = ?
                 ORDER BY created_at ASC
@@ -299,6 +299,7 @@ class SqliteTaskRepository(_SqliteRepositoryBase):
                 id=row["id"],
                 session_id=row["session_id"],
                 task_type=TaskType(row["task_type"]),
+                owner_user_id=row["owner_user_id"],
                 status=TaskStatus(row["status"]),
                 result_data=json.loads(row["result_json"] or "{}"),
                 error_message=row["error_message"],
@@ -321,6 +322,7 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
                     task_id TEXT NOT NULL,
                     filename TEXT NOT NULL,
                     content_type TEXT NOT NULL,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                     storage_backend TEXT NOT NULL DEFAULT 'local',
                     storage_key TEXT NOT NULL DEFAULT '',
                     storage_uri TEXT NOT NULL DEFAULT '',
@@ -329,47 +331,19 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
                 )
                 """
             )
-            self._ensure_column(
-                connection=connection,
-                table="artifacts",
-                column="storage_backend",
-                definition="TEXT NOT NULL DEFAULT 'local'",
-            )
-            self._ensure_column(
-                connection=connection,
-                table="artifacts",
-                column="storage_key",
-                definition="TEXT NOT NULL DEFAULT ''",
-            )
-            self._ensure_column(
-                connection=connection,
-                table="artifacts",
-                column="storage_uri",
-                definition="TEXT NOT NULL DEFAULT ''",
-            )
-            self._ensure_column(
-                connection=connection,
-                table="artifacts",
-                column="size_bytes",
-                definition="INTEGER NOT NULL DEFAULT 0",
-            )
-
-    @staticmethod
-    def _ensure_column(*, connection: sqlite3.Connection, table: str, column: str, definition: str) -> None:
-        existing_columns = {
-            row[1]
-            for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
-        }
-        if column not in existing_columns:
-            connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+            self._ensure_column(connection=connection, table="artifacts", column="owner_user_id", definition="TEXT NOT NULL DEFAULT 'user_local_default'")
+            self._ensure_column(connection=connection, table="artifacts", column="storage_backend", definition="TEXT NOT NULL DEFAULT 'local'")
+            self._ensure_column(connection=connection, table="artifacts", column="storage_key", definition="TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(connection=connection, table="artifacts", column="storage_uri", definition="TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(connection=connection, table="artifacts", column="size_bytes", definition="INTEGER NOT NULL DEFAULT 0")
 
     def create(self, artifact: Artifact) -> Artifact:
         with self._lock, self._connect() as connection:
             connection.execute(
                 """
                 INSERT OR REPLACE INTO artifacts
-                (id, session_id, task_id, filename, content_type, storage_backend, storage_key, storage_uri, size_bytes, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, session_id, task_id, filename, content_type, owner_user_id, storage_backend, storage_key, storage_uri, size_bytes, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     artifact.id,
@@ -377,6 +351,7 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
                     artifact.task_id,
                     artifact.filename,
                     artifact.content_type,
+                    artifact.owner_user_id,
                     artifact.storage_backend,
                     artifact.storage_key,
                     artifact.storage_uri,
@@ -390,7 +365,7 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
         with self._connect() as connection:
             row = connection.execute(
                 """
-                SELECT id, session_id, task_id, filename, content_type, storage_backend, storage_key, storage_uri, size_bytes, created_at
+                SELECT id, session_id, task_id, filename, content_type, owner_user_id, storage_backend, storage_key, storage_uri, size_bytes, created_at
                 FROM artifacts
                 WHERE id = ?
                 """,
@@ -404,6 +379,7 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
             task_id=row["task_id"],
             filename=row["filename"],
             content_type=row["content_type"],
+            owner_user_id=row["owner_user_id"],
             storage_backend=row["storage_backend"],
             storage_key=row["storage_key"],
             storage_uri=row["storage_uri"],
@@ -415,7 +391,7 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT id, session_id, task_id, filename, content_type, storage_backend, storage_key, storage_uri, size_bytes, created_at
+                SELECT id, session_id, task_id, filename, content_type, owner_user_id, storage_backend, storage_key, storage_uri, size_bytes, created_at
                 FROM artifacts
                 WHERE session_id = ?
                 ORDER BY created_at ASC
@@ -429,6 +405,7 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
                 task_id=row["task_id"],
                 filename=row["filename"],
                 content_type=row["content_type"],
+                owner_user_id=row["owner_user_id"],
                 storage_backend=row["storage_backend"],
                 storage_key=row["storage_key"],
                 storage_uri=row["storage_uri"],
@@ -440,15 +417,6 @@ class SqliteArtifactRepository(_SqliteRepositoryBase):
 
 
 class SqliteUploadedFileRepository(_SqliteRepositoryBase):
-    @staticmethod
-    def _ensure_column(*, connection: sqlite3.Connection, table: str, column: str, definition: str) -> None:
-        existing_columns = {
-            row[1]
-            for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
-        }
-        if column not in existing_columns:
-            connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
-
     def _initialize_schema(self) -> None:
         with self._connect() as connection:
             connection.execute(
@@ -459,6 +427,7 @@ class SqliteUploadedFileRepository(_SqliteRepositoryBase):
                     original_filename TEXT NOT NULL,
                     content_type TEXT NOT NULL,
                     size_bytes INTEGER NOT NULL,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                     storage_backend TEXT NOT NULL DEFAULT 'local',
                     storage_key TEXT NOT NULL DEFAULT '',
                     storage_uri TEXT NOT NULL DEFAULT '',
@@ -466,32 +435,18 @@ class SqliteUploadedFileRepository(_SqliteRepositoryBase):
                 )
                 """
             )
-            self._ensure_column(
-                connection=connection,
-                table="uploaded_files",
-                column="storage_backend",
-                definition="TEXT NOT NULL DEFAULT 'local'",
-            )
-            self._ensure_column(
-                connection=connection,
-                table="uploaded_files",
-                column="storage_key",
-                definition="TEXT NOT NULL DEFAULT ''",
-            )
-            self._ensure_column(
-                connection=connection,
-                table="uploaded_files",
-                column="storage_uri",
-                definition="TEXT NOT NULL DEFAULT ''",
-            )
+            self._ensure_column(connection=connection, table="uploaded_files", column="owner_user_id", definition="TEXT NOT NULL DEFAULT 'user_local_default'")
+            self._ensure_column(connection=connection, table="uploaded_files", column="storage_backend", definition="TEXT NOT NULL DEFAULT 'local'")
+            self._ensure_column(connection=connection, table="uploaded_files", column="storage_key", definition="TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(connection=connection, table="uploaded_files", column="storage_uri", definition="TEXT NOT NULL DEFAULT ''")
 
     def create(self, uploaded_file: UploadedFile) -> UploadedFile:
         with self._lock, self._connect() as connection:
             connection.execute(
                 """
                 INSERT OR REPLACE INTO uploaded_files
-                (id, session_id, original_filename, content_type, size_bytes, storage_backend, storage_key, storage_uri, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, session_id, original_filename, content_type, size_bytes, owner_user_id, storage_backend, storage_key, storage_uri, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     uploaded_file.id,
@@ -499,6 +454,7 @@ class SqliteUploadedFileRepository(_SqliteRepositoryBase):
                     uploaded_file.original_filename,
                     uploaded_file.content_type,
                     uploaded_file.size_bytes,
+                    uploaded_file.owner_user_id,
                     uploaded_file.storage_backend,
                     uploaded_file.storage_key,
                     uploaded_file.storage_uri,
@@ -511,7 +467,7 @@ class SqliteUploadedFileRepository(_SqliteRepositoryBase):
         with self._connect() as connection:
             row = connection.execute(
                 """
-                SELECT id, session_id, original_filename, content_type, size_bytes, storage_backend, storage_key, storage_uri, created_at
+                SELECT id, session_id, original_filename, content_type, size_bytes, owner_user_id, storage_backend, storage_key, storage_uri, created_at
                 FROM uploaded_files
                 WHERE id = ?
                 """,
@@ -525,6 +481,7 @@ class SqliteUploadedFileRepository(_SqliteRepositoryBase):
             original_filename=row["original_filename"],
             content_type=row["content_type"],
             size_bytes=row["size_bytes"],
+            owner_user_id=row["owner_user_id"],
             storage_backend=row["storage_backend"],
             storage_key=row["storage_key"],
             storage_uri=row["storage_uri"],
@@ -535,7 +492,7 @@ class SqliteUploadedFileRepository(_SqliteRepositoryBase):
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT id, session_id, original_filename, content_type, size_bytes, storage_backend, storage_key, storage_uri, created_at
+                SELECT id, session_id, original_filename, content_type, size_bytes, owner_user_id, storage_backend, storage_key, storage_uri, created_at
                 FROM uploaded_files
                 WHERE session_id = ?
                 ORDER BY created_at ASC
@@ -549,6 +506,7 @@ class SqliteUploadedFileRepository(_SqliteRepositoryBase):
                 original_filename=row["original_filename"],
                 content_type=row["content_type"],
                 size_bytes=row["size_bytes"],
+                owner_user_id=row["owner_user_id"],
                 storage_backend=row["storage_backend"],
                 storage_key=row["storage_key"],
                 storage_uri=row["storage_uri"],
@@ -578,11 +536,13 @@ class SqliteStoredFileRepository(_SqliteRepositoryBase):
                     checksum_sha256 TEXT,
                     size_bytes INTEGER,
                     is_remote INTEGER NOT NULL DEFAULT 0,
+                    owner_user_id TEXT NOT NULL DEFAULT 'user_local_default',
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 )
                 """
             )
+            self._ensure_column(connection=connection, table="stored_files", column="owner_user_id", definition="TEXT NOT NULL DEFAULT 'user_local_default'")
 
     def create(self, stored_file: StoredFile) -> StoredFile:
         with self._lock, self._connect() as connection:
@@ -590,8 +550,8 @@ class SqliteStoredFileRepository(_SqliteRepositoryBase):
                 """
                 INSERT OR REPLACE INTO stored_files
                 (id, session_id, task_id, kind, file_type, mime_type, title, original_filename,
-                 storage_backend, storage_key, storage_uri, checksum_sha256, size_bytes, is_remote, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 storage_backend, storage_key, storage_uri, checksum_sha256, size_bytes, is_remote, owner_user_id, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     stored_file.id,
@@ -608,6 +568,7 @@ class SqliteStoredFileRepository(_SqliteRepositoryBase):
                     stored_file.checksum_sha256,
                     stored_file.size_bytes,
                     1 if stored_file.is_remote else 0,
+                    stored_file.owner_user_id,
                     stored_file.created_at.isoformat(),
                     stored_file.updated_at.isoformat(),
                 ),
@@ -616,10 +577,7 @@ class SqliteStoredFileRepository(_SqliteRepositoryBase):
 
     def get(self, stored_file_id: str) -> StoredFile | None:
         with self._connect() as connection:
-            row = connection.execute(
-                "SELECT * FROM stored_files WHERE id = ?",
-                (stored_file_id,),
-            ).fetchone()
+            row = connection.execute("SELECT * FROM stored_files WHERE id = ?", (stored_file_id,)).fetchone()
         if row is None:
             return None
         return StoredFile(
@@ -637,16 +595,14 @@ class SqliteStoredFileRepository(_SqliteRepositoryBase):
             checksum_sha256=row["checksum_sha256"],
             size_bytes=row["size_bytes"],
             is_remote=bool(row["is_remote"]),
+            owner_user_id=row["owner_user_id"],
             created_at=_parse_datetime(row["created_at"]),
             updated_at=_parse_datetime(row["updated_at"]),
         )
 
     def list_by_session(self, session_id: str) -> list[StoredFile]:
         with self._connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM stored_files WHERE session_id = ? ORDER BY created_at ASC",
-                (session_id,),
-            ).fetchall()
+            rows = connection.execute("SELECT * FROM stored_files WHERE session_id = ? ORDER BY created_at ASC", (session_id,)).fetchall()
         return [
             StoredFile(
                 id=row["id"],
@@ -663,6 +619,7 @@ class SqliteStoredFileRepository(_SqliteRepositoryBase):
                 checksum_sha256=row["checksum_sha256"],
                 size_bytes=row["size_bytes"],
                 is_remote=bool(row["is_remote"]),
+                owner_user_id=row["owner_user_id"],
                 created_at=_parse_datetime(row["created_at"]),
                 updated_at=_parse_datetime(row["updated_at"]),
             )
@@ -711,10 +668,7 @@ class SqliteDocumentRepository(_SqliteRepositoryBase):
 
     def get(self, document_id: str) -> Document | None:
         with self._connect() as connection:
-            row = connection.execute(
-                "SELECT * FROM documents WHERE id = ?",
-                (document_id,),
-            ).fetchone()
+            row = connection.execute("SELECT * FROM documents WHERE id = ?", (document_id,)).fetchone()
         if row is None:
             return None
         return Document(
@@ -730,10 +684,7 @@ class SqliteDocumentRepository(_SqliteRepositoryBase):
 
     def list_by_session(self, session_id: str) -> list[Document]:
         with self._connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM documents WHERE session_id = ? ORDER BY created_at ASC",
-                (session_id,),
-            ).fetchall()
+            rows = connection.execute("SELECT * FROM documents WHERE session_id = ? ORDER BY created_at ASC", (session_id,)).fetchall()
         return [
             Document(
                 id=row["id"],
@@ -790,10 +741,7 @@ class SqlitePresentationRepository(_SqliteRepositoryBase):
 
     def get(self, presentation_id: str) -> Presentation | None:
         with self._connect() as connection:
-            row = connection.execute(
-                "SELECT * FROM presentations WHERE id = ?",
-                (presentation_id,),
-            ).fetchone()
+            row = connection.execute("SELECT * FROM presentations WHERE id = ?", (presentation_id,)).fetchone()
         if row is None:
             return None
         return Presentation(
@@ -809,10 +757,7 @@ class SqlitePresentationRepository(_SqliteRepositoryBase):
 
     def list_by_session(self, session_id: str) -> list[Presentation]:
         with self._connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM presentations WHERE session_id = ? ORDER BY created_at ASC",
-                (session_id,),
-            ).fetchall()
+            rows = connection.execute("SELECT * FROM presentations WHERE session_id = ? ORDER BY created_at ASC", (session_id,)).fetchall()
         return [
             Presentation(
                 id=row["id"],
@@ -867,10 +812,7 @@ class SqliteArtifactSourceRepository(_SqliteRepositoryBase):
 
     def list_by_artifact(self, artifact_id: str) -> list[ArtifactSource]:
         with self._connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM artifact_sources WHERE artifact_id = ? ORDER BY created_at ASC",
-                (artifact_id,),
-            ).fetchall()
+            rows = connection.execute("SELECT * FROM artifact_sources WHERE artifact_id = ? ORDER BY created_at ASC", (artifact_id,)).fetchall()
         return [
             ArtifactSource(
                 id=row["id"],
@@ -928,10 +870,7 @@ class SqliteDerivedContentRepository(_SqliteRepositoryBase):
 
     def list_by_file(self, file_id: str) -> list[DerivedContent]:
         with self._connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM derived_contents WHERE file_id = ? ORDER BY created_at ASC",
-                (file_id,),
-            ).fetchall()
+            rows = connection.execute("SELECT * FROM derived_contents WHERE file_id = ? ORDER BY created_at ASC", (file_id,)).fetchall()
         return [
             DerivedContent(
                 id=row["id"],

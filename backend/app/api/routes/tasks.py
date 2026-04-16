@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.app.api.dependencies import (
+    get_current_user_id,
     get_llm_text_service,
     get_official_execution_coordinator,
     get_session_task_service,
@@ -46,9 +47,10 @@ def _ensure_g1_supported_task_type(task: Task) -> None:
 @router.post("/tasks", response_model=TaskSchema, status_code=status.HTTP_201_CREATED)
 def create_task(
     request: TaskCreateRequest,
+    current_user_id: str = Depends(get_current_user_id),
     service: SessionTaskService = Depends(get_session_task_service),
 ) -> TaskSchema:
-    task = service.create_task(session_id=request.session_id, task_type=request.task_type)
+    task = service.create_task(session_id=request.session_id, task_type=request.task_type, owner_user_id=current_user_id)
     return _task_to_schema(task)
 
 
@@ -56,15 +58,17 @@ def create_task(
 def execute_task(
     task_id: str,
     execute_request: TaskExecuteRequest,
+    current_user_id: str = Depends(get_current_user_id),
     service: SessionTaskService = Depends(get_session_task_service),
     task_source_service: TaskSourceService = Depends(get_task_source_service),
     coordinator: OrchestratorExecutionCoordinator = Depends(get_official_execution_coordinator),
 ) -> TaskSchema:
-    task = service.get_task(task_id)
+    task = service.get_task_for_user(task_id, current_user_id)
     _ensure_g1_supported_task_type(task)
 
     resolved_input = task_source_service.build_execution_input(
         session_id=task.session_id,
+        owner_user_id=current_user_id,
         prompt_content=execute_request.content,
         uploaded_file_ids=execute_request.uploaded_file_ids,
         stored_file_ids=execute_request.stored_file_ids,
@@ -77,49 +81,23 @@ def execute_task(
     if executed_task.status is not TaskStatus.SUCCEEDED:
         return _task_to_schema(executed_task)
 
-    artifact_ids = [
-        artifact_id
-        for artifact_id in executed_task.result_data.get("artifact_ids", [])
-        if isinstance(artifact_id, str)
-    ]
-    task_source_service.record_artifact_sources(
-        artifact_ids=artifact_ids,
-        sources=resolved_input.sources,
-    )
+    artifact_ids = [artifact_id for artifact_id in executed_task.result_data.get("artifact_ids", []) if isinstance(artifact_id, str)]
+    task_source_service.record_artifact_sources(artifact_ids=artifact_ids, sources=resolved_input.sources)
 
-    updated_result_data = {
-        **executed_task.result_data,
-        "source_mode": resolved_input.source_mode,
-        "source_refs": resolved_input.as_result_refs(),
-    }
+    updated_result_data = {**executed_task.result_data, "source_mode": resolved_input.source_mode, "source_refs": resolved_input.as_result_refs()}
     finalized_task = service.mark_task_succeeded(task_id, result_data=updated_result_data)
     return _task_to_schema(finalized_task)
 
 
-_SUPPORTED_SEMANTIC_WORKFLOWS = {
-    "classification",
-    "summarization",
-    "rewriting",
-    "outline_generation",
-}
+_SUPPORTED_SEMANTIC_WORKFLOWS = {"classification", "summarization", "rewriting", "outline_generation"}
 
 
-def _run_semantic_workflow(
-    *,
-    workflow: str,
-    llm_text_service: LLMTextService,
-    content: str,
-    instruction: str | None,
-    task_id: str,
-) -> str:
+def _run_semantic_workflow(*, workflow: str, llm_text_service: LLMTextService, content: str, instruction: str | None, task_id: str) -> str:
     normalized_workflow = workflow.strip().lower()
     if normalized_workflow not in _SUPPORTED_SEMANTIC_WORKFLOWS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Unsupported semantic workflow. Expected one of: "
-                + ", ".join(sorted(_SUPPORTED_SEMANTIC_WORKFLOWS))
-            ),
+            detail="Unsupported semantic workflow. Expected one of: " + ", ".join(sorted(_SUPPORTED_SEMANTIC_WORKFLOWS)),
         )
 
     if normalized_workflow == "classification":
@@ -127,11 +105,7 @@ def _run_semantic_workflow(
     if normalized_workflow == "summarization":
         return llm_text_service.summarize_text(content, task_id=task_id)
     if normalized_workflow == "rewriting":
-        return llm_text_service.rewrite_text(
-            content,
-            instruction=instruction or "Improve clarity while preserving meaning.",
-            task_id=task_id,
-        )
+        return llm_text_service.rewrite_text(content, instruction=instruction or "Improve clarity while preserving meaning.", task_id=task_id)
     return llm_text_service.generate_outline(content, task_id=task_id)
 
 
@@ -139,13 +113,15 @@ def _run_semantic_workflow(
 def execute_semantic_task(
     task_id: str,
     semantic_request: TaskSemanticExecuteRequest,
+    current_user_id: str = Depends(get_current_user_id),
     service: SessionTaskService = Depends(get_session_task_service),
     task_source_service: TaskSourceService = Depends(get_task_source_service),
     llm_text_service: LLMTextService = Depends(get_llm_text_service),
 ) -> TaskSchema:
-    task = service.get_task(task_id)
+    task = service.get_task_for_user(task_id, current_user_id)
     resolved_input = task_source_service.build_execution_input(
         session_id=task.session_id,
+        owner_user_id=current_user_id,
         prompt_content=semantic_request.content,
         uploaded_file_ids=semantic_request.uploaded_file_ids,
         stored_file_ids=semantic_request.stored_file_ids,
@@ -166,11 +142,7 @@ def execute_semantic_task(
         failed = service.mark_task_failed(
             task_id,
             error_message=str(exc),
-            result_data={
-                "semantic_workflow": semantic_request.workflow,
-                "source_mode": resolved_input.source_mode,
-                "source_refs": resolved_input.as_result_refs(),
-            },
+            result_data={"semantic_workflow": semantic_request.workflow, "source_mode": resolved_input.source_mode, "source_refs": resolved_input.as_result_refs()},
         )
         return _task_to_schema(failed)
 
@@ -190,7 +162,8 @@ def execute_semantic_task(
 @router.get("/tasks/{task_id}", response_model=TaskSchema)
 def get_task(
     task_id: str,
+    current_user_id: str = Depends(get_current_user_id),
     service: SessionTaskService = Depends(get_session_task_service),
 ) -> TaskSchema:
-    task = service.get_task(task_id)
+    task = service.get_task_for_user(task_id, current_user_id)
     return _task_to_schema(task)

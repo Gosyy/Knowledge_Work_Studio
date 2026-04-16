@@ -18,6 +18,8 @@ from backend.app.repositories import (
     UploadedFileRepository,
 )
 
+DEFAULT_OWNER_USER_ID = "user_local_default"
+
 
 def _infer_file_type(*, original_filename: str, content_type: str) -> str:
     suffix = Path(original_filename).suffix.lower().lstrip(".")
@@ -28,6 +30,15 @@ def _infer_file_type(*, original_filename: str, content_type: str) -> str:
     return "bin"
 
 
+def _raise_not_found(detail: str) -> None:
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+
+
+def _ensure_owner(*, actual_owner_user_id: str, expected_owner_user_id: str, detail: str) -> None:
+    if actual_owner_user_id != expected_owner_user_id:
+        _raise_not_found(detail)
+
+
 @dataclass
 class SessionTaskService:
     sessions: SessionRepository
@@ -36,25 +47,49 @@ class SessionTaskService:
     storage: FileStorage
     stored_files: StoredFileRepository | None = None
 
-    def create_session(self) -> Session:
-        session = Session(id=f"ses_{uuid4().hex}")
+    def create_session(self, owner_user_id: str = DEFAULT_OWNER_USER_ID) -> Session:
+        session = Session(id=f"ses_{uuid4().hex}", owner_user_id=owner_user_id)
         return self.sessions.create(session)
 
     def get_session(self, session_id: str) -> Session:
         session = self.sessions.get(session_id)
         if session is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+            _raise_not_found("Session not found")
         return session
 
-    def create_task(self, session_id: str, task_type: TaskType) -> Task:
-        self.get_session(session_id)
-        task = Task(id=f"task_{uuid4().hex}", session_id=session_id, task_type=task_type, status=TaskStatus.PENDING)
+    def get_session_for_user(self, session_id: str, owner_user_id: str) -> Session:
+        session = self.get_session(session_id)
+        _ensure_owner(
+            actual_owner_user_id=session.owner_user_id,
+            expected_owner_user_id=owner_user_id,
+            detail="Session not found",
+        )
+        return session
+
+    def create_task(self, session_id: str, task_type: TaskType, owner_user_id: str = DEFAULT_OWNER_USER_ID) -> Task:
+        session = self.get_session_for_user(session_id, owner_user_id)
+        task = Task(
+            id=f"task_{uuid4().hex}",
+            session_id=session_id,
+            task_type=task_type,
+            owner_user_id=session.owner_user_id,
+            status=TaskStatus.PENDING,
+        )
         return self.tasks.create(task)
 
     def get_task(self, task_id: str) -> Task:
         task = self.tasks.get(task_id)
         if task is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+            _raise_not_found("Task not found")
+        return task
+
+    def get_task_for_user(self, task_id: str, owner_user_id: str) -> Task:
+        task = self.get_task(task_id)
+        _ensure_owner(
+            actual_owner_user_id=task.owner_user_id,
+            expected_owner_user_id=owner_user_id,
+            detail="Task not found",
+        )
         return task
 
     def mark_task_running(self, task_id: str) -> Task:
@@ -63,6 +98,7 @@ class SessionTaskService:
             id=task.id,
             session_id=task.session_id,
             task_type=task.task_type,
+            owner_user_id=task.owner_user_id,
             status=TaskStatus.RUNNING,
             result_data={},
             error_message=None,
@@ -79,6 +115,7 @@ class SessionTaskService:
             id=task.id,
             session_id=task.session_id,
             task_type=task.task_type,
+            owner_user_id=task.owner_user_id,
             status=TaskStatus.SUCCEEDED,
             result_data=result_data,
             error_message=None,
@@ -95,6 +132,7 @@ class SessionTaskService:
             id=task.id,
             session_id=task.session_id,
             task_type=task.task_type,
+            owner_user_id=task.owner_user_id,
             status=TaskStatus.FAILED,
             result_data=result_data or {},
             error_message=error_message,
@@ -110,8 +148,8 @@ class SessionTaskService:
     def get_session_upload_ids(self, session_id: str) -> list[str]:
         return [upload.id for upload in self.uploads.list_by_session(session_id)]
 
-    async def save_upload(self, session_id: str, upload_file: UploadFile) -> UploadedFile:
-        self.get_session(session_id)
+    async def save_upload(self, session_id: str, upload_file: UploadFile, owner_user_id: str = DEFAULT_OWNER_USER_ID) -> UploadedFile:
+        session = self.get_session_for_user(session_id, owner_user_id)
         file_bytes = await upload_file.read()
         file_id = f"upl_{uuid4().hex}"
         original_filename = upload_file.filename or "upload.bin"
@@ -121,14 +159,12 @@ class SessionTaskService:
             upload_id=file_id,
             original_filename=original_filename,
         )
-        storage_uri = self.storage.save_bytes(
-            storage_key=storage_key,
-            content=file_bytes,
-        )
+        storage_uri = self.storage.save_bytes(storage_key=storage_key, content=file_bytes)
 
         uploaded = UploadedFile(
             id=file_id,
             session_id=session_id,
+            owner_user_id=session.owner_user_id,
             original_filename=original_filename,
             content_type=content_type,
             size_bytes=len(file_bytes),
@@ -144,11 +180,9 @@ class SessionTaskService:
                     id=file_id,
                     session_id=session_id,
                     task_id=None,
+                    owner_user_id=session.owner_user_id,
                     kind="uploaded_source",
-                    file_type=_infer_file_type(
-                        original_filename=original_filename,
-                        content_type=content_type,
-                    ),
+                    file_type=_infer_file_type(original_filename=original_filename, content_type=content_type),
                     mime_type=content_type,
                     title=original_filename,
                     original_filename=original_filename,
