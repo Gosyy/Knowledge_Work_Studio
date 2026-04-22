@@ -6,6 +6,7 @@ import pytest
 from backend.app.composition import build_storage
 from backend.app.core.config import Settings, get_settings
 from backend.app.deployment import build_deployment_readiness
+from backend.app.integrations.file_storage import S3CompatibleFileStorage
 from backend.app.main import app
 
 
@@ -95,19 +96,59 @@ def test_l3_ready_endpoint_reports_approved_profile(monkeypatch, tmp_path: Path)
     assert payload["llm_provider"] == "gigachat"
 
 
-def test_l3_non_local_storage_never_silently_falls_back_to_local(tmp_path: Path) -> None:
+def test_l3_remote_storage_missing_config_fails_readiness(tmp_path: Path) -> None:
     settings = approved_settings(tmp_path).model_copy(
         update={
             "storage_backend": "minio",
-            "storage_endpoint": "https://storage.internal.example",
+            "storage_root": "",
+        }
+    )
+
+    readiness = build_deployment_readiness(settings)
+
+    assert readiness.status == "not_ready"
+    assert readiness.checks["storage_configured"] is False
+    assert any("Storage backend settings are incomplete." in error for error in readiness.errors)
+
+
+def test_l3_s3_compatible_storage_uses_real_adapter_path(monkeypatch, tmp_path: Path) -> None:
+    settings = approved_settings(tmp_path).model_copy(
+        update={
+            "storage_backend": "minio",
+            "storage_endpoint": "https://minio.internal.example:9000",
             "storage_bucket": "kw-studio",
             "storage_access_key": "access",
             "storage_secret_key": "secret",
+            "storage_addressing_style": "path",
         }
     )
 
     readiness = build_deployment_readiness(settings)
     assert readiness.checks["storage_configured"] is True
 
-    with pytest.raises(NotImplementedError, match="blocks silent fallback"):
-        build_storage(settings)
+    monkeypatch.setattr("backend.app.integrations.file_storage.s3.build_s3_client", lambda **kwargs: object())
+
+    storage = build_storage(settings)
+
+    assert isinstance(storage, S3CompatibleFileStorage)
+    assert storage.backend_name == "minio"
+    assert storage.make_uri(storage_key="uploads/ses_1/upl_1.txt") == "minio://kw-studio/uploads/ses_1/upl_1.txt"
+
+
+def test_l3_invalid_storage_addressing_style_fails_readiness(tmp_path: Path) -> None:
+    settings = approved_settings(tmp_path).model_copy(
+        update={
+            "storage_backend": "s3",
+            "storage_endpoint": "https://s3.internal.example",
+            "storage_bucket": "kw-studio",
+            "storage_access_key": "access",
+            "storage_secret_key": "secret",
+            "storage_addressing_style": "broken",
+        }
+    )
+
+    readiness = build_deployment_readiness(settings)
+
+    assert readiness.status == "not_ready"
+    assert readiness.checks["storage_addressing_style_supported"] is False
+    assert any("STORAGE_ADDRESSING_STYLE must be one of" in error for error in readiness.errors)

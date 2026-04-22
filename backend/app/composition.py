@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from backend.app.core.config import Settings
 from backend.app.integrations import get_storage_paths
-from backend.app.integrations.file_storage import LocalFileStorage
+from backend.app.integrations.file_storage import LocalFileStorage, RemoteObjectStorage, S3CompatibleFileStorage
 from backend.app.integrations.queue import InMemoryTaskExecutionQueue, TaskExecutionQueue
 from backend.app.repositories.storage import FileStorage
 from backend.app.integrations.llm import LLMProvider
@@ -157,11 +157,11 @@ def build_storage(settings: Settings) -> FileStorage:
     backend = resolve_storage_backend(settings)
     if backend == "local":
         return LocalFileStorage(get_storage_paths(settings))
-    raise NotImplementedError(
-        f"Storage backend '{backend}' is configured, but no production adapter is wired yet. "
-        "L3 blocks silent fallback to local storage; configure STORAGE_BACKEND=local with a "
-        "mounted internal storage volume or add a real remote storage adapter."
-    )
+    if backend == "remote_object_storage":
+        return RemoteObjectStorage.from_settings(settings)
+    if backend in {"minio", "s3"}:
+        return S3CompatibleFileStorage.from_settings(settings)
+    raise ValueError(f"Unsupported storage backend: {settings.storage_backend}")
 
 
 def build_app_container(settings: Settings) -> AppContainer:

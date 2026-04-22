@@ -1,6 +1,6 @@
 # KW Studio offline intranet deployment profile
 
-## Approved L3 deployment model
+## Approved L3/M5 deployment model
 
 KW Studio is hardened for this deployment profile:
 
@@ -21,6 +21,7 @@ METADATA_BACKEND=postgres
 SQLITE_RUNTIME_ALLOWED=false
 DATABASE_URL=postgresql+psycopg://kw_studio:<password>@postgres.internal:5432/kw_studio
 
+# Local binary storage on approved internal disk/NAS/mounted remote volume
 STORAGE_BACKEND=local
 STORAGE_ROOT=/srv/kw_studio/storage
 UPLOADS_DIR=/srv/kw_studio/storage/uploads
@@ -36,15 +37,27 @@ GIGACHAT_CLIENT_SECRET=<from secret store>
 SECRET_KEY=<from secret store>
 ```
 
-## Storage note
+## MinIO / S3-compatible object storage
 
-`STORAGE_BACKEND=local` is valid for offline intranet only when `STORAGE_ROOT`
-points to approved internal storage: local server disk, NAS, or a mounted remote
-storage volume.
+M5 wires a real S3-compatible object-storage adapter for MinIO, S3, or the
+generic `remote_object_storage` alias.
 
-Remote object storage configuration fields exist for deployment planning, but
-object-storage I/O must not silently fall back to local storage. Until a real
-remote adapter is wired, non-local storage backends fail loudly.
+Example internal MinIO profile:
+
+```bash
+STORAGE_BACKEND=minio
+STORAGE_ENDPOINT=https://minio.internal.example:9000
+STORAGE_BUCKET=kw-studio
+STORAGE_ACCESS_KEY=<from secret store>
+STORAGE_SECRET_KEY=<from secret store>
+STORAGE_REGION=us-east-1
+STORAGE_VERIFY_TLS=true
+STORAGE_ADDRESSING_STYLE=path
+```
+
+`STORAGE_ADDRESSING_STYLE=path` is the default because it is a safe internal
+default for MinIO/S3-compatible deployments. No silent fallback to local storage
+occurs when a remote object-storage backend is selected.
 
 ## Health and readiness
 
@@ -54,6 +67,7 @@ remote adapter is wired, non-local storage backends fail loudly.
   - Postgres metadata truth layer
   - SQLite disabled for runtime
   - storage configuration present
+  - supported addressing style
   - GigaChat-only provider
   - GigaChat URLs and credentials configured
   - non-default secret key configured

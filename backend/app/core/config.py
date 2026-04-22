@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     storage_secret_key: str = ""
     storage_region: str = ""
     storage_verify_tls: bool = True
+    storage_addressing_style: str = "path"
 
     repository_db_path: str = "./storage/repositories.sqlite3"
     migration_baseline_path: str = "./scripts/migrations/0001_repository_baseline.sql"

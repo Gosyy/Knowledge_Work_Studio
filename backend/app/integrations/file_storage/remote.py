@@ -1,25 +1,24 @@
 from __future__ import annotations
 
-from backend.app.repositories.storage import FileStorage
+from backend.app.core.config import Settings
+from backend.app.integrations.file_storage.s3 import S3CompatibleFileStorage, S3LikeClient
 
 
-class RemoteObjectStorage(FileStorage):
+class RemoteObjectStorage(S3CompatibleFileStorage):
     backend_name = "remote_object_storage"
 
-    def save_bytes(self, *, storage_key: str, content: bytes, content_type: str | None = None) -> str:
-        raise NotImplementedError("Remote object storage is a skeleton in F3 and not implemented yet")
-
-    def read_bytes(self, *, storage_key: str) -> bytes:
-        raise NotImplementedError("Remote object storage is a skeleton in F3 and not implemented yet")
-
-    def exists(self, *, storage_key: str) -> bool:
-        raise NotImplementedError("Remote object storage is a skeleton in F3 and not implemented yet")
-
-    def delete(self, *, storage_key: str) -> None:
-        raise NotImplementedError("Remote object storage is a skeleton in F3 and not implemented yet")
-
-    def get_size(self, *, storage_key: str) -> int | None:
-        raise NotImplementedError("Remote object storage is a skeleton in F3 and not implemented yet")
-
-    def make_uri(self, *, storage_key: str) -> str:
-        raise NotImplementedError("Remote object storage is a skeleton in F3 and not implemented yet")
+    @classmethod
+    def from_settings(
+        cls,
+        settings: Settings,
+        *,
+        client: S3LikeClient | None = None,
+    ) -> "RemoteObjectStorage":
+        storage = super().from_settings(
+            settings,
+            client=client,
+            backend_name=cls.backend_name,
+        )
+        if not isinstance(storage, cls):
+            storage.__class__ = cls
+        return storage

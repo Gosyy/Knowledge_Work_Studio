@@ -6,6 +6,7 @@ from typing import Any
 from backend.app.core.config import Settings
 
 _ALLOWED_STORAGE_BACKENDS = {"local", "remote_object_storage", "minio", "s3"}
+_ALLOWED_STORAGE_ADDRESSING_STYLES = {"path", "virtual"}
 _APPROVED_DEPLOYMENT_MODE = "offline_intranet"
 _APPROVED_METADATA_BACKEND = "postgres"
 _APPROVED_LLM_PROVIDER = "gigachat"
@@ -53,6 +54,7 @@ def build_deployment_readiness(settings: Settings) -> DeploymentReadiness:
     metadata_backend = _normalized(settings.metadata_backend)
     storage_backend = _normalized(settings.storage_backend)
     llm_provider = _normalized(settings.llm_provider)
+    storage_addressing_style = _normalized(settings.storage_addressing_style)
 
     checks: dict[str, bool] = {
         "offline_intranet_mode": deployment_mode == _APPROVED_DEPLOYMENT_MODE,
@@ -70,8 +72,10 @@ def build_deployment_readiness(settings: Settings) -> DeploymentReadiness:
         and len(settings.secret_key) >= 16,
     }
 
-    storage_configured = False
     warnings: list[str] = []
+    storage_configured = False
+    addressing_style_supported = True
+
     if storage_backend == "local":
         storage_configured = _is_set(settings.storage_root)
         warnings.append(
@@ -79,17 +83,20 @@ def build_deployment_readiness(settings: Settings) -> DeploymentReadiness:
             "points to approved internal disk, NAS, or a mounted remote storage volume."
         )
     elif storage_backend in _ALLOWED_STORAGE_BACKENDS:
-        storage_configured = _is_set(settings.storage_endpoint) and _is_set(settings.storage_bucket)
-        if storage_backend in {"minio", "s3"}:
-            storage_configured = (
-                storage_configured
-                and _is_set(settings.storage_access_key)
-                and _is_set(settings.storage_secret_key)
-            )
-        warnings.append(
-            "Remote object storage configuration is validated here, but object-storage "
-            "I/O must be backed by a real adapter before production use."
+        addressing_style_supported = storage_addressing_style in _ALLOWED_STORAGE_ADDRESSING_STYLES
+        storage_configured = (
+            _is_set(settings.storage_endpoint)
+            and _is_set(settings.storage_bucket)
+            and _is_set(settings.storage_access_key)
+            and _is_set(settings.storage_secret_key)
+            and addressing_style_supported
         )
+        warnings.append(
+            "Remote object storage uses the internal S3-compatible adapter path. "
+            "No silent fallback to local storage occurs."
+        )
+
+    checks["storage_addressing_style_supported"] = addressing_style_supported
     checks["storage_configured"] = storage_configured
 
     errors: list[str] = []
@@ -105,6 +112,12 @@ def build_deployment_readiness(settings: Settings) -> DeploymentReadiness:
         errors.append(
             "STORAGE_BACKEND must be one of: "
             + ", ".join(sorted(_ALLOWED_STORAGE_BACKENDS))
+            + "."
+        )
+    if not checks["storage_addressing_style_supported"]:
+        errors.append(
+            "STORAGE_ADDRESSING_STYLE must be one of: "
+            + ", ".join(sorted(_ALLOWED_STORAGE_ADDRESSING_STYLES))
             + "."
         )
     if not checks["storage_configured"]:
