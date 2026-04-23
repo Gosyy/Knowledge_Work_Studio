@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from backend.app.services.slides_service.media import SlideMediaAsset
+
 
 class SlideType(str, Enum):
     TITLE = "title"
@@ -32,6 +34,7 @@ class PlannedSlide:
     bullets: tuple[str, ...]
     speaker_notes: str | None = None
     layout_hint: str | None = None
+    media_assets: tuple[SlideMediaAsset, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -95,7 +98,11 @@ def build_presentation_plan(
             stage = StoryArcStage.CLOSE
         else:
             slide_type = _BODY_SEQUENCE[(index - 2) % len(_BODY_SEQUENCE)]
-            stage = StoryArcStage.ANALYSIS if slide_type in {SlideType.CONTENT, SlideType.DATA} else StoryArcStage.RECOMMENDATION
+            stage = (
+                StoryArcStage.ANALYSIS
+                if slide_type in {SlideType.CONTENT, SlideType.DATA}
+                else StoryArcStage.RECOMMENDATION
+            )
 
         planned_slides.append(
             PlannedSlide(

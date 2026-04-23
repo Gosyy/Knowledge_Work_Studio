@@ -14,6 +14,15 @@ class ShapeBox:
 
 
 @dataclass(frozen=True)
+class ImagePlaceholderBox:
+    placeholder_id: str
+    x: int
+    y: int
+    cx: int
+    cy: int
+
+
+@dataclass(frozen=True)
 class SlideLayoutSpec:
     layout_id: str
     title_box: ShapeBox
@@ -23,6 +32,7 @@ class SlideLayoutSpec:
     title_bold: bool = True
     title_align: str = "left"
     body_align: str = "left"
+    image_placeholders: tuple[ImagePlaceholderBox, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -157,6 +167,24 @@ def _build_layouts() -> dict[str, SlideLayoutSpec]:
             body_boxes=(ShapeBox(1143000, 2057400, 6858000, 1828800),),
             title_size=3200,
             body_size=2100,
+            title_align="center",
+            body_align="center",
+        ),
+        "content_with_visual": SlideLayoutSpec(
+            layout_id="content_with_visual",
+            title_box=ShapeBox(457200, 274320, 8229600, 914400),
+            body_boxes=(ShapeBox(685800, 1371600, 3429000, 4114800),),
+            image_placeholders=(ImagePlaceholderBox("primary_visual", 4343400, 1371600, 3429000, 4114800),),
+            title_size=3000,
+            body_size=1900,
+        ),
+        "title_with_visual": SlideLayoutSpec(
+            layout_id="title_with_visual",
+            title_box=ShapeBox(685800, 548640, 7772400, 914400),
+            body_boxes=(ShapeBox(1143000, 4800600, 6858000, 685800),),
+            image_placeholders=(ImagePlaceholderBox("hero_visual", 1600200, 1600200, 5943600, 2743200),),
+            title_size=3400,
+            body_size=2000,
             title_align="center",
             body_align="center",
         ),

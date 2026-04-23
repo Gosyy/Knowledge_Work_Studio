@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from html import escape
 import io
 import zipfile
 
-from backend.app.services.slides_service.layouts import ResolvedSlideLayout, SlideTemplate, get_template, resolve_layout_for_slide
+from backend.app.services.slides_service.layouts import ImagePlaceholderBox, ResolvedSlideLayout, ShapeBox, SlideLayoutSpec, SlideTemplate, get_template, resolve_layout_for_slide
+from backend.app.services.slides_service.media import ImageFitMode, SlideMediaAsset
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, SlideType, StoryArcStage
 
 P_NS = "http://schemas.openxmlformats.org/presentationml/2006/main"
@@ -12,11 +14,23 @@ A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
 R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 
 
+@dataclass(frozen=True)
+class PreparedSlideMedia:
+    rel_id: str
+    media_path: str
+    asset: SlideMediaAsset
+    placeholder: ImagePlaceholderBox
+    render_box: ShapeBox
+    src_rect_xml: str
+
+
 def generate_pptx_from_plan(plan: PresentationPlan, *, template_id: str = "default_light") -> bytes:
     template = get_template(template_id)
+    media_extensions = _collect_media_extensions(plan)
     buffer = io.BytesIO()
+    media_counter = 1
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as pptx:
-        pptx.writestr("[Content_Types].xml", _content_types_xml(len(plan.slides)))
+        pptx.writestr("[Content_Types].xml", _content_types_xml(len(plan.slides), media_extensions=media_extensions))
         pptx.writestr("_rels/.rels", _root_relationships_xml())
         pptx.writestr("docProps/core.xml", _core_properties_xml(plan.deck_title))
         pptx.writestr("docProps/app.xml", _app_properties_xml(len(plan.slides)))
@@ -29,8 +43,17 @@ def generate_pptx_from_plan(plan: PresentationPlan, *, template_id: str = "defau
         pptx.writestr("ppt/slideLayouts/_rels/slideLayout1.xml.rels", _slide_layout_relationships_xml())
         for index, slide in enumerate(plan.slides, start=1):
             resolved_layout = resolve_layout_for_slide(slide, template_id=template.template_id)
-            pptx.writestr(f"ppt/slides/slide{index}.xml", _slide_xml(slide, index=index, resolved_layout=resolved_layout))
-            pptx.writestr(f"ppt/slides/_rels/slide{index}.xml.rels", _slide_relationships_xml())
+            prepared_media, media_counter = _prepare_slide_media(slide=slide, resolved_layout=resolved_layout, media_counter=media_counter)
+            for item in prepared_media:
+                pptx.writestr(item.media_path, item.asset.data)
+            pptx.writestr(
+                f"ppt/slides/slide{index}.xml",
+                _slide_xml(slide, index=index, resolved_layout=resolved_layout, prepared_media=prepared_media),
+            )
+            pptx.writestr(
+                f"ppt/slides/_rels/slide{index}.xml.rels",
+                _slide_relationships_xml(prepared_media),
+            )
     return buffer.getvalue()
 
 
@@ -78,15 +101,102 @@ def _outline_to_plan(outline: tuple[SlideOutlineItem, ...]) -> PresentationPlan:
     )
 
 
-def _content_types_xml(slide_count: int) -> str:
+def _collect_media_extensions(plan: PresentationPlan) -> set[str]:
+    extensions: set[str] = set()
+    for slide in plan.slides:
+        for asset in slide.media_assets:
+            extensions.add(asset.extension())
+    return extensions
+
+
+def _prepare_slide_media(*, slide: PlannedSlide, resolved_layout: ResolvedSlideLayout, media_counter: int) -> tuple[tuple[PreparedSlideMedia, ...], int]:
+    assets = slide.media_assets
+    if not assets:
+        return (), media_counter
+
+    placeholders = resolved_layout.layout.image_placeholders
+    if not placeholders:
+        raise ValueError(
+            f"Layout '{resolved_layout.layout.layout_id}' does not define image placeholders for slide '{slide.slide_id}'."
+        )
+    if len(assets) > len(placeholders):
+        raise ValueError(
+            f"Slide '{slide.slide_id}' has {len(assets)} media asset(s) but layout '{resolved_layout.layout.layout_id}' only provides {len(placeholders)} placeholder(s)."
+        )
+
+    prepared: list[PreparedSlideMedia] = []
+    next_counter = media_counter
+    for offset, (asset, placeholder) in enumerate(zip(assets, placeholders, strict=False), start=0):
+        extension = asset.extension()
+        media_filename = f"image{next_counter}.{extension}"
+        media_path = f"ppt/media/{media_filename}"
+        rel_id = f"rId{offset + 2}"
+        render_box, src_rect_xml = _resolve_media_box(asset=asset, placeholder=placeholder)
+        prepared.append(
+            PreparedSlideMedia(
+                rel_id=rel_id,
+                media_path=media_path,
+                asset=asset,
+                placeholder=placeholder,
+                render_box=render_box,
+                src_rect_xml=src_rect_xml,
+            )
+        )
+        next_counter += 1
+    return tuple(prepared), next_counter
+
+
+def _resolve_media_box(*, asset: SlideMediaAsset, placeholder: ImagePlaceholderBox) -> tuple[ShapeBox, str]:
+    width_px, height_px = asset.normalized_dimensions()
+    asset_ratio = width_px / height_px
+    placeholder_ratio = placeholder.cx / placeholder.cy
+
+    if asset.fit_mode is ImageFitMode.STRETCH:
+        return ShapeBox(placeholder.x, placeholder.y, placeholder.cx, placeholder.cy), ""
+
+    if asset.fit_mode is ImageFitMode.COVER:
+        src_rect_xml = _src_rect_for_cover(asset_ratio=asset_ratio, placeholder_ratio=placeholder_ratio)
+        return ShapeBox(placeholder.x, placeholder.y, placeholder.cx, placeholder.cy), src_rect_xml
+
+    # contain
+    if asset_ratio >= placeholder_ratio:
+        render_cx = placeholder.cx
+        render_cy = max(1, round(placeholder.cx / asset_ratio))
+        render_x = placeholder.x
+        render_y = placeholder.y + max(0, (placeholder.cy - render_cy) // 2)
+    else:
+        render_cy = placeholder.cy
+        render_cx = max(1, round(placeholder.cy * asset_ratio))
+        render_x = placeholder.x + max(0, (placeholder.cx - render_cx) // 2)
+        render_y = placeholder.y
+    return ShapeBox(render_x, render_y, render_cx, render_cy), ""
+
+
+def _src_rect_for_cover(*, asset_ratio: float, placeholder_ratio: float) -> str:
+    if asset_ratio == placeholder_ratio:
+        return ""
+    if asset_ratio > placeholder_ratio:
+        visible_fraction = placeholder_ratio / asset_ratio
+        crop_each_side = max(0.0, (1.0 - visible_fraction) / 2.0)
+        amount = min(100000, max(0, round(crop_each_side * 100000)))
+        return f'<a:srcRect l="{amount}" r="{amount}"/>'
+    visible_fraction = asset_ratio / placeholder_ratio
+    crop_each_side = max(0.0, (1.0 - visible_fraction) / 2.0)
+    amount = min(100000, max(0, round(crop_each_side * 100000)))
+    return f'<a:srcRect t="{amount}" b="{amount}"/>'
+
+
+def _content_types_xml(slide_count: int, *, media_extensions: set[str]) -> str:
     slide_overrides = "\n".join(
         f'  <Override PartName="/ppt/slides/slide{index}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>'
         for index in range(1, slide_count + 1)
     )
+    media_defaults = "\n".join(_media_default_xml(extension) for extension in sorted(media_extensions))
+    media_defaults_block = f"\n{media_defaults}" if media_defaults else ""
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>{media_defaults_block}
   <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
   <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
   <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
@@ -96,6 +206,18 @@ def _content_types_xml(slide_count: int) -> str:
 {slide_overrides}
 </Types>
 '''
+
+
+def _media_default_xml(extension: str) -> str:
+    if extension == "png":
+        content_type = "image/png"
+    elif extension == "jpg":
+        content_type = "image/jpeg"
+    elif extension == "gif":
+        content_type = "image/gif"
+    else:
+        raise ValueError(f"Unsupported media extension: {extension}")
+    return f'  <Default Extension="{extension}" ContentType="{content_type}"/>'
 
 
 def _root_relationships_xml() -> str:
@@ -140,14 +262,14 @@ def _presentation_xml(slide_count: int) -> str:
 '''
 
 
-def _slide_xml(slide: PlannedSlide, *, index: int, resolved_layout: ResolvedSlideLayout) -> str:
+def _slide_xml(slide: PlannedSlide, *, index: int, resolved_layout: ResolvedSlideLayout, prepared_media: tuple[PreparedSlideMedia, ...]) -> str:
     template = resolved_layout.template
     layout = resolved_layout.layout
     title = _xml_text(slide.title)
     body_boxes_xml = _body_boxes_xml(slide=slide, layout=layout, template=template, index=index)
+    media_xml = _picture_shapes_xml(prepared_media=prepared_media, index=index)
     title_box = layout.title_box
     title_alignment = "ctr" if layout.title_align == "center" else "l"
-    body_background = "FFFFFF" if template.background_color == "FFFFFF" else template.background_color
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:p="{P_NS}" xmlns:a="{A_NS}" xmlns:r="{R_NS}">
   <p:cSld>
@@ -161,6 +283,7 @@ def _slide_xml(slide: PlannedSlide, *, index: int, resolved_layout: ResolvedSlid
         <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="{title_alignment}"/><a:r><a:rPr lang="en-US" sz="{layout.title_size}" b="{1 if layout.title_bold else 0}"><a:solidFill><a:srgbClr val="{template.title_color}"/></a:solidFill><a:latin typeface="{template.font_family}"/></a:rPr><a:t>{title}</a:t></a:r></a:p></p:txBody>
       </p:sp>
 {body_boxes_xml}
+{media_xml}
     </p:spTree>
   </p:cSld>
   <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
@@ -168,7 +291,7 @@ def _slide_xml(slide: PlannedSlide, *, index: int, resolved_layout: ResolvedSlid
 '''
 
 
-def _body_boxes_xml(*, slide: PlannedSlide, layout, template: SlideTemplate, index: int) -> str:
+def _body_boxes_xml(*, slide: PlannedSlide, layout: SlideLayoutSpec, template: SlideTemplate, index: int) -> str:
     if len(layout.body_boxes) == 2:
         midpoint = max(1, (len(slide.bullets) + 1) // 2)
         bullet_groups = (slide.bullets[:midpoint], slide.bullets[midpoint:] or ("No secondary comparison point",))
@@ -178,7 +301,17 @@ def _body_boxes_xml(*, slide: PlannedSlide, layout, template: SlideTemplate, ind
     body_xml: list[str] = []
     for offset, (box, bullets) in enumerate(zip(layout.body_boxes, bullet_groups, strict=False), start=2):
         alignment = "ctr" if layout.body_align == "center" else "l"
-        bullet_paragraphs = "\n".join(_bullet_paragraph_xml(text=bullet, font_size=layout.body_size, color=template.body_color, font_family=template.font_family, alignment=alignment, accent_color=template.accent_color) for bullet in bullets)
+        bullet_paragraphs = "\n".join(
+            _bullet_paragraph_xml(
+                text=bullet,
+                font_size=layout.body_size,
+                color=template.body_color,
+                font_family=template.font_family,
+                alignment=alignment,
+                accent_color=template.accent_color,
+            )
+            for bullet in bullets
+        )
         body_xml.append(
             f'''      <p:sp>
         <p:nvSpPr><p:cNvPr id="{index * 10 + offset}" name="Content {index}-{offset}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="{offset - 1}"/></p:nvPr></p:nvSpPr>
@@ -191,6 +324,32 @@ def _body_boxes_xml(*, slide: PlannedSlide, layout, template: SlideTemplate, ind
     return "\n".join(body_xml)
 
 
+def _picture_shapes_xml(*, prepared_media: tuple[PreparedSlideMedia, ...], index: int) -> str:
+    xml: list[str] = []
+    for offset, item in enumerate(prepared_media, start=1):
+        alt_text = _xml_text(item.asset.alt_text or item.asset.filename)
+        src_rect = item.src_rect_xml or ""
+        xml.append(
+            f'''      <p:pic>
+        <p:nvPicPr>
+          <p:cNvPr id="{index * 100 + offset}" name="Picture {index}-{offset}" descr="{alt_text}"/>
+          <p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>
+          <p:nvPr/>
+        </p:nvPicPr>
+        <p:blipFill>
+          <a:blip r:embed="{item.rel_id}"/>
+          {src_rect}
+          <a:stretch><a:fillRect/></a:stretch>
+        </p:blipFill>
+        <p:spPr>
+          <a:xfrm><a:off x="{item.render_box.x}" y="{item.render_box.y}"/><a:ext cx="{item.render_box.cx}" cy="{item.render_box.cy}"/></a:xfrm>
+          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+        </p:spPr>
+      </p:pic>'''
+        )
+    return "\n".join(xml)
+
+
 def _bullet_paragraph_xml(*, text: str, font_size: int, color: str, font_family: str, alignment: str, accent_color: str) -> str:
     return (
         '          <a:p><a:pPr lvl="0" algn="{alignment}"><a:buChar char="•"/><a:defRPr sz="{font_size}"><a:solidFill><a:srgbClr val="{accent_color}"/></a:solidFill></a:defRPr></a:pPr>'
@@ -198,10 +357,17 @@ def _bullet_paragraph_xml(*, text: str, font_size: int, color: str, font_family:
     ).format(alignment=alignment, font_size=font_size, color=color, font_family=font_family, accent_color=accent_color, text=_xml_text(text))
 
 
-def _slide_relationships_xml() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+def _slide_relationships_xml(prepared_media: tuple[PreparedSlideMedia, ...]) -> str:
+    relationships = [
+        '  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>'
+    ]
+    relationships.extend(
+        f'  <Relationship Id="{item.rel_id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/{item.media_path.rsplit("/", 1)[-1]}"/>'
+        for item in prepared_media
+    )
+    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+{chr(10).join(relationships)}
 </Relationships>
 '''
 
