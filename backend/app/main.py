@@ -1,19 +1,12 @@
 from contextlib import asynccontextmanager
-import logging
 
 from fastapi import FastAPI
 
+from backend.app.api.routes import get_api_router
 from backend.app.core.config import get_settings
 from backend.app.integrations.database import initialize_database
-from backend.app.api.routes import get_api_router
+from backend.app.observability import RequestLoggingMiddleware, configure_logging
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-)
-
-logger = logging.getLogger(__name__)
 
 _OPENAPI_TAGS = [
     {"name": "health", "description": "Health and readiness endpoints for backend and deployment checks."},
@@ -23,13 +16,13 @@ _OPENAPI_TAGS = [
     {"name": "artifacts", "description": "Artifact listing, metadata lookup, and download endpoints for generated outputs."},
 ]
 
+configure_logging(get_settings().log_level)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting KW Studio backend")
     initialize_database(get_settings())
     yield
-    logger.info("Stopping KW Studio backend")
 
 
 def create_app() -> FastAPI:
@@ -43,6 +36,7 @@ def create_app() -> FastAPI:
         openapi_tags=_OPENAPI_TAGS,
         lifespan=lifespan,
     )
+    app.add_middleware(RequestLoggingMiddleware)
     app.include_router(get_api_router())
     return app
 

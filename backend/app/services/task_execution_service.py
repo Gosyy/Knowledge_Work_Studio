@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable
@@ -8,6 +9,8 @@ from uuid import uuid4
 from backend.app.domain import ExecutionRun, Task
 from backend.app.repositories import ExecutionRunRepository
 from backend.app.services.session_task_service import SessionTaskService
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -19,6 +22,14 @@ class TaskExecutionService:
     def execute(self, task_id: str, runner: Callable[[Task], dict[str, Any]]) -> Task:
         running_task = self.session_task_service.mark_task_running(task_id)
         execution_run = self._start_execution_run(running_task)
+        logger.info(
+            "task_execution_started",
+            extra={
+                "task_id": task_id,
+                "engine_type": self.engine_type,
+                "execution_run_id": execution_run.id if execution_run else None,
+            },
+        )
         try:
             result_data = runner(running_task)
         except Exception as exc:  # deliberately captures runner failures with explicit lifecycle handling
@@ -29,6 +40,15 @@ class TaskExecutionService:
                 error_message=str(exc),
             )
             failed_result_data = {"execution_run_id": execution_run.id} if execution_run else None
+            logger.error(
+                "task_execution_failed",
+                extra={
+                    "task_id": task_id,
+                    "engine_type": self.engine_type,
+                    "execution_run_id": execution_run.id if execution_run else None,
+                    "error_message": str(exc),
+                },
+            )
             return self.session_task_service.mark_task_failed(
                 task_id,
                 error_message=str(exc),
@@ -43,6 +63,15 @@ class TaskExecutionService:
         )
         if execution_run is not None:
             result_data = {**result_data, "execution_run_id": execution_run.id}
+        logger.info(
+            "task_execution_succeeded",
+            extra={
+                "task_id": task_id,
+                "engine_type": self.engine_type,
+                "execution_run_id": execution_run.id if execution_run else None,
+                "result_keys": sorted(result_data.keys()),
+            },
+        )
         return self.session_task_service.mark_task_succeeded(task_id, result_data=result_data)
 
     def _start_execution_run(self, task: Task) -> ExecutionRun | None:
