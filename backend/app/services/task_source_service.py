@@ -15,6 +15,7 @@ from backend.app.repositories import (
     StoredFileRepository,
     UploadedFileRepository,
 )
+from backend.app.services.source_extraction import BinarySourceExtractor, ExtractionResult
 
 _TEXT_FILE_TYPES = {"txt", "md", "csv", "json", "yaml", "yml", "log"}
 
@@ -56,6 +57,7 @@ class TaskSourceService:
     artifact_sources: ArtifactSourceRepository
     derived_contents: DerivedContentRepository
     storage: FileStorage
+    extractor: BinarySourceExtractor = BinarySourceExtractor()
 
     def build_execution_input(
         self,
@@ -267,12 +269,13 @@ class TaskSourceService:
         stored_file: StoredFile,
         source_label: str,
     ) -> str:
-        cached_text = self._get_cached_extracted_text(stored_file.id)
-        if cached_text is not None:
-            return cached_text
+        cached = self._get_cached_extracted_content(stored_file.id)
+        if cached is not None:
+            return cached.text
 
-        content = self._read_text_content(
-            storage_key=stored_file.storage_key,
+        raw_content = self.storage.read_bytes(storage_key=stored_file.storage_key)
+        extracted = self.extractor.extract(
+            raw_content=raw_content,
             file_type=stored_file.file_type,
             mime_type=stored_file.mime_type,
             source_label=source_label,
@@ -281,42 +284,24 @@ class TaskSourceService:
             DerivedContent(
                 id=f"dcon_{uuid4().hex}",
                 file_id=stored_file.id,
-                content_kind="extracted_text",
-                text_content=content,
+                content_kind=extracted.content_kind,
+                text_content=extracted.text,
                 structured_json=None,
-                outline_json=None,
+                outline_json=extracted.outline_json,
                 language=None,
             )
         )
-        return content
+        return extracted.text
 
-    def _get_cached_extracted_text(self, file_id: str) -> str | None:
+    def _get_cached_extracted_content(self, file_id: str) -> ExtractionResult | None:
         for derived_content in self.derived_contents.list_by_file(file_id):
-            if (
-                derived_content.content_kind == "extracted_text"
-                and derived_content.text_content is not None
-            ):
-                return derived_content.text_content
-        return None
-
-    def _read_text_content(
-        self,
-        *,
-        storage_key: str,
-        file_type: str,
-        mime_type: str,
-        source_label: str,
-    ) -> str:
-        normalized_file_type = (file_type or "").lower()
-        normalized_mime_type = (mime_type or "").lower()
-        is_text_like = normalized_mime_type.startswith("text/") or normalized_file_type in _TEXT_FILE_TYPES
-        if not is_text_like:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    f"{source_label} is not text-compatible for official G2 execution yet. "
-                    "Binary/non-text source extraction belongs to later phases."
-                ),
+            if derived_content.text_content is None:
+                continue
+            if derived_content.content_kind != "extracted_text":
+                continue
+            return ExtractionResult(
+                text=derived_content.text_content,
+                outline_json=derived_content.outline_json,
+                content_kind=derived_content.content_kind,
             )
-        raw_content = self.storage.read_bytes(storage_key=storage_key)
-        return raw_content.decode("utf-8", errors="replace")
+        return None
