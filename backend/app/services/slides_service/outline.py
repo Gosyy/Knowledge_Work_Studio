@@ -187,9 +187,15 @@ def _speaker_notes_for_type(slide_type: SlideType) -> str:
 
 def _layout_hint_for_type(slide_type: SlideType) -> str:
     if slide_type is SlideType.COMPARISON:
-        return "comparison_placeholder"
+        return "two_column_comparison"
     if slide_type is SlideType.TIMELINE:
-        return "timeline_placeholder"
+        return "timeline"
     if slide_type is SlideType.DATA:
-        return "data_placeholder"
-    return "text_placeholder"
+        return "data_summary"
+    if slide_type is SlideType.TITLE:
+        return "title_slide"
+    if slide_type in {SlideType.SECTION, SlideType.APPENDIX}:
+        return "section_slide"
+    if slide_type is SlideType.CONCLUSION:
+        return "conclusion"
+    return "title_and_bullets"
