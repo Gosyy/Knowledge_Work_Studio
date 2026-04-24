@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from enum import Enum
 from hashlib import sha256
@@ -15,6 +15,7 @@ from backend.app.repositories import (
 )
 from backend.app.services.slides_service.generator import generate_pptx_from_plan
 from backend.app.services.slides_service.outline import PlannedSlide, PresentationPlan, StoryArcStage
+from backend.app.services.slides_service.revision_strategy import DeterministicRevisionStrategy, SlideRevisionStrategy
 
 
 _PPTX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
@@ -69,12 +70,17 @@ class DeckRevisionService:
     stored_files: StoredFileRepository
     presentations: PresentationRepository
     presentation_versions: PresentationVersionRepository
+    revision_strategy: SlideRevisionStrategy = field(default_factory=DeterministicRevisionStrategy)
 
     def regenerate_slide(self, request: DeckRevisionRequest) -> DeckRevisionResult:
         presentation = self._require_presentation(request.presentation_id)
         target_index = self._resolve_target_slide_index(request.plan, request)
         old_slide = request.plan.slides[target_index]
-        new_slide = _revise_slide(old_slide, instruction=request.instruction)
+        new_slide = self.revision_strategy.revise_slide(
+            old_slide,
+            instruction=request.instruction,
+            task_id=request.task_id,
+        )
 
         slides = list(request.plan.slides)
         slides[target_index] = new_slide
@@ -99,7 +105,11 @@ class DeckRevisionService:
         deltas: list[SlideRevisionDelta] = []
         for slide in request.plan.slides:
             if slide.story_arc_stage is target_stage:
-                revised_slide = _revise_slide(slide, instruction=request.instruction)
+                revised_slide = self.revision_strategy.revise_slide(
+                    slide,
+                    instruction=request.instruction,
+                    task_id=request.task_id,
+                )
                 slides.append(revised_slide)
                 revised_slide_ids.append(revised_slide.slide_id)
                 deltas.append(_build_delta(slide, revised_slide))

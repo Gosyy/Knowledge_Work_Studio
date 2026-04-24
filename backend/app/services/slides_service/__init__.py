@@ -18,6 +18,12 @@ from backend.app.services.slides_service.revision import (
     DeckRevisionService,
     SlideRevisionDelta,
 )
+from backend.app.services.slides_service.revision_strategy import (
+    DeterministicRevisionStrategy,
+    LLMRevisionStrategy,
+    LLMRevisionPayload,
+    SlideRevisionStrategy,
+)
 from backend.app.services.slides_service.source_grounding import (
     SlideCitation,
     SourceFragment,
@@ -31,6 +37,10 @@ from backend.app.services.slides_service.service import SlidesService, SlidesTra
 __all__ = [
     "DeterministicPatternImageProvider",
     "SlideRevisionDelta",
+    "SlideRevisionStrategy",
+    "LLMRevisionPayload",
+    "LLMRevisionStrategy",
+    "DeterministicRevisionStrategy",
     "DeckRevisionService",
     "DeckRevisionScope",
     "DeckRevisionResult",
