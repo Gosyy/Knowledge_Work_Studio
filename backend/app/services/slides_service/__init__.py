@@ -11,6 +11,13 @@ from backend.app.services.slides_service.image_pipeline import (
 from backend.app.services.slides_service.layouts import ImagePlaceholderBox, ResolvedSlideLayout, ShapeBox, SlideLayoutSpec, SlideTemplate, get_template, get_template_registry, resolve_layout_for_slide
 from backend.app.services.slides_service.media import ImageFitMode, SlideMediaAsset
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, SlideType, StoryArcStage, build_presentation_plan, build_slides_outline, plan_to_outline
+from backend.app.services.slides_service.revision import (
+    DeckRevisionRequest,
+    DeckRevisionResult,
+    DeckRevisionScope,
+    DeckRevisionService,
+    SlideRevisionDelta,
+)
 from backend.app.services.slides_service.source_grounding import (
     SlideCitation,
     SourceFragment,
@@ -23,6 +30,11 @@ from backend.app.services.slides_service.service import SlidesService, SlidesTra
 
 __all__ = [
     "DeterministicPatternImageProvider",
+    "SlideRevisionDelta",
+    "DeckRevisionService",
+    "DeckRevisionScope",
+    "DeckRevisionResult",
+    "DeckRevisionRequest",
     "ImageFitMode",
     "ImagePlaceholderBox",
     "ImageSpec",
