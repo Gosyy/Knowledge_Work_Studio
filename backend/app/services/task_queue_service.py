@@ -71,7 +71,11 @@ class TaskQueueService:
                 presentation_ids=self._payload_list(job.payload, "presentation_ids"),
             )
 
-            executed_task = self.coordinator.execute_task(job.task_id, content=resolved_input.content)
+            executed_task = self.coordinator.execute_task(
+                job.task_id,
+                content=resolved_input.content,
+                source_refs=resolved_input.as_grounding_refs(),
+            )
 
             if executed_task.status is not TaskStatus.SUCCEEDED:
                 return self.queue.fail(

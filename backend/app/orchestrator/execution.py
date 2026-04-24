@@ -44,7 +44,7 @@ class OrchestratorExecutionCoordinator:
         self._pdf_service = pdf_service
         self._slides_service = slides_service
 
-    def execute_task(self, task_id: str, *, content: str) -> Task:
+    def execute_task(self, task_id: str, *, content: str, source_refs: tuple[dict[str, str], ...] = ()) -> Task:
         logger.info(
             "orchestrator_execute_task",
             extra={
@@ -52,9 +52,12 @@ class OrchestratorExecutionCoordinator:
                 "content_length": len(content),
             },
         )
-        return self._task_execution_service.execute(task_id, lambda task: self._run_task(task, content=content))
+        return self._task_execution_service.execute(
+            task_id,
+            lambda task: self._run_task(task, content=content, source_refs=source_refs),
+        )
 
-    def _run_task(self, task: Task, *, content: str) -> dict[str, object]:
+    def _run_task(self, task: Task, *, content: str, source_refs: tuple[dict[str, str], ...] = ()) -> dict[str, object]:
         _ = self._task_router.route(task.task_type)
         logger.info(
             "orchestrator_service_dispatch",
@@ -64,7 +67,7 @@ class OrchestratorExecutionCoordinator:
                 "content_length": len(content),
             },
         )
-        service_result = self._execute_service(task, content)
+        service_result = self._execute_service(task, content, source_refs=source_refs)
 
         if service_result.artifact_content is None:
             artifact = self._artifact_service.create_placeholder_artifact(
@@ -89,7 +92,7 @@ class OrchestratorExecutionCoordinator:
             **service_result.result_metadata,
         }
 
-    def _execute_service(self, task: Task, content: str) -> ServiceExecutionResult:
+    def _execute_service(self, task: Task, content: str, source_refs: tuple[dict[str, str], ...] = ()) -> ServiceExecutionResult:
         task_type = task.task_type
         if task_type is TaskType.DOCX_EDIT:
             result = self._docx_service.transform(
@@ -127,6 +130,7 @@ class OrchestratorExecutionCoordinator:
                     session_id=task.session_id,
                     task_id=task.id,
                     owner_user_id=task.owner_user_id,
+                    source_refs=source_refs,
                 )
             )
             return ServiceExecutionResult(

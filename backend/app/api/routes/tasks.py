@@ -108,7 +108,11 @@ def execute_task(
         presentation_ids=execute_request.presentation_ids,
     )
 
-    executed_task = coordinator.execute_task(task_id, content=resolved_input.content)
+    executed_task = coordinator.execute_task(
+        task_id,
+        content=resolved_input.content,
+        source_refs=resolved_input.as_grounding_refs(),
+    )
 
     if executed_task.status is not TaskStatus.SUCCEEDED:
         return _task_to_schema(executed_task)

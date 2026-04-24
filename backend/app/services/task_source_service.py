@@ -21,6 +21,12 @@ _TEXT_FILE_TYPES = {"txt", "md", "csv", "json", "yaml", "yml", "log"}
 
 
 @dataclass(frozen=True)
+class ResolvedContent:
+    text: str
+    derived_content_id: str | None = None
+
+
+@dataclass(frozen=True)
 class ResolvedSource:
     kind: str
     source_id: str
@@ -29,6 +35,7 @@ class ResolvedSource:
     source_file_id: str | None = None
     source_document_id: str | None = None
     source_presentation_id: str | None = None
+    derived_content_id: str | None = None
 
     def as_result_ref(self) -> dict[str, str]:
         return {
@@ -36,6 +43,17 @@ class ResolvedSource:
             "source_id": self.source_id,
             "role": self.role,
         }
+
+    def as_grounding_ref(self) -> dict[str, str]:
+        payload = self.as_result_ref()
+        optional_refs = {
+            "source_file_id": self.source_file_id,
+            "source_document_id": self.source_document_id,
+            "source_presentation_id": self.source_presentation_id,
+            "derived_content_id": self.derived_content_id,
+        }
+        payload.update({key: value for key, value in optional_refs.items() if value})
+        return payload
 
 
 @dataclass(frozen=True)
@@ -46,6 +64,9 @@ class ResolvedTaskInput:
 
     def as_result_refs(self) -> list[dict[str, str]]:
         return [source.as_result_ref() for source in self.sources]
+
+    def as_grounding_refs(self) -> tuple[dict[str, str], ...]:
+        return tuple(source.as_grounding_ref() for source in self.sources)
 
 
 @dataclass
@@ -158,7 +179,7 @@ class TaskSourceService:
                 ),
             )
 
-        content = self._content_from_stored_file(
+        resolved_content = self._content_from_stored_file(
             stored_file=mirrored_stored_file,
             source_label=f"uploaded source '{upload_id}'",
         )
@@ -166,8 +187,9 @@ class TaskSourceService:
             kind="uploaded_file",
             source_id=upload_id,
             role="primary_source",
-            content=content,
+            content=resolved_content.text,
             source_file_id=upload_id,
+            derived_content_id=resolved_content.derived_content_id,
         )
 
     def _resolve_stored_file_source(self, *, session_id: str, owner_user_id: str, stored_file_id: str) -> ResolvedSource:
@@ -178,7 +200,7 @@ class TaskSourceService:
                 detail=f"Stored file source '{stored_file_id}' not found for this session.",
             )
 
-        content = self._content_from_stored_file(
+        resolved_content = self._content_from_stored_file(
             stored_file=stored_file,
             source_label=f"stored file '{stored_file_id}'",
         )
@@ -186,8 +208,9 @@ class TaskSourceService:
             kind="stored_file",
             source_id=stored_file_id,
             role="primary_source",
-            content=content,
+            content=resolved_content.text,
             source_file_id=stored_file_id,
+            derived_content_id=resolved_content.derived_content_id,
         )
 
     def _resolve_document_source(self, *, session_id: str, document_id: str) -> ResolvedSource:
@@ -198,7 +221,7 @@ class TaskSourceService:
                 detail=f"Document source '{document_id}' not found for this session.",
             )
         stored_file = self._require_current_file_for_document(document)
-        content = self._content_from_stored_file(
+        resolved_content = self._content_from_stored_file(
             stored_file=stored_file,
             source_label=f"document '{document_id}'",
         )
@@ -206,8 +229,9 @@ class TaskSourceService:
             kind="document",
             source_id=document_id,
             role="primary_source",
-            content=content,
+            content=resolved_content.text,
             source_document_id=document_id,
+            derived_content_id=resolved_content.derived_content_id,
         )
 
     def _resolve_presentation_source(
@@ -223,7 +247,7 @@ class TaskSourceService:
                 detail=f"Presentation source '{presentation_id}' not found for this session.",
             )
         stored_file = self._require_current_file_for_presentation(presentation)
-        content = self._content_from_stored_file(
+        resolved_content = self._content_from_stored_file(
             stored_file=stored_file,
             source_label=f"presentation '{presentation_id}'",
         )
@@ -231,8 +255,9 @@ class TaskSourceService:
             kind="presentation",
             source_id=presentation_id,
             role="primary_source",
-            content=content,
+            content=resolved_content.text,
             source_presentation_id=presentation_id,
+            derived_content_id=resolved_content.derived_content_id,
         )
 
     def _require_current_file_for_document(self, document: Document) -> StoredFile:
@@ -268,10 +293,10 @@ class TaskSourceService:
         *,
         stored_file: StoredFile,
         source_label: str,
-    ) -> str:
+    ) -> ResolvedContent:
         cached = self._get_cached_extracted_content(stored_file.id)
         if cached is not None:
-            return cached.text
+            return cached
 
         raw_content = self.storage.read_bytes(storage_key=stored_file.storage_key)
         extracted = self.extractor.extract(
@@ -280,9 +305,10 @@ class TaskSourceService:
             mime_type=stored_file.mime_type,
             source_label=source_label,
         )
+        derived_content_id = f"dcon_{uuid4().hex}"
         self.derived_contents.create(
             DerivedContent(
-                id=f"dcon_{uuid4().hex}",
+                id=derived_content_id,
                 file_id=stored_file.id,
                 content_kind=extracted.content_kind,
                 text_content=extracted.text,
@@ -291,17 +317,16 @@ class TaskSourceService:
                 language=None,
             )
         )
-        return extracted.text
+        return ResolvedContent(text=extracted.text, derived_content_id=derived_content_id)
 
-    def _get_cached_extracted_content(self, file_id: str) -> ExtractionResult | None:
+    def _get_cached_extracted_content(self, file_id: str) -> ResolvedContent | None:
         for derived_content in self.derived_contents.list_by_file(file_id):
             if derived_content.text_content is None:
                 continue
             if derived_content.content_kind != "extracted_text":
                 continue
-            return ExtractionResult(
+            return ResolvedContent(
                 text=derived_content.text_content,
-                outline_json=derived_content.outline_json,
-                content_kind=derived_content.content_kind,
+                derived_content_id=derived_content.id,
             )
         return None

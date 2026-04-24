@@ -51,6 +51,8 @@ class PlannedSlide:
     image_specs: tuple[ImageSpec, ...] = ()
     media_assets: tuple[SlideMediaAsset, ...] = ()
     blocks: tuple[SlideBlock, ...] = ()
+    citations: tuple[object, ...] = ()
+    source_notes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

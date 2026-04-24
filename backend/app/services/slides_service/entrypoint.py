@@ -13,6 +13,7 @@ class SlidesGenerateRequest:
     session_id: str | None = None
     task_id: str | None = None
     owner_user_id: str = "user_local_default"
+    source_refs: tuple[dict[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,7 @@ class SlidesGenerateResult:
     artifact_content: bytes
     outline: tuple[SlideOutlineItem, ...]
     generated_media_file_ids: tuple[str, ...] = ()
+    source_grounding_metadata: dict[str, object] | None = None
 
 
 @dataclass
@@ -35,6 +37,7 @@ class SlidesServiceEntrypoint:
             session_id=request.session_id,
             task_id=request.task_id,
             owner_user_id=request.owner_user_id,
+            source_refs=request.source_refs,
         )
         return SlidesGenerateResult(
             slide_count=output.slide_count,
@@ -42,4 +45,5 @@ class SlidesServiceEntrypoint:
             artifact_content=output.artifact_content,
             outline=output.outline,
             generated_media_file_ids=output.generated_media_file_ids,
+            source_grounding_metadata=output.source_grounding_metadata,
         )

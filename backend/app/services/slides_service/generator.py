@@ -9,6 +9,7 @@ from backend.app.services.slides_service.block_rendering import render_structure
 from backend.app.services.slides_service.layouts import ImagePlaceholderBox, ResolvedSlideLayout, ShapeBox, SlideLayoutSpec, SlideTemplate, get_template, resolve_layout_for_slide
 from backend.app.services.slides_service.media import ImageFitMode, SlideMediaAsset
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, SlideType, StoryArcStage
+from backend.app.services.slides_service.source_grounding import render_slide_citations_xml
 
 P_NS = "http://schemas.openxmlformats.org/presentationml/2006/main"
 A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
@@ -287,6 +288,11 @@ def _slide_xml(slide: PlannedSlide, *, index: int, resolved_layout: ResolvedSlid
     title = _xml_text(slide.title)
     body_boxes_xml = _body_boxes_xml(slide=slide, layout=layout, template=template, index=index)
     media_xml = _picture_shapes_xml(prepared_media=prepared_media, index=index, template=template)
+    citations_xml = render_slide_citations_xml(
+        citations=slide.citations,
+        template=template,
+        slide_index=index,
+    )
     title_box = layout.title_box
     title_alignment = "ctr" if layout.title_align == "center" else "l"
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -303,6 +309,7 @@ def _slide_xml(slide: PlannedSlide, *, index: int, resolved_layout: ResolvedSlid
       </p:sp>
 {body_boxes_xml}
 {media_xml}
+{citations_xml}
     </p:spTree>
   </p:cSld>
   <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>

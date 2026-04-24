@@ -5,6 +5,7 @@ from dataclasses import dataclass, field, replace
 from backend.app.services.slides_service.generator import generate_pptx_from_plan
 from backend.app.services.slides_service.image_pipeline import DeterministicPatternImageProvider, SlideImageProvider, SlideImageRegistry
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, build_presentation_plan, plan_to_outline
+from backend.app.services.slides_service.source_grounding import build_source_grounded_plan
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,7 @@ class SlidesTransformOutput:
     plan: PresentationPlan
     template_id: str
     generated_media_file_ids: tuple[str, ...] = ()
+    source_grounding_metadata: dict[str, object] | None = None
 
 
 @dataclass
@@ -33,10 +35,16 @@ class SlidesService:
         session_id: str | None = None,
         task_id: str | None = None,
         owner_user_id: str = "user_local_default",
+        source_refs: tuple[dict[str, str], ...] = (),
     ) -> SlidesTransformOutput:
         plan = build_presentation_plan(source_text, min_slides=5, max_slides=10)
-        enriched_plan, stored_file_ids = self._attach_generated_visuals(
+        grounding = build_source_grounded_plan(
             plan,
+            source_text=source_text,
+            source_refs=source_refs,
+        )
+        enriched_plan, stored_file_ids = self._attach_generated_visuals(
+            grounding.plan,
             session_id=session_id,
             task_id=task_id,
             owner_user_id=owner_user_id,
@@ -57,6 +65,7 @@ class SlidesService:
             plan=enriched_plan,
             template_id=template_id,
             generated_media_file_ids=stored_file_ids,
+            source_grounding_metadata=grounding.as_metadata(),
         )
 
     def _attach_generated_visuals(
