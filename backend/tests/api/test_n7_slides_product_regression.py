@@ -218,7 +218,7 @@ def test_n7_sync_prompt_only_slides_generation_regression(
     assert parsed.task_type == "slides_generate"
     assert parsed.artifact_ids
     assert parsed.slide_count == len(parsed.outline)
-    assert parsed.source_mode == "inline"
+    assert parsed.source_mode == "prompt_only"
 
     pptx_payload = _download_artifact(parsed.artifact_ids[0])
     _assert_valid_pptx(pptx_payload)
