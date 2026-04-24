@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from backend.app.services.slides_service.image_pipeline import ImageSpec, VisualIntent
 from backend.app.services.slides_service.media import SlideMediaAsset
 
 
@@ -34,6 +35,8 @@ class PlannedSlide:
     bullets: tuple[str, ...]
     speaker_notes: str | None = None
     layout_hint: str | None = None
+    visual_intent: VisualIntent = VisualIntent.NONE
+    image_specs: tuple[ImageSpec, ...] = ()
     media_assets: tuple[SlideMediaAsset, ...] = ()
 
 
@@ -104,15 +107,28 @@ def build_presentation_plan(
                 else StoryArcStage.RECOMMENDATION
             )
 
+        title = _plan_title_for_type(slide_type=slide_type, seed=segment)
+        bullets = tuple(_bounded_bullets(segment))
+        layout_hint = _layout_hint_for_type(slide_type)
+        visual_intent = _visual_intent_for_slide(slide_type=slide_type)
+        image_specs = _image_specs_for_slide(
+            slide_id=f"slide_{slide_number:03d}",
+            visual_intent=visual_intent,
+            title=title,
+            bullets=bullets,
+        )
+
         planned_slides.append(
             PlannedSlide(
                 slide_id=f"slide_{slide_number:03d}",
                 slide_type=slide_type,
                 story_arc_stage=stage,
-                title=_plan_title_for_type(slide_type=slide_type, seed=segment),
-                bullets=tuple(_bounded_bullets(segment)),
+                title=title,
+                bullets=bullets,
                 speaker_notes=_speaker_notes_for_type(slide_type),
-                layout_hint=_layout_hint_for_type(slide_type),
+                layout_hint=layout_hint,
+                visual_intent=visual_intent,
+                image_specs=image_specs,
             )
         )
 
@@ -193,16 +209,44 @@ def _speaker_notes_for_type(slide_type: SlideType) -> str:
 
 
 def _layout_hint_for_type(slide_type: SlideType) -> str:
+    if slide_type is SlideType.TITLE:
+        return "title_with_visual"
+    if slide_type in {SlideType.SECTION, SlideType.APPENDIX}:
+        return "section_slide"
+    if slide_type is SlideType.CONTENT:
+        return "content_with_visual"
     if slide_type is SlideType.COMPARISON:
         return "two_column_comparison"
     if slide_type is SlideType.TIMELINE:
         return "timeline"
     if slide_type is SlideType.DATA:
         return "data_summary"
-    if slide_type is SlideType.TITLE:
-        return "title_slide"
-    if slide_type in {SlideType.SECTION, SlideType.APPENDIX}:
-        return "section_slide"
     if slide_type is SlideType.CONCLUSION:
         return "conclusion"
     return "title_and_bullets"
+
+
+def _visual_intent_for_slide(*, slide_type: SlideType) -> VisualIntent:
+    if slide_type is SlideType.TITLE:
+        return VisualIntent.COVER_ILLUSTRATION
+    if slide_type is SlideType.CONTENT:
+        return VisualIntent.PROCESS_VISUAL
+    return VisualIntent.NONE
+
+
+def _image_specs_for_slide(*, slide_id: str, visual_intent: VisualIntent, title: str, bullets: tuple[str, ...]) -> tuple[ImageSpec, ...]:
+    if visual_intent is VisualIntent.NONE:
+        return ()
+    prompt_parts = [title, *bullets]
+    prompt = ". ".join(part for part in prompt_parts if part).strip()
+    return (
+        ImageSpec(
+            spec_id=f"{slide_id}_{visual_intent.value}",
+            intent=visual_intent,
+            prompt=prompt,
+            aspect_ratio="16:9",
+            caption=title,
+            source_label="Local deterministic slide image generation",
+            required=True,
+        ),
+    )

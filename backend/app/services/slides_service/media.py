@@ -20,6 +20,10 @@ class SlideMediaAsset:
     height_px: int
     fit_mode: ImageFitMode = ImageFitMode.CONTAIN
     alt_text: str | None = None
+    caption: str | None = None
+    source_label: str | None = None
+    stored_file_id: str | None = None
+    storage_uri: str | None = None
 
     def extension(self) -> str:
         content_type = (self.content_type or "").lower().strip()

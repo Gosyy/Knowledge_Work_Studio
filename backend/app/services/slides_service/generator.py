@@ -22,6 +22,7 @@ class PreparedSlideMedia:
     placeholder: ImagePlaceholderBox
     render_box: ShapeBox
     src_rect_xml: str
+    caption_box: ShapeBox | None = None
 
 
 def generate_pptx_from_plan(plan: PresentationPlan, *, template_id: str = "default_light") -> bytes:
@@ -131,7 +132,7 @@ def _prepare_slide_media(*, slide: PlannedSlide, resolved_layout: ResolvedSlideL
         media_filename = f"image{next_counter}.{extension}"
         media_path = f"ppt/media/{media_filename}"
         rel_id = f"rId{offset + 2}"
-        render_box, src_rect_xml = _resolve_media_box(asset=asset, placeholder=placeholder)
+        render_box, src_rect_xml, caption_box = _resolve_media_box(asset=asset, placeholder=placeholder)
         prepared.append(
             PreparedSlideMedia(
                 rel_id=rel_id,
@@ -140,36 +141,53 @@ def _prepare_slide_media(*, slide: PlannedSlide, resolved_layout: ResolvedSlideL
                 placeholder=placeholder,
                 render_box=render_box,
                 src_rect_xml=src_rect_xml,
+                caption_box=caption_box,
             )
         )
         next_counter += 1
     return tuple(prepared), next_counter
 
 
-def _resolve_media_box(*, asset: SlideMediaAsset, placeholder: ImagePlaceholderBox) -> tuple[ShapeBox, str]:
+def _resolve_media_box(*, asset: SlideMediaAsset, placeholder: ImagePlaceholderBox) -> tuple[ShapeBox, str, ShapeBox | None]:
     width_px, height_px = asset.normalized_dimensions()
     asset_ratio = width_px / height_px
-    placeholder_ratio = placeholder.cx / placeholder.cy
+    caption_box = _caption_box_for_asset(asset=asset, placeholder=placeholder)
+    image_area = _image_area_without_caption(placeholder=placeholder, caption_box=caption_box)
+    placeholder_ratio = image_area.cx / image_area.cy
 
     if asset.fit_mode is ImageFitMode.STRETCH:
-        return ShapeBox(placeholder.x, placeholder.y, placeholder.cx, placeholder.cy), ""
+        return ShapeBox(image_area.x, image_area.y, image_area.cx, image_area.cy), "", caption_box
 
     if asset.fit_mode is ImageFitMode.COVER:
         src_rect_xml = _src_rect_for_cover(asset_ratio=asset_ratio, placeholder_ratio=placeholder_ratio)
-        return ShapeBox(placeholder.x, placeholder.y, placeholder.cx, placeholder.cy), src_rect_xml
+        return ShapeBox(image_area.x, image_area.y, image_area.cx, image_area.cy), src_rect_xml, caption_box
 
     # contain
     if asset_ratio >= placeholder_ratio:
-        render_cx = placeholder.cx
-        render_cy = max(1, round(placeholder.cx / asset_ratio))
-        render_x = placeholder.x
-        render_y = placeholder.y + max(0, (placeholder.cy - render_cy) // 2)
+        render_cx = image_area.cx
+        render_cy = max(1, round(image_area.cx / asset_ratio))
+        render_x = image_area.x
+        render_y = image_area.y + max(0, (image_area.cy - render_cy) // 2)
     else:
-        render_cy = placeholder.cy
-        render_cx = max(1, round(placeholder.cy * asset_ratio))
-        render_x = placeholder.x + max(0, (placeholder.cx - render_cx) // 2)
-        render_y = placeholder.y
-    return ShapeBox(render_x, render_y, render_cx, render_cy), ""
+        render_cy = image_area.cy
+        render_cx = max(1, round(image_area.cy * asset_ratio))
+        render_x = image_area.x + max(0, (image_area.cx - render_cx) // 2)
+        render_y = image_area.y
+    return ShapeBox(render_x, render_y, render_cx, render_cy), "", caption_box
+
+
+def _caption_box_for_asset(*, asset: SlideMediaAsset, placeholder: ImagePlaceholderBox) -> ShapeBox | None:
+    if not asset.caption and not asset.source_label:
+        return None
+    caption_height = max(274320, placeholder.cy // 5)
+    return ShapeBox(placeholder.x, placeholder.y + placeholder.cy - caption_height, placeholder.cx, caption_height)
+
+
+def _image_area_without_caption(*, placeholder: ImagePlaceholderBox, caption_box: ShapeBox | None) -> ShapeBox:
+    if caption_box is None:
+        return ShapeBox(placeholder.x, placeholder.y, placeholder.cx, placeholder.cy)
+    image_cy = max(1, caption_box.y - placeholder.y - 114300)
+    return ShapeBox(placeholder.x, placeholder.y, placeholder.cx, image_cy)
 
 
 def _src_rect_for_cover(*, asset_ratio: float, placeholder_ratio: float) -> str:
@@ -267,7 +285,7 @@ def _slide_xml(slide: PlannedSlide, *, index: int, resolved_layout: ResolvedSlid
     layout = resolved_layout.layout
     title = _xml_text(slide.title)
     body_boxes_xml = _body_boxes_xml(slide=slide, layout=layout, template=template, index=index)
-    media_xml = _picture_shapes_xml(prepared_media=prepared_media, index=index)
+    media_xml = _picture_shapes_xml(prepared_media=prepared_media, index=index, template=template)
     title_box = layout.title_box
     title_alignment = "ctr" if layout.title_align == "center" else "l"
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -324,7 +342,7 @@ def _body_boxes_xml(*, slide: PlannedSlide, layout: SlideLayoutSpec, template: S
     return "\n".join(body_xml)
 
 
-def _picture_shapes_xml(*, prepared_media: tuple[PreparedSlideMedia, ...], index: int) -> str:
+def _picture_shapes_xml(*, prepared_media: tuple[PreparedSlideMedia, ...], index: int, template: SlideTemplate) -> str:
     xml: list[str] = []
     for offset, item in enumerate(prepared_media, start=1):
         alt_text = _xml_text(item.asset.alt_text or item.asset.filename)
@@ -346,6 +364,20 @@ def _picture_shapes_xml(*, prepared_media: tuple[PreparedSlideMedia, ...], index
           <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
         </p:spPr>
       </p:pic>'''
+        )
+    for offset, item in enumerate(prepared_media, start=1):
+        if item.caption_box is None:
+            continue
+        caption_lines = [part for part in (item.asset.caption, item.asset.source_label) if part]
+        if not caption_lines:
+            continue
+        caption_text = " • ".join(_xml_text(part) for part in caption_lines)
+        xml.append(
+            f'''      <p:sp>
+        <p:nvSpPr><p:cNvPr id="{index * 100 + 50 + offset}" name="Caption {index}-{offset}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="{item.caption_box.x}" y="{item.caption_box.y}"/><a:ext cx="{item.caption_box.cx}" cy="{item.caption_box.cy}"/></a:xfrm></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="en-US" sz="1200"><a:solidFill><a:srgbClr val="{template.body_color}"/></a:solidFill><a:latin typeface="{template.font_family}"/></a:rPr><a:t>{caption_text}</a:t></a:r></a:p></p:txBody>
+      </p:sp>'''
         )
     return "\n".join(xml)
 

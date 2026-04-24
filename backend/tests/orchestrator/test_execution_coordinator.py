@@ -5,7 +5,7 @@ from zipfile import ZipFile, is_zipfile
 import pytest
 
 from backend.app.core.config import Settings
-from backend.app.domain import TaskStatus, TaskType
+from backend.app.domain import StoredFile, TaskStatus, TaskType
 from backend.app.integrations import get_storage_paths
 from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.orchestrator import OrchestratorExecutionCoordinator, TaskRouter
@@ -13,7 +13,23 @@ from backend.app.repositories import InMemoryArtifactRepository, InMemorySession
 from backend.app.services import ArtifactService, DataAnalysisService, SessionTaskService, TaskExecutionService
 from backend.app.services.docx_service import DocxService, DocxServiceEntrypoint
 from backend.app.services.pdf_service import PdfService, PdfServiceEntrypoint
-from backend.app.services.slides_service import SlidesService, SlidesServiceEntrypoint
+from backend.app.services.slides_service import SlideImageRegistry, SlidesService, SlidesServiceEntrypoint
+
+
+class _FakeStoredFileRepository:
+    def __init__(self) -> None:
+        self.items: dict[str, StoredFile] = {}
+
+    def create(self, stored_file: StoredFile) -> StoredFile:
+        self.items[stored_file.id] = stored_file
+        return stored_file
+
+    def get(self, stored_file_id: str) -> StoredFile | None:
+        return self.items.get(stored_file_id)
+
+    def list_by_session(self, session_id: str) -> list[StoredFile]:
+        return [item for item in self.items.values() if item.session_id == session_id]
+
 
 
 @pytest.mark.parametrize(
@@ -43,6 +59,7 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
     tasks = InMemoryTaskRepository()
     uploads = InMemoryUploadedFileRepository()
     artifacts = InMemoryArtifactRepository()
+    stored_files = _FakeStoredFileRepository()
 
     session_task_service = SessionTaskService(sessions=sessions, tasks=tasks, uploads=uploads, storage=storage)
     task_execution_service = TaskExecutionService(session_task_service=session_task_service)
@@ -56,7 +73,9 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
         data_service=DataAnalysisService.from_settings(settings),
         docx_service=DocxServiceEntrypoint(service=DocxService()),
         pdf_service=PdfServiceEntrypoint(service=PdfService()),
-        slides_service=SlidesServiceEntrypoint(service=SlidesService()),
+        slides_service=SlidesServiceEntrypoint(
+            service=SlidesService(image_registry=SlideImageRegistry(storage=storage, stored_files=stored_files))
+        ),
     )
 
     session = session_task_service.create_session()
@@ -99,9 +118,11 @@ def test_execution_coordinator_routes_to_services_and_persists_artifacts(
         downloaded_artifact, downloaded_bytes = artifact_service.get_artifact_download(artifact.id)
         assert downloaded_artifact.size_bytes > 0
         assert is_zipfile(BytesIO(downloaded_bytes))
+        assert completed.result_data["generated_media_file_ids"]
         with ZipFile(BytesIO(downloaded_bytes)) as pptx:
             names = set(pptx.namelist())
             assert "ppt/presentation.xml" in names
             assert "ppt/slides/slide1.xml" in names
             assert "ppt/slideMasters/slideMaster1.xml" in names
+            assert any(name.startswith("ppt/media/") for name in names)
             assert not any(name.endswith(".txt") for name in names)

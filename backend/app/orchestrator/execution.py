@@ -64,7 +64,7 @@ class OrchestratorExecutionCoordinator:
                 "content_length": len(content),
             },
         )
-        service_result = self._execute_service(task.task_type, content)
+        service_result = self._execute_service(task, content)
 
         if service_result.artifact_content is None:
             artifact = self._artifact_service.create_placeholder_artifact(
@@ -89,7 +89,8 @@ class OrchestratorExecutionCoordinator:
             **service_result.result_metadata,
         }
 
-    def _execute_service(self, task_type: TaskType, content: str) -> ServiceExecutionResult:
+    def _execute_service(self, task: Task, content: str) -> ServiceExecutionResult:
+        task_type = task.task_type
         if task_type is TaskType.DOCX_EDIT:
             result = self._docx_service.transform(
                 DocxTransformRequest(content=content, target="draft", replacement="final")
@@ -120,7 +121,14 @@ class OrchestratorExecutionCoordinator:
             )
 
         if task_type is TaskType.SLIDES_GENERATE:
-            result = self._slides_service.generate(SlidesGenerateRequest(content=content))
+            result = self._slides_service.generate(
+                SlidesGenerateRequest(
+                    content=content,
+                    session_id=task.session_id,
+                    task_id=task.id,
+                    owner_user_id=task.owner_user_id,
+                )
+            )
             return ServiceExecutionResult(
                 output_text=result.summary,
                 filename="slides.pptx",
@@ -131,6 +139,7 @@ class OrchestratorExecutionCoordinator:
                         {"title": item.title, "bullets": list(item.bullets)}
                         for item in result.outline
                     ],
+                    "generated_media_file_ids": list(result.generated_media_file_ids),
                 },
             )
 

@@ -50,7 +50,7 @@ from backend.app.services import (
 )
 from backend.app.services.docx_service import DocxServiceEntrypoint
 from backend.app.services.pdf_service import PdfServiceEntrypoint
-from backend.app.services.slides_service import SlidesServiceEntrypoint
+from backend.app.services.slides_service import SlidesServiceEntrypoint, SlideImageRegistry
 from backend.app.services.task_source_service import TaskSourceService
 
 
@@ -203,6 +203,8 @@ def build_official_execution_coordinator(
     settings: Settings,
     container: AppContainer,
 ) -> OrchestratorExecutionCoordinator:
+    storage = build_storage(settings)
+    source_repositories = build_source_repositories(settings)
     return OrchestratorExecutionCoordinator(
         task_router=TaskRouter(),
         session_task_service=container.session_task_service,
@@ -214,7 +216,11 @@ def build_official_execution_coordinator(
         data_service=DataAnalysisService.from_settings(settings),
         docx_service=DocxServiceEntrypoint(service=DocxService()),
         pdf_service=PdfServiceEntrypoint(service=PdfService()),
-        slides_service=SlidesServiceEntrypoint(service=SlidesService()),
+        slides_service=SlidesServiceEntrypoint(
+            service=SlidesService(
+                image_registry=SlideImageRegistry(storage=storage, stored_files=source_repositories.stored_files),
+            )
+        ),
     )
 
 

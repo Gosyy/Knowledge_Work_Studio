@@ -1,17 +1,26 @@
 import base64
 import zipfile
 from io import BytesIO
+from pathlib import Path
 
 import pytest
 
+from backend.app.core.config import Settings
+from backend.app.domain import StoredFile
+from backend.app.integrations import get_storage_paths
+from backend.app.integrations.file_storage import LocalFileStorage
 from backend.app.services.slides_service import (
+    DeterministicPatternImageProvider,
     ImageFitMode,
+    ImageSpec,
     PlannedSlide,
     PresentationPlan,
+    SlideImageRegistry,
     SlideMediaAsset,
     SlidesService,
     SlideType,
     StoryArcStage,
+    VisualIntent,
     build_presentation_plan,
     build_slides_outline,
     generate_pptx_from_plan,
@@ -22,6 +31,21 @@ from backend.app.services.slides_service import (
 _SMALL_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WnWkQAAAABJRU5ErkJggg=="
 )
+
+
+class _FakeStoredFileRepository:
+    def __init__(self) -> None:
+        self.items: dict[str, StoredFile] = {}
+
+    def create(self, stored_file: StoredFile) -> StoredFile:
+        self.items[stored_file.id] = stored_file
+        return stored_file
+
+    def get(self, stored_file_id: str) -> StoredFile | None:
+        return self.items.get(stored_file_id)
+
+    def list_by_session(self, session_id: str) -> list[StoredFile]:
+        return [item for item in self.items.values() if item.session_id == session_id]
 
 
 def test_slides_service_generates_valid_openxml_pptx_payload() -> None:
@@ -35,6 +59,7 @@ def test_slides_service_generates_valid_openxml_pptx_payload() -> None:
     assert result.plan.slides[0].slide_type is SlideType.TITLE
     assert result.template_id == "default_light"
     assert result.artifact_content[:2] == b"PK"
+    assert any(slide.media_assets for slide in result.plan.slides)
 
     with zipfile.ZipFile(BytesIO(result.artifact_content), "r") as pptx_zip:
         names = set(pptx_zip.namelist())
@@ -54,8 +79,8 @@ def test_slides_service_generates_valid_openxml_pptx_payload() -> None:
     assert "<p:sldIdLst>" in presentation_xml
     assert "Intro slide" in first_slide_xml
     assert "KW Studio Light" in theme_xml
-    assert not any(name.endswith(".txt") for name in names)
-    assert not any(name.startswith("ppt/media/") for name in names)
+    assert "ppt/media/image1.png" in names
+    assert '<p:pic>' in first_slide_xml
 
 
 def test_presentation_planner_returns_typed_plan_and_explicit_story_arc() -> None:
@@ -163,6 +188,8 @@ def test_generator_embeds_media_assets_into_pptx_with_valid_relationships() -> N
                 height_px=900,
                 fit_mode=ImageFitMode.CONTAIN,
                 alt_text="Embedded chart",
+                caption="Generated chart",
+                source_label="Local deterministic generation",
             ),
         ),
     )
@@ -193,6 +220,8 @@ def test_generator_embeds_media_assets_into_pptx_with_valid_relationships() -> N
     assert '<p:pic>' in slide_xml
     assert 'r:embed="rId2"' in slide_xml
     assert 'descr="Embedded chart"' in slide_xml
+    assert 'Generated chart' in slide_xml
+    assert 'Local deterministic generation' in slide_xml
 
 
 def test_generator_applies_cover_fit_with_src_rect_crop() -> None:
@@ -265,3 +294,76 @@ def test_generator_fails_honestly_when_layout_has_no_image_placeholder() -> None
 
     with pytest.raises(ValueError, match="does not define image placeholders"):
         generate_pptx_from_plan(plan, template_id="default_light")
+
+
+def test_planner_declares_visual_intent_and_image_specs_for_supported_slides() -> None:
+    plan = build_presentation_plan("Big picture. Supporting analysis. Final recommendation.")
+
+    assert plan.slides[0].visual_intent is VisualIntent.COVER_ILLUSTRATION
+    assert plan.slides[0].image_specs
+    content_slides = [slide for slide in plan.slides if slide.slide_type is SlideType.CONTENT]
+    assert any(slide.visual_intent is VisualIntent.PROCESS_VISUAL for slide in content_slides)
+    assert any(slide.image_specs for slide in content_slides)
+
+
+def test_local_image_provider_generates_real_png_from_image_spec() -> None:
+    provider = DeterministicPatternImageProvider()
+    asset = provider.generate(
+        ImageSpec(
+            spec_id="spec_demo",
+            intent=VisualIntent.COVER_ILLUSTRATION,
+            prompt="Create a clean strategic cover visual for quarterly planning.",
+            caption="Quarterly planning cover",
+            source_label="Local deterministic slide image generation",
+        )
+    )
+
+    assert asset.content_type == "image/png"
+    assert asset.data.startswith(b"\x89PNG\r\n\x1a\n")
+    assert asset.caption == "Quarterly planning cover"
+    assert asset.source_label == "Local deterministic slide image generation"
+    assert asset.width_px == 1280
+    assert asset.height_px == 720
+
+
+def test_slides_service_registers_generated_visuals_to_storage_when_context_available(tmp_path: Path) -> None:
+    settings = Settings(
+        storage_root=str(tmp_path),
+        uploads_dir=str(tmp_path / "uploads"),
+        artifacts_dir=str(tmp_path / "artifacts"),
+        temp_dir=str(tmp_path / "temp"),
+    )
+    storage = LocalFileStorage(get_storage_paths(settings))
+    stored_files = _FakeStoredFileRepository()
+    registry = SlideImageRegistry(storage=storage, stored_files=stored_files)
+    service = SlidesService(image_registry=registry)
+
+    result = service.generate_deck(
+        "Executive framing. Delivery analysis. Final recommendation.",
+        session_id="ses_demo",
+        task_id="task_demo",
+        owner_user_id="alice",
+    )
+
+    assert result.generated_media_file_ids
+    assert len(result.generated_media_file_ids) >= 1
+    registered = stored_files.get(result.generated_media_file_ids[0])
+    assert registered is not None
+    assert registered.kind == "generated_slide_media"
+    assert registered.owner_user_id == "alice"
+    assert storage.exists(storage_key=registered.storage_key) is True
+    assert registered.storage_uri.startswith("local://")
+    first_visual_slide = next(slide for slide in result.plan.slides if slide.media_assets)
+    assert first_visual_slide.media_assets[0].stored_file_id == registered.id
+    assert first_visual_slide.media_assets[0].storage_uri == registered.storage_uri
+
+
+def test_slides_service_fails_honestly_when_image_provider_errors() -> None:
+    class _BrokenProvider:
+        def generate(self, spec):
+            raise RuntimeError(f"failed for {spec.spec_id}")
+
+    service = SlidesService(image_provider=_BrokenProvider())
+
+    with pytest.raises(RuntimeError, match="failed for"):
+        service.generate_deck("Vision slide. Supporting analysis. Conclusion.")
