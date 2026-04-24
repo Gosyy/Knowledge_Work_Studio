@@ -14,6 +14,7 @@ from backend.app.api.schemas import (
     TaskExecutionJobSchema,
     TaskSchema,
     TaskSemanticExecuteRequest,
+    normalize_public_task_result_data,
 )
 from backend.app.domain import Task, TaskExecutionJob, TaskStatus, TaskType
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
@@ -31,7 +32,7 @@ def _task_to_schema(task: Task) -> TaskSchema:
         session_id=task.session_id,
         task_type=task.task_type,
         status=task.status,
-        result_data=task.result_data,
+        result_data=normalize_public_task_result_data(task.result_data),
         error_message=task.error_message,
         started_at=task.started_at,
         completed_at=task.completed_at,
