@@ -15,6 +15,7 @@ from backend.app.integrations.llm import LLMProvider
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
 from backend.app.services import ArtifactService, LLMTextService, PresentationCatalogService, SessionTaskService, TaskQueueService
 from backend.app.services.task_source_service import TaskSourceService
+from backend.app.services.slides_service import DeckRevisionService
 
 DEFAULT_CURRENT_USER_ID = "user_local_default"
 
@@ -46,6 +47,13 @@ def get_session_task_service(request: Request) -> SessionTaskService:
 
 def get_artifact_service(request: Request) -> ArtifactService:
     return get_app_container(request).artifact_service
+
+
+def get_deck_revision_service(request: Request) -> DeckRevisionService:
+    service = get_app_container(request).deck_revision_service
+    if service is None:
+        raise RuntimeError("Deck revision service is not configured in the application container.")
+    return service
 
 
 def get_presentation_catalog_service(request: Request) -> PresentationCatalogService:

@@ -53,7 +53,7 @@ from backend.app.services import (
 )
 from backend.app.services.docx_service import DocxServiceEntrypoint
 from backend.app.services.pdf_service import PdfServiceEntrypoint
-from backend.app.services.slides_service import SlidesServiceEntrypoint, SlideImageRegistry
+from backend.app.services.slides_service import DeckRevisionService, SlidesServiceEntrypoint, SlideImageRegistry
 from backend.app.services.task_source_service import TaskSourceService
 
 
@@ -81,6 +81,7 @@ class AppContainer:
     session_task_service: SessionTaskService
     task_source_service: TaskSourceService
     presentation_catalog_service: PresentationCatalogService | None = None
+    deck_revision_service: DeckRevisionService | None = None
 
 
 def resolve_metadata_backend(settings: Settings) -> str:
@@ -204,11 +205,18 @@ def build_app_container(settings: Settings) -> AppContainer:
         stored_files=source_repositories.stored_files,
         presentation_versions=source_repositories.presentation_versions,
     )
+    deck_revision_service = DeckRevisionService(
+        storage=storage,
+        stored_files=source_repositories.stored_files,
+        presentations=source_repositories.presentations,
+        presentation_versions=source_repositories.presentation_versions,
+    )
     return AppContainer(
         artifact_service=artifact_service,
         session_task_service=session_task_service,
         task_source_service=task_source_service,
         presentation_catalog_service=presentation_catalog_service,
+        deck_revision_service=deck_revision_service,
     )
 
 
