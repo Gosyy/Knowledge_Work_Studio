@@ -3,6 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from backend.app.services.slides_service.blocks import (
+    BulletBlock,
+    BusinessMetric,
+    BusinessMetricBlock,
+    ChartBlock,
+    ComparisonBlock,
+    SlideBlock,
+    TableBlock,
+    TextBlock,
+    TimelineBlock,
+    TimelineItem,
+)
 from backend.app.services.slides_service.image_pipeline import ImageSpec, VisualIntent
 from backend.app.services.slides_service.media import SlideMediaAsset
 
@@ -38,6 +50,7 @@ class PlannedSlide:
     visual_intent: VisualIntent = VisualIntent.NONE
     image_specs: tuple[ImageSpec, ...] = ()
     media_assets: tuple[SlideMediaAsset, ...] = ()
+    blocks: tuple[SlideBlock, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -86,6 +99,7 @@ def build_presentation_plan(
 
     for index in range(target_slide_count):
         slide_number = index + 1
+        slide_id = f"slide_{slide_number:03d}"
         segment = content_segments[index]
         if index == 0:
             slide_type = SlideType.TITLE
@@ -112,15 +126,16 @@ def build_presentation_plan(
         layout_hint = _layout_hint_for_type(slide_type)
         visual_intent = _visual_intent_for_slide(slide_type=slide_type)
         image_specs = _image_specs_for_slide(
-            slide_id=f"slide_{slide_number:03d}",
+            slide_id=slide_id,
             visual_intent=visual_intent,
             title=title,
             bullets=bullets,
         )
+        blocks = _structured_blocks_for_slide(slide_id=slide_id, slide_type=slide_type, title=title, bullets=bullets)
 
         planned_slides.append(
             PlannedSlide(
-                slide_id=f"slide_{slide_number:03d}",
+                slide_id=slide_id,
                 slide_type=slide_type,
                 story_arc_stage=stage,
                 title=title,
@@ -129,6 +144,7 @@ def build_presentation_plan(
                 layout_hint=layout_hint,
                 visual_intent=visual_intent,
                 image_specs=image_specs,
+                blocks=blocks,
             )
         )
 
@@ -250,3 +266,83 @@ def _image_specs_for_slide(*, slide_id: str, visual_intent: VisualIntent, title:
             required=True,
         ),
     )
+
+
+def _structured_blocks_for_slide(*, slide_id: str, slide_type: SlideType, title: str, bullets: tuple[str, ...]) -> tuple[SlideBlock, ...]:
+    if slide_type is SlideType.TITLE:
+        return (TextBlock(block_id=f"{slide_id}_text", text=" / ".join(bullets), caption=title),)
+    if slide_type is SlideType.COMPARISON:
+        left_items, right_items = _split_items_for_comparison(bullets)
+        return (
+            ComparisonBlock(
+                block_id=f"{slide_id}_comparison",
+                left_title="Option A / Current path",
+                left_items=left_items,
+                right_title="Option B / Recommended path",
+                right_items=right_items,
+            ),
+        )
+    if slide_type is SlideType.TIMELINE:
+        return (TimelineBlock(block_id=f"{slide_id}_timeline", items=_timeline_items_from_bullets(bullets), caption=title),)
+    if slide_type is SlideType.DATA:
+        return (
+            BusinessMetricBlock(block_id=f"{slide_id}_metrics", metrics=_business_metrics_from_bullets(bullets), caption="Business signals"),
+            TableBlock(
+                block_id=f"{slide_id}_table",
+                columns=("Signal", "Evidence", "Weight"),
+                rows=_table_rows_from_bullets(bullets),
+                caption="Structured data summary",
+            ),
+            ChartBlock(
+                block_id=f"{slide_id}_chart",
+                title="Evidence weight by signal",
+                categories=tuple(_short_label(bullet, fallback=f"S{i + 1}") for i, bullet in enumerate(bullets)),
+                values=tuple(float(_weight_for_bullet(bullet)) for bullet in bullets),
+                unit="pts",
+            ),
+        )
+    if slide_type is SlideType.CONTENT:
+        return (BulletBlock(block_id=f"{slide_id}_bullets", bullets=bullets, heading="Key points"),)
+    return (BulletBlock(block_id=f"{slide_id}_bullets", bullets=bullets, heading=title),)
+
+
+def _split_items_for_comparison(bullets: tuple[str, ...]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    midpoint = max(1, (len(bullets) + 1) // 2)
+    left_items = bullets[:midpoint] or ("Current baseline",)
+    right_items = bullets[midpoint:] or ("Recommended next step",)
+    return left_items, right_items
+
+
+def _timeline_items_from_bullets(bullets: tuple[str, ...]) -> tuple[TimelineItem, ...]:
+    source_items = bullets or ("Start", "Execute", "Review")
+    return tuple(
+        TimelineItem(label=f"Step {index}", detail=bullet)
+        for index, bullet in enumerate(source_items[:4], start=1)
+    )
+
+
+def _business_metrics_from_bullets(bullets: tuple[str, ...]) -> tuple[BusinessMetric, ...]:
+    total_words = sum(len(bullet.split()) for bullet in bullets)
+    return (
+        BusinessMetric(label="Signals", value=str(len(bullets)), note="bounded slide inputs"),
+        BusinessMetric(label="Evidence", value=str(total_words), note="source words used"),
+        BusinessMetric(label="Priority", value=f"{max((_weight_for_bullet(bullet) for bullet in bullets), default=0)} pts", note="derived from bullet length"),
+    )
+
+
+def _table_rows_from_bullets(bullets: tuple[str, ...]) -> tuple[tuple[str, ...], ...]:
+    return tuple(
+        (f"S{index}", bullet, str(_weight_for_bullet(bullet)))
+        for index, bullet in enumerate(bullets or ("No supporting detail provided",), start=1)
+    )
+
+
+def _weight_for_bullet(bullet: str) -> int:
+    # Deterministic, honest local formatting signal based only on supplied text.
+    return min(100, max(10, len(bullet.split()) * 10))
+
+
+def _short_label(text: str, *, fallback: str) -> str:
+    words = [word.strip(" ,;:-") for word in text.split() if word.strip(" ,;:-")]
+    label = " ".join(words[:3]).strip()
+    return label[:24] if label else fallback
