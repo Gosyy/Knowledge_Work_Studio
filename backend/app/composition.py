@@ -19,6 +19,7 @@ from backend.app.repositories import (
     PostgresExecutionRunRepository,
     PostgresLLMRunRepository,
     PostgresPresentationRepository,
+    PostgresPresentationVersionRepository,
     PostgresSessionRepository,
     PostgresStoredFileRepository,
     PostgresTaskRepository,
@@ -35,6 +36,7 @@ from backend.app.repositories.sqlite import (
     SqliteDerivedContentRepository,
     SqliteDocumentRepository,
     SqlitePresentationRepository,
+    SqlitePresentationVersionRepository,
     SqliteStoredFileRepository,
 )
 from backend.app.services import (
@@ -43,6 +45,7 @@ from backend.app.services import (
     DocxService,
     LLMTextService,
     PdfService,
+    PresentationCatalogService,
     SessionTaskService,
     SlidesService,
     TaskExecutionService,
@@ -67,6 +70,7 @@ class SourceRepositoryBundle:
     stored_files: object
     documents: object
     presentations: object
+    presentation_versions: object
     artifact_sources: object
     derived_contents: object
 
@@ -76,6 +80,7 @@ class AppContainer:
     artifact_service: ArtifactService
     session_task_service: SessionTaskService
     task_source_service: TaskSourceService
+    presentation_catalog_service: PresentationCatalogService | None = None
 
 
 def resolve_metadata_backend(settings: Settings) -> str:
@@ -120,6 +125,7 @@ def build_source_repositories(settings: Settings) -> SourceRepositoryBundle:
             stored_files=PostgresStoredFileRepository(settings.database_url),
             documents=PostgresDocumentRepository(settings.database_url),
             presentations=PostgresPresentationRepository(settings.database_url),
+            presentation_versions=PostgresPresentationVersionRepository(settings.database_url),
             artifact_sources=PostgresArtifactSourceRepository(settings.database_url),
             derived_contents=PostgresDerivedContentRepository(settings.database_url),
         )
@@ -127,6 +133,7 @@ def build_source_repositories(settings: Settings) -> SourceRepositoryBundle:
         stored_files=SqliteStoredFileRepository(settings.repository_db_path),
         documents=SqliteDocumentRepository(settings.repository_db_path),
         presentations=SqlitePresentationRepository(settings.repository_db_path),
+        presentation_versions=SqlitePresentationVersionRepository(settings.repository_db_path),
         artifact_sources=SqliteArtifactSourceRepository(settings.repository_db_path),
         derived_contents=SqliteDerivedContentRepository(settings.repository_db_path),
     )
@@ -191,10 +198,17 @@ def build_app_container(settings: Settings) -> AppContainer:
         derived_contents=source_repositories.derived_contents,
         storage=storage,
     )
+    presentation_catalog_service = PresentationCatalogService(
+        session_task_service=session_task_service,
+        presentations=source_repositories.presentations,
+        stored_files=source_repositories.stored_files,
+        presentation_versions=source_repositories.presentation_versions,
+    )
     return AppContainer(
         artifact_service=artifact_service,
         session_task_service=session_task_service,
         task_source_service=task_source_service,
+        presentation_catalog_service=presentation_catalog_service,
     )
 
 
