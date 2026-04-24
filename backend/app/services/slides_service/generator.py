@@ -5,6 +5,7 @@ from html import escape
 import io
 import zipfile
 
+from backend.app.services.slides_service.block_rendering import render_structured_blocks_xml
 from backend.app.services.slides_service.layouts import ImagePlaceholderBox, ResolvedSlideLayout, ShapeBox, SlideLayoutSpec, SlideTemplate, get_template, resolve_layout_for_slide
 from backend.app.services.slides_service.media import ImageFitMode, SlideMediaAsset
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, SlideType, StoryArcStage
@@ -310,6 +311,14 @@ def _slide_xml(slide: PlannedSlide, *, index: int, resolved_layout: ResolvedSlid
 
 
 def _body_boxes_xml(*, slide: PlannedSlide, layout: SlideLayoutSpec, template: SlideTemplate, index: int) -> str:
+    if slide.blocks:
+        return render_structured_blocks_xml(
+            blocks=slide.blocks,
+            layout=layout,
+            template=template,
+            slide_index=index,
+        )
+
     if len(layout.body_boxes) == 2:
         midpoint = max(1, (len(slide.bullets) + 1) // 2)
         bullet_groups = (slide.bullets[:midpoint], slide.bullets[midpoint:] or ("No secondary comparison point",))
