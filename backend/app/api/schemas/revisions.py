@@ -85,7 +85,7 @@ class PresentationPlanPayloadSchema(BaseModel):
 
 class DeckRevisionSlideRequestSchema(BaseModel):
     instruction: str
-    plan: PresentationPlanPayloadSchema
+    plan: PresentationPlanPayloadSchema | None = None
     target_slide_id: str | None = None
     target_slide_index: int | None = None
     template_id: str = "default_light"
@@ -95,7 +95,7 @@ class DeckRevisionSlideRequestSchema(BaseModel):
 
 class DeckRevisionSectionRequestSchema(BaseModel):
     instruction: str
-    plan: PresentationPlanPayloadSchema
+    plan: PresentationPlanPayloadSchema | None = None
     target_stage: str
     template_id: str = "default_light"
     task_id: str | None = None

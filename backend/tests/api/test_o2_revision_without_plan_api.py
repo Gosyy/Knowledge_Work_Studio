@@ -7,11 +7,17 @@ from backend.app.core.config import get_settings
 from backend.app.domain import Presentation, PresentationVersion, StoredFile
 from backend.app.main import app
 from backend.app.repositories.sqlite import (
+    SqlitePresentationPlanSnapshotRepository,
     SqlitePresentationRepository,
     SqlitePresentationVersionRepository,
     SqliteStoredFileRepository,
 )
-from backend.app.services.slides_service.outline import PresentationPlan, build_presentation_plan
+from backend.app.services.slides_service import (
+    PresentationPlanSnapshotService,
+    deserialize_presentation_plan,
+    build_presentation_plan,
+)
+from backend.app.services.slides_service.outline import PresentationPlan
 
 client = TestClient(app)
 
@@ -55,8 +61,9 @@ def _register_presentation(
     repository_db_path: str,
     session_id: str,
     owner_user_id: str = "user_local_default",
-    presentation_id: str = "pres_n2",
-    file_id: str = "sf_initial_n2",
+    presentation_id: str = "pres_o2",
+    file_id: str = "sf_initial_o2",
+    version_id: str = "presver_initial_o2",
 ) -> None:
     stored_files = SqliteStoredFileRepository(repository_db_path)
     presentations = SqlitePresentationRepository(repository_db_path)
@@ -66,12 +73,12 @@ def _register_presentation(
         StoredFile(
             id=file_id,
             session_id=session_id,
-            task_id="task_initial_n2",
+            task_id="task_initial_o2",
             kind="presentation_deck",
             file_type="pptx",
             mime_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            title="N2 initial deck",
-            original_filename="n2_initial.pptx",
+            title="O2 initial deck",
+            original_filename="o2_initial.pptx",
             storage_backend="local",
             storage_key=f"presentations/{session_id}/{file_id}.pptx",
             storage_uri=f"local://presentations/{session_id}/{file_id}.pptx",
@@ -86,16 +93,16 @@ def _register_presentation(
             session_id=session_id,
             current_file_id=file_id,
             presentation_type="generated_deck",
-            title="N2 deck",
+            title="O2 deck",
         )
     )
     versions.create(
         PresentationVersion(
-            id="presver_initial_n2",
+            id=version_id,
             presentation_id=presentation_id,
             file_id=file_id,
             version_number=1,
-            created_from_task_id="task_initial_n2",
+            created_from_task_id="task_initial_o2",
             parent_version_id=None,
             change_summary="Initial deck",
         )
@@ -125,73 +132,83 @@ def _plan_payload(plan: PresentationPlan) -> dict[str, object]:
     }
 
 
-def _default_plan_payload() -> dict[str, object]:
-    plan = build_presentation_plan(
+def _default_plan() -> PresentationPlan:
+    return build_presentation_plan(
         "Opening. Context. Analysis. Compare. Timeline. Data. Close.",
         min_slides=7,
         max_slides=7,
     )
-    return _plan_payload(plan)
 
 
-def test_n2_slide_revision_api_creates_new_version_and_updates_current_file(
+def _seed_plan_snapshot(*, repository_db_path: str, presentation_id: str = "pres_o2") -> None:
+    service = PresentationPlanSnapshotService(
+        snapshots=SqlitePresentationPlanSnapshotRepository(repository_db_path),
+        presentations=SqlitePresentationRepository(repository_db_path),
+        presentation_versions=SqlitePresentationVersionRepository(repository_db_path),
+    )
+    service.create_snapshot(
+        presentation_id=presentation_id,
+        presentation_version_id="presver_initial_o2",
+        plan=_default_plan(),
+        created_from_task_id="task_initial_o2",
+        change_summary="Initial plan snapshot",
+        snapshot_id="plansnap_initial_o2",
+    )
+
+
+def test_o2_slide_revision_without_explicit_plan_loads_latest_snapshot_and_persists_revised_plan(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
     session_id = _create_session()
     _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_plan_snapshot(repository_db_path=repository_db_path)
 
     response = client.post(
-        "/presentations/pres_n2/revisions/slide",
+        "/presentations/pres_o2/revisions/slide",
         json={
-            "instruction": "Emphasize implementation risk and shorten the recommendation.",
-            "plan": _default_plan_payload(),
+            "instruction": "Make the analysis slide sharper and more executive.",
             "target_slide_index": 2,
-            "template_id": "business_clean",
-            "task_id": "task_revision_n2",
-            "change_summary": "Refresh one slide",
+            "task_id": "task_o2_slide_revision",
+            "change_summary": "O2 slide revision without explicit plan",
         },
     )
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["presentation_id"] == "pres_n2"
     assert payload["version_number"] == 2
-    assert payload["parent_version_id"] == "presver_initial_n2"
-    assert payload["previous_file_id"] == "sf_initial_n2"
-    assert payload["stored_file_id"].startswith("sf_presrev_")
-    assert payload["current_file_id"] == payload["stored_file_id"]
-    assert payload["scope"] == "slide"
+    assert payload["parent_version_id"] == "presver_initial_o2"
     assert payload["revised_slide_ids"] == ["slide_003"]
-    assert payload["change_summary"] == "Refresh one slide"
 
-    presentation = SqlitePresentationRepository(repository_db_path).get("pres_n2")
-    assert presentation is not None
-    assert presentation.current_file_id == payload["stored_file_id"]
+    snapshots = SqlitePresentationPlanSnapshotRepository(repository_db_path)
+    all_snapshots = snapshots.list_by_presentation("pres_o2")
+    assert len(all_snapshots) == 2
+    assert all_snapshots[0].id == "plansnap_initial_o2"
+    assert all_snapshots[-1].presentation_version_id == payload["version_id"]
 
-    stored_file = SqliteStoredFileRepository(repository_db_path).get(payload["stored_file_id"])
-    assert stored_file is not None
-    assert stored_file.kind == "presentation_revision"
-    assert stored_file.task_id == "task_revision_n2"
+    latest_plan = deserialize_presentation_plan(all_snapshots[-1].snapshot_json)
+    assert latest_plan.slides[2].slide_id == "slide_003"
+    assert "revised:" in latest_plan.slides[2].title
+    assert latest_plan.slides[2].speaker_notes is not None
+    assert "Make the analysis slide sharper" in latest_plan.slides[2].speaker_notes
 
 
-def test_n2_section_revision_api_updates_target_stage_and_lineage(
+def test_o2_section_revision_without_explicit_plan_loads_snapshot(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
     session_id = _create_session()
     _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
-    plan_payload = _default_plan_payload()
+    _seed_plan_snapshot(repository_db_path=repository_db_path)
 
     response = client.post(
-        "/presentations/pres_n2/revisions/section",
+        "/presentations/pres_o2/revisions/section",
         json={
-            "instruction": "Reframe this section around delivery readiness.",
-            "plan": plan_payload,
+            "instruction": "Reframe analysis around delivery risk.",
             "target_stage": "analysis",
-            "change_summary": "Refresh analysis section",
+            "change_summary": "O2 section revision without explicit plan",
         },
     )
 
@@ -199,17 +216,14 @@ def test_n2_section_revision_api_updates_target_stage_and_lineage(
     payload = response.json()
     assert payload["scope"] == "section"
     assert payload["version_number"] == 2
-    assert payload["change_summary"] == "Refresh analysis section"
     assert set(payload["revised_slide_ids"]) == {"slide_003", "slide_006"}
 
-    lineage_response = client.get("/presentations/pres_n2/revisions")
-    assert lineage_response.status_code == 200
-    lineage = lineage_response.json()
-    assert [item["version_number"] for item in lineage] == [1, 2]
-    assert lineage[-1]["id"] == payload["version_id"]
+    latest_snapshot = SqlitePresentationPlanSnapshotRepository(repository_db_path).get_latest_for_presentation("pres_o2")
+    assert latest_snapshot is not None
+    assert latest_snapshot.presentation_version_id == payload["version_id"]
 
 
-def test_n2_revision_api_requires_plan_or_snapshot(
+def test_o2_revision_without_plan_fails_clearly_when_snapshot_is_missing(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -218,9 +232,9 @@ def test_n2_revision_api_requires_plan_or_snapshot(
     _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
 
     response = client.post(
-        "/presentations/pres_n2/revisions/slide",
+        "/presentations/pres_o2/revisions/slide",
         json={
-            "instruction": "Revise without plan.",
+            "instruction": "Try to revise without a plan snapshot.",
             "target_slide_index": 0,
         },
     )
@@ -229,7 +243,7 @@ def test_n2_revision_api_requires_plan_or_snapshot(
     assert "no editable plan snapshot" in response.json()["detail"]
 
 
-def test_n2_revision_api_returns_400_for_invalid_target(
+def test_o2_explicit_plan_revision_still_works_and_persists_revised_snapshot(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -238,19 +252,26 @@ def test_n2_revision_api_returns_400_for_invalid_target(
     _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
 
     response = client.post(
-        "/presentations/pres_n2/revisions/slide",
+        "/presentations/pres_o2/revisions/slide",
         json={
-            "instruction": "Revise an invalid slide.",
-            "plan": _default_plan_payload(),
-            "target_slide_index": 999,
+            "instruction": "Explicit plan remains supported.",
+            "plan": _plan_payload(_default_plan()),
+            "target_slide_index": 1,
+            "change_summary": "O2 explicit plan compatibility",
         },
     )
 
-    assert response.status_code == 400
-    assert "out of range" in response.json()["detail"]
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["version_number"] == 2
+    assert payload["revised_slide_ids"] == ["slide_002"]
+
+    latest_snapshot = SqlitePresentationPlanSnapshotRepository(repository_db_path).get_latest_for_presentation("pres_o2")
+    assert latest_snapshot is not None
+    assert latest_snapshot.presentation_version_id == payload["version_id"]
 
 
-def test_n2_revision_api_is_owner_scoped(
+def test_o2_missing_snapshot_error_is_owner_scoped(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -261,27 +282,15 @@ def test_n2_revision_api_is_owner_scoped(
         session_id=session_id,
         owner_user_id="alice",
     )
+    _seed_plan_snapshot(repository_db_path=repository_db_path)
 
     response = client.post(
-        "/presentations/pres_n2/revisions/slide",
+        "/presentations/pres_o2/revisions/slide",
         headers={"X-User-Id": "bob"},
         json={
-            "instruction": "Unauthorized revision.",
-            "plan": _default_plan_payload(),
+            "instruction": "Unauthorized no-plan revision.",
             "target_slide_index": 0,
         },
     )
 
     assert response.status_code == 404
-
-
-def test_n2_missing_presentation_returns_404(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    _configure_sqlite_test_env(monkeypatch, tmp_path)
-
-    response = client.get("/presentations/missing/revisions")
-
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Presentation not found"

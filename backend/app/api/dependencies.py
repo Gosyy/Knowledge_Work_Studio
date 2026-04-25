@@ -15,7 +15,7 @@ from backend.app.integrations.llm import LLMProvider
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
 from backend.app.services import ArtifactService, LLMTextService, PresentationCatalogService, SessionTaskService, TaskQueueService
 from backend.app.services.task_source_service import TaskSourceService
-from backend.app.services.slides_service import DeckRevisionService
+from backend.app.services.slides_service import DeckRevisionService, PresentationPlanSnapshotService
 
 DEFAULT_CURRENT_USER_ID = "user_local_default"
 
@@ -53,6 +53,13 @@ def get_deck_revision_service(request: Request) -> DeckRevisionService:
     service = get_app_container(request).deck_revision_service
     if service is None:
         raise RuntimeError("Deck revision service is not configured in the application container.")
+    return service
+
+
+def get_presentation_plan_snapshot_service(request: Request) -> PresentationPlanSnapshotService:
+    service = get_app_container(request).presentation_plan_snapshot_service
+    if service is None:
+        raise RuntimeError("Presentation plan snapshot service is not configured in the application container.")
     return service
 
 
