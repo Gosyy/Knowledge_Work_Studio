@@ -12,6 +12,7 @@ from backend.app.domain import (
     DerivedContent,
     Document,
     Presentation,
+    PresentationVersion,
     Session,
     StoredFile,
     Task,
@@ -768,6 +769,71 @@ class SqlitePresentationRepository(_SqliteRepositoryBase):
                 status=row["status"],
                 created_at=_parse_datetime(row["created_at"]),
                 updated_at=_parse_datetime(row["updated_at"]),
+            )
+            for row in rows
+        ]
+
+
+class SqlitePresentationVersionRepository(_SqliteRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS presentation_versions (
+                    id TEXT PRIMARY KEY,
+                    presentation_id TEXT NOT NULL,
+                    file_id TEXT NOT NULL,
+                    version_number INTEGER NOT NULL,
+                    created_from_task_id TEXT,
+                    parent_version_id TEXT,
+                    change_summary TEXT,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+
+    def create(self, presentation_version: PresentationVersion) -> PresentationVersion:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO presentation_versions
+                (id, presentation_id, file_id, version_number, created_from_task_id, parent_version_id, change_summary, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    presentation_version.id,
+                    presentation_version.presentation_id,
+                    presentation_version.file_id,
+                    presentation_version.version_number,
+                    presentation_version.created_from_task_id,
+                    presentation_version.parent_version_id,
+                    presentation_version.change_summary,
+                    presentation_version.created_at.isoformat(),
+                ),
+            )
+        return presentation_version
+
+    def list_by_presentation(self, presentation_id: str) -> list[PresentationVersion]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT id, presentation_id, file_id, version_number, created_from_task_id, parent_version_id, change_summary, created_at
+                FROM presentation_versions
+                WHERE presentation_id = ?
+                ORDER BY version_number ASC
+                """,
+                (presentation_id,),
+            ).fetchall()
+        return [
+            PresentationVersion(
+                id=row["id"],
+                presentation_id=row["presentation_id"],
+                file_id=row["file_id"],
+                version_number=row["version_number"],
+                created_from_task_id=row["created_from_task_id"],
+                parent_version_id=row["parent_version_id"],
+                change_summary=row["change_summary"],
+                created_at=_parse_datetime(row["created_at"]),
             )
             for row in rows
         ]

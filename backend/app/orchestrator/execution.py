@@ -139,11 +139,17 @@ class OrchestratorExecutionCoordinator:
                 content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 artifact_content=result.artifact_content,
                 result_metadata={
+                    "slide_count": result.slide_count,
                     "outline": [
                         {"title": item.title, "bullets": list(item.bullets)}
                         for item in result.outline
                     ],
                     "generated_media_file_ids": list(result.generated_media_file_ids),
+                    "generated_media_refs": [
+                        {"stored_file_id": file_id, "role": "generated_slide_media"}
+                        for file_id in result.generated_media_file_ids
+                    ],
+                    "source_grounding_metadata": result.source_grounding_metadata,
                 },
             )
 

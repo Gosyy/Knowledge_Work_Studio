@@ -3,6 +3,7 @@ from backend.app.services.data_service import DataAnalysisService
 from backend.app.services.docx_service import DocxService
 from backend.app.services.llm_text_service import LLMTextService
 from backend.app.services.pdf_service import PdfService
+from backend.app.services.presentation_catalog_service import PresentationCatalogService
 from backend.app.services.session_task_service import SessionTaskService
 from backend.app.services.slides_service import SlidesService
 from backend.app.services.task_execution_service import TaskExecutionService
@@ -15,6 +16,7 @@ __all__ = [
     "DocxService",
     "LLMTextService",
     "PdfService",
+    "PresentationCatalogService",
     "SessionTaskService",
     "SlidesService",
     "TaskExecutionService",
