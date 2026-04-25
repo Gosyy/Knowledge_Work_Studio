@@ -3,6 +3,7 @@ import { ArtifactsPanel } from "@/components/artifacts/artifacts-panel";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { UploadPanel } from "@/components/upload/upload-panel";
 import { TaskStatusPanel } from "@/components/task-status/task-status-panel";
+import { PresentationRegistryPanel } from "@/components/presentations/presentation-registry-panel";
 
 const panelStyle: CSSProperties = {
   background: "#ffffff",
@@ -10,6 +11,11 @@ const panelStyle: CSSProperties = {
   borderRadius: "0.5rem",
   padding: "1rem",
   minHeight: "200px",
+};
+
+const widePanelStyle: CSSProperties = {
+  ...panelStyle,
+  gridColumn: "1 / -1",
 };
 
 const gridStyle: CSSProperties = {
@@ -41,6 +47,9 @@ export function WorkspaceShell() {
         </div>
         <div style={panelStyle}>
           <ArtifactsPanel />
+        </div>
+        <div style={widePanelStyle}>
+          <PresentationRegistryPanel />
         </div>
       </section>
     </main>
