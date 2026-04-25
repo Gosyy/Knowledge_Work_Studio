@@ -75,6 +75,19 @@ class PresentationVersion:
 
 
 @dataclass(frozen=True)
+class PresentationPlanSnapshot:
+    id: str
+    presentation_id: str
+    presentation_version_id: str | None
+    snapshot_json: dict[str, Any]
+    created_from_task_id: str | None
+    change_summary: str | None
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+
+
+@dataclass(frozen=True)
 class ArtifactSource:
     id: str
     artifact_id: str

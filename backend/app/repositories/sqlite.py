@@ -12,6 +12,7 @@ from backend.app.domain import (
     DerivedContent,
     Document,
     Presentation,
+    PresentationPlanSnapshot,
     PresentationVersion,
     Session,
     StoredFile,
@@ -837,6 +838,120 @@ class SqlitePresentationVersionRepository(_SqliteRepositoryBase):
             )
             for row in rows
         ]
+
+class SqlitePresentationPlanSnapshotRepository(_SqliteRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS presentation_plan_snapshots (
+                    id TEXT PRIMARY KEY,
+                    presentation_id TEXT NOT NULL,
+                    presentation_version_id TEXT,
+                    snapshot_json TEXT NOT NULL,
+                    created_from_task_id TEXT,
+                    change_summary TEXT,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS idx_presentation_plan_snapshots_presentation "
+                "ON presentation_plan_snapshots (presentation_id, created_at)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS idx_presentation_plan_snapshots_version "
+                "ON presentation_plan_snapshots (presentation_version_id)"
+            )
+
+    def create(self, snapshot: PresentationPlanSnapshot) -> PresentationPlanSnapshot:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO presentation_plan_snapshots
+                (id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    snapshot.id,
+                    snapshot.presentation_id,
+                    snapshot.presentation_version_id,
+                    json.dumps(snapshot.snapshot_json),
+                    snapshot.created_from_task_id,
+                    snapshot.change_summary,
+                    snapshot.created_at.isoformat(),
+                ),
+            )
+        return snapshot
+
+    def get(self, snapshot_id: str) -> PresentationPlanSnapshot | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at
+                FROM presentation_plan_snapshots
+                WHERE id = ?
+                """,
+                (snapshot_id,),
+            ).fetchone()
+        return self._row_to_snapshot(row)
+
+    def list_by_presentation(self, presentation_id: str) -> list[PresentationPlanSnapshot]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at
+                FROM presentation_plan_snapshots
+                WHERE presentation_id = ?
+                ORDER BY created_at ASC, id ASC
+                """,
+                (presentation_id,),
+            ).fetchall()
+        return [snapshot for row in rows if (snapshot := self._row_to_snapshot(row)) is not None]
+
+    def get_latest_for_presentation(self, presentation_id: str) -> PresentationPlanSnapshot | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at
+                FROM presentation_plan_snapshots
+                WHERE presentation_id = ?
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+                """,
+                (presentation_id,),
+            ).fetchone()
+        return self._row_to_snapshot(row)
+
+    def get_by_version(self, presentation_version_id: str) -> PresentationPlanSnapshot | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at
+                FROM presentation_plan_snapshots
+                WHERE presentation_version_id = ?
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+                """,
+                (presentation_version_id,),
+            ).fetchone()
+        return self._row_to_snapshot(row)
+
+    @staticmethod
+    def _row_to_snapshot(row: sqlite3.Row | None) -> PresentationPlanSnapshot | None:
+        if row is None:
+            return None
+        return PresentationPlanSnapshot(
+            id=row["id"],
+            presentation_id=row["presentation_id"],
+            presentation_version_id=row["presentation_version_id"],
+            snapshot_json=json.loads(row["snapshot_json"] or "{}"),
+            created_from_task_id=row["created_from_task_id"],
+            change_summary=row["change_summary"],
+            created_at=_parse_datetime(row["created_at"]),
+        )
+
+
 
 
 class SqliteArtifactSourceRepository(_SqliteRepositoryBase):

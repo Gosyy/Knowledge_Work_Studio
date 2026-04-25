@@ -11,6 +11,7 @@ from backend.app.domain import (
     ExecutionRun,
     LLMRun,
     Presentation,
+    PresentationPlanSnapshot,
     PresentationVersion,
     Session,
     StoredFile,
@@ -96,6 +97,20 @@ class PresentationVersionRepository(Protocol):
     def create(self, presentation_version: PresentationVersion) -> PresentationVersion: ...
 
     def list_by_presentation(self, presentation_id: str) -> list[PresentationVersion]: ...
+
+
+class PresentationPlanSnapshotRepository(Protocol):
+    def create(self, snapshot: PresentationPlanSnapshot) -> PresentationPlanSnapshot: ...
+
+    def get(self, snapshot_id: str) -> PresentationPlanSnapshot | None: ...
+
+    def list_by_presentation(self, presentation_id: str) -> list[PresentationPlanSnapshot]: ...
+
+    def get_latest_for_presentation(self, presentation_id: str) -> PresentationPlanSnapshot | None: ...
+
+    def get_by_version(self, presentation_version_id: str) -> PresentationPlanSnapshot | None: ...
+
+
 
 
 class ArtifactSourceRepository(Protocol):

@@ -11,6 +11,13 @@ from backend.app.services.slides_service.image_pipeline import (
 from backend.app.services.slides_service.layouts import ImagePlaceholderBox, ResolvedSlideLayout, ShapeBox, SlideLayoutSpec, SlideTemplate, get_template, get_template_registry, resolve_layout_for_slide
 from backend.app.services.slides_service.media import ImageFitMode, SlideMediaAsset
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, SlideType, StoryArcStage, build_presentation_plan, build_slides_outline, plan_to_outline
+from backend.app.services.slides_service.plan_snapshot import (
+    PresentationPlanSnapshotService,
+    deserialize_presentation_plan,
+    serialize_presentation_plan,
+)
+
+
 from backend.app.services.slides_service.revision import (
     DeckRevisionRequest,
     DeckRevisionResult,
@@ -49,6 +56,9 @@ __all__ = [
     "ImagePlaceholderBox",
     "ImageSpec",
     "PlannedSlide",
+    "PresentationPlanSnapshotService",
+    "deserialize_presentation_plan",
+    "serialize_presentation_plan",
     "PresentationPlan",
     "RegisteredSlideMedia",
     "ResolvedSlideLayout",
