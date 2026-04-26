@@ -2,7 +2,7 @@ PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
 UVICORN ?= $(PYTHON) -m uvicorn
 
-.PHONY: install run test lint create-dirs deploy-preflight operator-smoke
+.PHONY: install run test lint create-dirs deploy-preflight operator-smoke postgres-integration
 
 install:
 	$(PIP) install -r requirements.txt
@@ -24,3 +24,6 @@ deploy-preflight:
 
 operator-smoke:
 	$(PYTHON) scripts/kw_operator_smoke.py --base-url http://localhost:8000
+
+postgres-integration:
+	$(PYTHON) scripts/kw_postgres_integration_gate.py --require-dsn
