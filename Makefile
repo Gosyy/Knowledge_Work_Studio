@@ -2,7 +2,7 @@ PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
 UVICORN ?= $(PYTHON) -m uvicorn
 
-.PHONY: install run test lint create-dirs deploy-preflight operator-smoke postgres-integration deploy-package-validate docker-build docker-up docker-down
+.PHONY: install run test lint create-dirs deploy-preflight operator-smoke postgres-integration deploy-package-validate docker-build docker-up docker-down production-readiness
 
 install:
 	$(PIP) install -r requirements.txt
@@ -39,3 +39,6 @@ docker-up:
 
 docker-down:
 	docker compose -f docker-compose.deploy.yml down
+
+production-readiness:
+	$(PYTHON) scripts/kw_production_readiness_gate.py --repo-root .
