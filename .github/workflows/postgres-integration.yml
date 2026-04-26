@@ -1,0 +1,53 @@
+name: Postgres integration gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 5_Stage_P
+  push:
+    branches:
+      - main
+      - 5_Stage_P
+  workflow_dispatch:
+
+jobs:
+  postgres-integration:
+    name: Postgres integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: kwstudio
+          POSTGRES_PASSWORD: kwstudio
+          POSTGRES_DB: kwstudio_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kwstudio -d kwstudio_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      KW_POSTGRES_TEST_DATABASE_URL: postgresql://kwstudio:kwstudio@localhost:5432/kwstudio_test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend and Postgres test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt "psycopg[binary]>=3.1,<4.0"
+
+      - name: Run Postgres integration gate
+        run: python scripts/kw_postgres_integration_gate.py --require-dsn

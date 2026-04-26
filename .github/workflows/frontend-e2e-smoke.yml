@@ -1,0 +1,45 @@
+name: Frontend E2E smoke
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 5_Stage_P
+  push:
+    branches:
+      - main
+      - 5_Stage_P
+  workflow_dispatch:
+
+jobs:
+  frontend-e2e-smoke:
+    name: Frontend E2E smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --no-audit --no-fund --progress=false
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Build frontend
+        run: NEXT_TELEMETRY_DISABLED=1 npm run build
+
+      - name: Run E2E smoke
+        run: npm run test:e2e:smoke

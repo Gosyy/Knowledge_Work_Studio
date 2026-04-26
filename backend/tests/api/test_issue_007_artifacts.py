@@ -42,17 +42,21 @@ def test_issue_007_get_and_list_artifacts(monkeypatch, tmp_path: Path) -> None:
     assert get_resp.status_code == 200
     get_payload = get_resp.json()
     assert get_payload["id"] == artifact.id
-    assert get_payload["storage_backend"] == "local"
-    assert get_payload["storage_key"].startswith(f"artifacts/{session_id}/{task_id}/{artifact.id}/")
-    assert get_payload["storage_uri"] == f"local://{get_payload['storage_key']}"
+    assert get_payload["download_url"] == f"/artifacts/{artifact.id}/download"
     assert get_payload["size_bytes"] == 0
+    assert "storage_backend" not in get_payload
+    assert "storage_key" not in get_payload
+    assert "storage_uri" not in get_payload
 
     list_resp = client.get(f"/sessions/{session_id}/artifacts")
     assert list_resp.status_code == 200
     listed = list_resp.json()
     assert len(listed) == 1
     assert listed[0]["id"] == artifact.id
-    assert listed[0]["storage_uri"] == f"local://{listed[0]['storage_key']}"
+    assert listed[0]["download_url"] == f"/artifacts/{artifact.id}/download"
+    assert "storage_backend" not in listed[0]
+    assert "storage_key" not in listed[0]
+    assert "storage_uri" not in listed[0]
 
 
 def test_issue_007_artifact_endpoints_not_found(monkeypatch, tmp_path: Path) -> None:
@@ -106,8 +110,11 @@ def test_issue_007_artifacts_persist_after_container_reset(monkeypatch, tmp_path
     assert get_resp.status_code == 200
     payload = get_resp.json()
     assert payload["id"] == artifact.id
-    assert payload["storage_key"].endswith(f"{artifact.id}-edited.docx")
+    assert payload["download_url"] == f"/artifacts/{artifact.id}/download"
     assert payload["size_bytes"] == 0
+    assert "storage_backend" not in payload
+    assert "storage_key" not in payload
+    assert "storage_uri" not in payload
 
 
 def test_issue_007_download_artifact_returns_file_content(monkeypatch, tmp_path: Path) -> None:

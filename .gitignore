@@ -37,3 +37,7 @@ build/
 
 # Transitional packaging artifacts
 kw_studio_ideal_structure*.zip
+
+# Playwright
+playwright-report/
+test-results/

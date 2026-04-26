@@ -64,6 +64,24 @@ class DeckRevisionResult:
     previous_file_id: str | None
 
 
+@dataclass(frozen=True)
+class DeckRestoreRequest:
+    presentation_id: str
+    target_version_id: str
+    owner_user_id: str = "user_local_default"
+    task_id: str | None = None
+    change_summary: str | None = None
+
+
+@dataclass(frozen=True)
+class DeckRestoreResult:
+    presentation: Presentation
+    version: PresentationVersion
+    target_version: PresentationVersion
+    previous_version_id: str | None
+    previous_file_id: str | None
+
+
 @dataclass
 class DeckRevisionService:
     storage: FileStorage
@@ -135,6 +153,47 @@ class DeckRevisionService:
                 self.presentation_versions.list_by_presentation(presentation_id),
                 key=lambda version: version.version_number,
             )
+        )
+
+    def restore_version(self, request: DeckRestoreRequest) -> DeckRestoreResult:
+        presentation = self._require_presentation(request.presentation_id)
+        versions = self.list_revision_lineage(presentation.id)
+        target_version = next((version for version in versions if version.id == request.target_version_id), None)
+        if target_version is None:
+            raise ValueError(
+                f"Presentation version '{request.target_version_id}' not found for presentation '{presentation.id}'."
+            )
+
+        previous_version = versions[-1] if versions else None
+        if previous_version is not None and previous_version.id == target_version.id:
+            raise ValueError(f"Presentation version '{target_version.id}' is already current.")
+
+        next_version_number = (previous_version.version_number + 1) if previous_version else 1
+        restored_version = PresentationVersion(
+            id=f"presver_restore_{uuid4().hex}",
+            presentation_id=presentation.id,
+            file_id=target_version.file_id,
+            version_number=next_version_number,
+            created_from_task_id=request.task_id,
+            parent_version_id=previous_version.id if previous_version else None,
+            change_summary=request.change_summary
+            or f"Restore to version {target_version.version_number}",
+        )
+        self.presentation_versions.create(restored_version)
+
+        updated_presentation = replace(
+            presentation,
+            current_file_id=target_version.file_id,
+            updated_at=datetime.now(timezone.utc),
+        )
+        self.presentations.create(updated_presentation)
+
+        return DeckRestoreResult(
+            presentation=updated_presentation,
+            version=restored_version,
+            target_version=target_version,
+            previous_version_id=previous_version.id if previous_version else None,
+            previous_file_id=presentation.current_file_id,
         )
 
     def _require_presentation(self, presentation_id: str) -> Presentation:

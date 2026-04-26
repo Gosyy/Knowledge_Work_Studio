@@ -81,6 +81,14 @@ export async function getPresentation(presentationId: string): Promise<Presentat
   return requestJson<PresentationSummary>(`/presentations/${safePresentationId}`);
 }
 
+export async function listPresentationVersions(presentationId: string): Promise<PresentationVersionSummary[]> {
+  const safePresentationId = encodeURIComponent(presentationId.trim());
+  if (!safePresentationId) {
+    throw new Error("Presentation id is required to load version timeline.");
+  }
+  return requestJson<PresentationVersionSummary[]>(`/presentations/${safePresentationId}/versions`);
+}
+
 export type PresentationPlanSlide = {
   slide_id?: string;
   slide_type?: string;
@@ -190,6 +198,25 @@ export type DeckRevisionResponse = {
   previous_file_id: string | null;
 };
 
+export type PresentationRestoreRequest = {
+  confirmation: "RESTORE" | string;
+  task_id?: string | null;
+  change_summary?: string | null;
+};
+
+export type PresentationRestoreResponse = {
+  presentation_id: string;
+  restored_version_id: string;
+  restored_version_number: number;
+  target_version_id: string;
+  target_version_number: number;
+  parent_version_id: string | null;
+  current_file_id: string;
+  previous_file_id: string | null;
+  change_summary: string | null;
+  created_at: string;
+};
+
 export type DeckSlideRevisionRequest = {
   instruction: string;
   target_slide_id?: string | null;
@@ -241,6 +268,22 @@ export async function revisePresentationSectionWithoutPlan(
   }
   return requestJson<DeckRevisionResponse>(
     `/presentations/${safePresentationId}/revisions/section`,
+    jsonRequestInit(request),
+  );
+}
+
+export async function restorePresentationVersion(
+  presentationId: string,
+  versionId: string,
+  request: PresentationRestoreRequest,
+): Promise<PresentationRestoreResponse> {
+  const safePresentationId = encodeURIComponent(presentationId.trim());
+  const safeVersionId = encodeURIComponent(versionId.trim());
+  if (!safePresentationId || !safeVersionId) {
+    throw new Error("Presentation id and version id are required to restore a version.");
+  }
+  return requestJson<PresentationRestoreResponse>(
+    `/presentations/${safePresentationId}/versions/${safeVersionId}/restore`,
     jsonRequestInit(request),
   );
 }

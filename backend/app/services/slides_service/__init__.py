@@ -19,6 +19,8 @@ from backend.app.services.slides_service.plan_snapshot import (
 
 
 from backend.app.services.slides_service.revision import (
+    DeckRestoreRequest,
+    DeckRestoreResult,
     DeckRevisionRequest,
     DeckRevisionResult,
     DeckRevisionScope,
@@ -50,6 +52,8 @@ __all__ = [
     "DeterministicRevisionStrategy",
     "DeckRevisionService",
     "DeckRevisionScope",
+    "DeckRestoreResult",
+    "DeckRestoreRequest",
     "DeckRevisionResult",
     "DeckRevisionRequest",
     "ImageFitMode",
