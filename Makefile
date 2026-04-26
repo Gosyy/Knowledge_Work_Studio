@@ -2,7 +2,7 @@ PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
 UVICORN ?= $(PYTHON) -m uvicorn
 
-.PHONY: install run test lint create-dirs deploy-preflight operator-smoke postgres-integration
+.PHONY: install run test lint create-dirs deploy-preflight operator-smoke postgres-integration deploy-package-validate docker-build docker-up docker-down
 
 install:
 	$(PIP) install -r requirements.txt
@@ -27,3 +27,15 @@ operator-smoke:
 
 postgres-integration:
 	$(PYTHON) scripts/kw_postgres_integration_gate.py --require-dsn
+
+deploy-package-validate:
+	$(PYTHON) scripts/kw_validate_deployment_package.py --repo-root .
+
+docker-build:
+	docker compose -f docker-compose.deploy.yml build
+
+docker-up:
+	docker compose -f docker-compose.deploy.yml up -d
+
+docker-down:
+	docker compose -f docker-compose.deploy.yml down
