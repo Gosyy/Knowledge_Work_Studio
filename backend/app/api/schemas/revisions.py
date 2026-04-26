@@ -134,6 +134,28 @@ class DeckRevisionResponseSchema(BaseModel):
     )
 
 
+class PresentationRestoreRequestSchema(BaseModel):
+    confirmation: str = Field(
+        ...,
+        description="Must be exactly RESTORE to perform a non-destructive version restore.",
+    )
+    task_id: str | None = None
+    change_summary: str | None = None
+
+
+class PresentationRestoreResponseSchema(BaseModel):
+    presentation_id: str
+    restored_version_id: str
+    restored_version_number: int
+    target_version_id: str
+    target_version_number: int
+    parent_version_id: str | None
+    current_file_id: str
+    previous_file_id: str | None
+    change_summary: str | None
+    created_at: datetime
+
+
 class PresentationRevisionLineageItemSchema(BaseModel):
     id: str
     version_number: int

@@ -271,7 +271,13 @@ function PresentationDetailCard({
       )}
 
       <PlanSnapshotInspector presentation={presentation} />
-      <VersionTimelinePanel presentation={presentation} />
+      <VersionTimelinePanel
+        presentation={presentation}
+        onRestoreApplied={async () => {
+          const updated = await getPresentation(presentation.id);
+          onPresentationUpdated(updated);
+        }}
+      />
       <RevisionActionPanel
         presentation={presentation}
         onRevisionApplied={async () => {

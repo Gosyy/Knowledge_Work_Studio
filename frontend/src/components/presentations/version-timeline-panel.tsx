@@ -6,10 +6,12 @@ import {
   getPresentationRevisionDiff,
   getPresentationVersionPlan,
   listPresentationVersions,
+  restorePresentationVersion,
   type PresentationPlanDiff,
   type PresentationPlanSnapshot,
   type PresentationSummary,
   type PresentationVersionSummary,
+  type PresentationRestoreResponse,
 } from "@/lib/api/presentations";
 
 const mutedTextStyle = {
@@ -47,7 +49,15 @@ type TimelineState = {
   selectedDiff: PresentationPlanDiff | null;
 };
 
-export function VersionTimelinePanel({ presentation }: { presentation: PresentationSummary }) {
+export function VersionTimelinePanel({
+  presentation,
+  onRestoreApplied,
+}: {
+  presentation: PresentationSummary;
+  onRestoreApplied?: () => Promise<void> | void;
+}) {
+  const [restoreConfirmation, setRestoreConfirmation] = useState("");
+  const [restoreResult, setRestoreResult] = useState<PresentationRestoreResponse | null>(null);
   const [state, setState] = useState<TimelineState>({
     status: "idle",
     error: null,
@@ -64,6 +74,7 @@ export function VersionTimelinePanel({ presentation }: { presentation: Presentat
   const selectedVersion = state.versions.find((version) => version.id === state.selectedVersionId) ?? null;
   const canLoadSelectedPlan = Boolean(selectedVersion);
   const canLoadSelectedDiff = Boolean(selectedVersion?.parent_version_id);
+  const canRestoreSelected = Boolean(selectedVersion && restoreConfirmation.trim() === "RESTORE" && state.status !== "loading_diff");
 
   async function loadVersions() {
     setState((current) => ({ ...current, status: "loading_versions", error: null }));
@@ -96,6 +107,7 @@ export function VersionTimelinePanel({ presentation }: { presentation: Presentat
       selectedDiff: null,
       error: null,
     }));
+    setRestoreResult(null);
   }
 
   async function loadSelectedPlan() {
@@ -116,6 +128,48 @@ export function VersionTimelinePanel({ presentation }: { presentation: Presentat
         ...current,
         status: "error",
         error: error instanceof Error ? error.message : "Unable to load selected version plan.",
+      }));
+    }
+  }
+
+  async function restoreSelectedVersion() {
+    if (!selectedVersion) {
+      return;
+    }
+    if (restoreConfirmation.trim() !== "RESTORE") {
+      setState((current) => ({
+        ...current,
+        status: "error",
+        error: "Type RESTORE to confirm version restore.",
+      }));
+      return;
+    }
+
+    setState((current) => ({ ...current, status: "loading_diff", error: null }));
+    try {
+      const result = await restorePresentationVersion(presentation.id, selectedVersion.id, {
+        confirmation: restoreConfirmation,
+        change_summary: `Restore to v${selectedVersion.version_number}`,
+      });
+      const versions = await listPresentationVersions(presentation.id);
+      const latest = [...versions].sort((left, right) => right.version_number - left.version_number)[0] ?? null;
+      setRestoreResult(result);
+      setRestoreConfirmation("");
+      setState((current) => ({
+        ...current,
+        status: "loaded",
+        error: null,
+        versions,
+        selectedVersionId: latest?.id ?? result.restored_version_id,
+        selectedPlan: null,
+        selectedDiff: null,
+      }));
+      await onRestoreApplied?.();
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        status: "error",
+        error: error instanceof Error ? error.message : "Unable to restore selected version.",
       }));
     }
   }
@@ -226,6 +280,42 @@ export function VersionTimelinePanel({ presentation }: { presentation: Presentat
       {state.status === "loaded" && sortedVersions.length === 0 ? (
         <p style={{ ...mutedTextStyle, marginTop: "0.75rem" }}>No presentation versions are available.</p>
       ) : null}
+
+      <div style={{ marginTop: "1rem", border: "1px solid #e5e7eb", borderRadius: "0.5rem", padding: "0.75rem", background: "#fff7ed" }}>
+        <h5 style={{ marginTop: 0 }}>Restore selected version</h5>
+        <p style={mutedTextStyle}>
+          This creates a new restore version and does not delete historical versions. Type RESTORE to enable the action.
+        </p>
+        <label>
+          <span style={{ display: "block", fontSize: "0.875rem", marginBottom: "0.25rem" }}>Restore confirmation</span>
+          <input
+            aria-label="Restore confirmation"
+            value={restoreConfirmation}
+            onChange={(event) => setRestoreConfirmation(event.target.value)}
+            placeholder="Type RESTORE"
+            style={{
+              border: "1px solid #d1d5db",
+              borderRadius: "0.375rem",
+              padding: "0.45rem 0.7rem",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          style={{ ...secondaryButtonStyle, marginTop: "0.5rem" }}
+          onClick={() => void restoreSelectedVersion()}
+          disabled={!canRestoreSelected}
+        >
+          Restore selected version
+        </button>
+        {restoreResult ? (
+          <p style={{ ...mutedTextStyle, marginTop: "0.5rem" }}>
+            Restored v{restoreResult.target_version_number} as v{restoreResult.restored_version_number} · {restoreResult.restored_version_id}
+          </p>
+        ) : null}
+      </div>
 
       {selectedVersion && !selectedVersion.parent_version_id ? (
         <p style={{ ...mutedTextStyle, marginTop: "0.75rem" }}>
