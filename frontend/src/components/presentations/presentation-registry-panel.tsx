@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { PlanSnapshotInspector } from "@/components/presentations/plan-snapshot-inspector";
 import { RevisionActionPanel } from "@/components/presentations/revision-action-panel";
+import { VersionTimelinePanel } from "@/components/presentations/version-timeline-panel";
 import {
   formatBytes,
   formatDateTime,
@@ -270,6 +271,7 @@ function PresentationDetailCard({
       )}
 
       <PlanSnapshotInspector presentation={presentation} />
+      <VersionTimelinePanel presentation={presentation} />
       <RevisionActionPanel
         presentation={presentation}
         onRevisionApplied={async () => {

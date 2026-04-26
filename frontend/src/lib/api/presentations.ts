@@ -81,6 +81,14 @@ export async function getPresentation(presentationId: string): Promise<Presentat
   return requestJson<PresentationSummary>(`/presentations/${safePresentationId}`);
 }
 
+export async function listPresentationVersions(presentationId: string): Promise<PresentationVersionSummary[]> {
+  const safePresentationId = encodeURIComponent(presentationId.trim());
+  if (!safePresentationId) {
+    throw new Error("Presentation id is required to load version timeline.");
+  }
+  return requestJson<PresentationVersionSummary[]>(`/presentations/${safePresentationId}/versions`);
+}
+
 export type PresentationPlanSlide = {
   slide_id?: string;
   slide_type?: string;

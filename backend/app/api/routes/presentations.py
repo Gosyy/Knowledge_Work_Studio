@@ -16,6 +16,7 @@ from backend.app.api.schemas import (
     PresentationPlanSlideDeltaSchema,
     PresentationPlanSnapshotSchema,
     PresentationSchema,
+    PresentationVersionSummarySchema,
 )
 from backend.app.domain import PresentationPlanSnapshot
 from backend.app.services import PresentationCatalogService
@@ -56,6 +57,22 @@ def get_presentation(
         owner_user_id=current_user_id,
     )
     return PresentationSchema(**presentation.__dict__)
+
+
+@router.get(
+    "/presentations/{presentation_id}/versions",
+    response_model=list[PresentationVersionSummarySchema],
+)
+def list_presentation_versions(
+    presentation_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+    service: PresentationCatalogService = Depends(get_presentation_catalog_service),
+) -> list[PresentationVersionSummarySchema]:
+    versions = service.list_presentation_versions_for_user(
+        presentation_id=presentation_id,
+        owner_user_id=current_user_id,
+    )
+    return [PresentationVersionSummarySchema(**version.__dict__) for version in versions]
 
 
 @router.get("/presentations/{presentation_id}/plan", response_model=PresentationPlanSnapshotSchema)

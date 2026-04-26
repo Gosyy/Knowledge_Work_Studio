@@ -68,6 +68,23 @@ class PresentationCatalogService:
         self.session_task_service.get_session_for_user(presentation.session_id, owner_user_id)
         return self._to_metadata(presentation)
 
+    def list_presentation_versions_for_user(
+        self,
+        *,
+        presentation_id: str,
+        owner_user_id: str,
+    ) -> tuple[PresentationVersionSummary, ...]:
+        presentation = self.presentations.get(presentation_id)
+        if presentation is None:
+            _not_found("Presentation not found")
+
+        self.session_task_service.get_session_for_user(presentation.session_id, owner_user_id)
+        versions = sorted(
+            self.presentation_versions.list_by_presentation(presentation_id),
+            key=lambda item: item.version_number,
+        )
+        return tuple(_version_summary(version) for version in versions)
+
     def _to_metadata(self, presentation: Presentation) -> PresentationMetadata:
         current_file = self._current_file_ref(presentation.current_file_id)
         latest_version = self._latest_version_summary(presentation.id)
