@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { PlanSnapshotInspector } from "@/components/presentations/plan-snapshot-inspector";
 import {
   formatBytes,
   formatDateTime,
@@ -249,6 +250,8 @@ function PresentationDetailCard({ presentation }: { presentation: PresentationSu
       ) : (
         <p style={mutedTextStyle}>No version metadata is available.</p>
       )}
+
+      <PlanSnapshotInspector presentation={presentation} />
     </aside>
   );
 }

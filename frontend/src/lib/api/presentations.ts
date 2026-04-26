@@ -81,6 +81,101 @@ export async function getPresentation(presentationId: string): Promise<Presentat
   return requestJson<PresentationSummary>(`/presentations/${safePresentationId}`);
 }
 
+export type PresentationPlanSlide = {
+  slide_id?: string;
+  slide_type?: string;
+  story_arc_stage?: string;
+  title?: string;
+  bullets?: string[];
+  speaker_notes?: string | null;
+  layout_hint?: string | null;
+  [key: string]: unknown;
+};
+
+export type PresentationPlanPayload = {
+  schema_version?: number;
+  deck_title?: string;
+  deck_goal?: string;
+  audience?: string;
+  tone?: string;
+  target_slide_count?: number;
+  story_arc?: string[];
+  slides?: PresentationPlanSlide[];
+  [key: string]: unknown;
+};
+
+export type PresentationPlanSnapshot = {
+  snapshot_id: string;
+  presentation_id: string;
+  presentation_version_id: string | null;
+  created_from_task_id: string | null;
+  change_summary: string | null;
+  created_at: string;
+  plan: PresentationPlanPayload;
+};
+
+export type PresentationPlanSlideDelta = {
+  slide_id: string;
+  change_type: "added" | "removed" | "modified";
+  before_index: number | null;
+  after_index: number | null;
+  title_before: string | null;
+  title_after: string | null;
+  story_arc_stage_before: string | null;
+  story_arc_stage_after: string | null;
+  layout_hint_before: string | null;
+  layout_hint_after: string | null;
+  bullets_added: string[];
+  bullets_removed: string[];
+  speaker_notes_changed: boolean;
+};
+
+export type PresentationPlanDiff = {
+  presentation_id: string;
+  base_version_id: string;
+  compared_version_id: string;
+  base_snapshot_id: string;
+  compared_snapshot_id: string;
+  changed_slide_count: number;
+  slide_deltas: PresentationPlanSlideDelta[];
+};
+
+export async function getCurrentPresentationPlan(presentationId: string): Promise<PresentationPlanSnapshot> {
+  const safePresentationId = encodeURIComponent(presentationId.trim());
+  if (!safePresentationId) {
+    throw new Error("Presentation id is required to load the editable plan.");
+  }
+  return requestJson<PresentationPlanSnapshot>(`/presentations/${safePresentationId}/plan`);
+}
+
+export async function getPresentationVersionPlan(
+  presentationId: string,
+  versionId: string,
+): Promise<PresentationPlanSnapshot> {
+  const safePresentationId = encodeURIComponent(presentationId.trim());
+  const safeVersionId = encodeURIComponent(versionId.trim());
+  if (!safePresentationId || !safeVersionId) {
+    throw new Error("Presentation id and version id are required to load a plan snapshot.");
+  }
+  return requestJson<PresentationPlanSnapshot>(
+    `/presentations/${safePresentationId}/versions/${safeVersionId}/plan`,
+  );
+}
+
+export async function getPresentationRevisionDiff(
+  presentationId: string,
+  versionId: string,
+): Promise<PresentationPlanDiff> {
+  const safePresentationId = encodeURIComponent(presentationId.trim());
+  const safeVersionId = encodeURIComponent(versionId.trim());
+  if (!safePresentationId || !safeVersionId) {
+    throw new Error("Presentation id and version id are required to load revision diff.");
+  }
+  return requestJson<PresentationPlanDiff>(
+    `/presentations/${safePresentationId}/revisions/${safeVersionId}/diff`,
+  );
+}
+
 export function formatBytes(sizeBytes: number | null): string {
   if (sizeBytes === null || !Number.isFinite(sizeBytes)) {
     return "unknown size";
