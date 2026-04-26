@@ -19,6 +19,7 @@ from backend.app.repositories import (
     PostgresExecutionRunRepository,
     PostgresLLMRunRepository,
     PostgresPresentationRepository,
+    PostgresPresentationPlanSnapshotRepository,
     PostgresPresentationVersionRepository,
     PostgresSessionRepository,
     PostgresStoredFileRepository,
@@ -36,6 +37,7 @@ from backend.app.repositories.sqlite import (
     SqliteDerivedContentRepository,
     SqliteDocumentRepository,
     SqlitePresentationRepository,
+    SqlitePresentationPlanSnapshotRepository,
     SqlitePresentationVersionRepository,
     SqliteStoredFileRepository,
 )
@@ -53,7 +55,7 @@ from backend.app.services import (
 )
 from backend.app.services.docx_service import DocxServiceEntrypoint
 from backend.app.services.pdf_service import PdfServiceEntrypoint
-from backend.app.services.slides_service import DeckRevisionService, SlidesServiceEntrypoint, SlideImageRegistry
+from backend.app.services.slides_service import DeckRevisionService, PresentationPlanSnapshotService, SlidesServiceEntrypoint, SlideImageRegistry
 from backend.app.services.task_source_service import TaskSourceService
 
 
@@ -71,6 +73,7 @@ class SourceRepositoryBundle:
     documents: object
     presentations: object
     presentation_versions: object
+    presentation_plan_snapshots: object
     artifact_sources: object
     derived_contents: object
 
@@ -82,6 +85,7 @@ class AppContainer:
     task_source_service: TaskSourceService
     presentation_catalog_service: PresentationCatalogService | None = None
     deck_revision_service: DeckRevisionService | None = None
+    presentation_plan_snapshot_service: PresentationPlanSnapshotService | None = None
 
 
 def resolve_metadata_backend(settings: Settings) -> str:
@@ -127,6 +131,7 @@ def build_source_repositories(settings: Settings) -> SourceRepositoryBundle:
             documents=PostgresDocumentRepository(settings.database_url),
             presentations=PostgresPresentationRepository(settings.database_url),
             presentation_versions=PostgresPresentationVersionRepository(settings.database_url),
+            presentation_plan_snapshots=PostgresPresentationPlanSnapshotRepository(settings.database_url),
             artifact_sources=PostgresArtifactSourceRepository(settings.database_url),
             derived_contents=PostgresDerivedContentRepository(settings.database_url),
         )
@@ -135,6 +140,7 @@ def build_source_repositories(settings: Settings) -> SourceRepositoryBundle:
         documents=SqliteDocumentRepository(settings.repository_db_path),
         presentations=SqlitePresentationRepository(settings.repository_db_path),
         presentation_versions=SqlitePresentationVersionRepository(settings.repository_db_path),
+        presentation_plan_snapshots=SqlitePresentationPlanSnapshotRepository(settings.repository_db_path),
         artifact_sources=SqliteArtifactSourceRepository(settings.repository_db_path),
         derived_contents=SqliteDerivedContentRepository(settings.repository_db_path),
     )
@@ -211,12 +217,18 @@ def build_app_container(settings: Settings) -> AppContainer:
         presentations=source_repositories.presentations,
         presentation_versions=source_repositories.presentation_versions,
     )
+    presentation_plan_snapshot_service = PresentationPlanSnapshotService(
+        snapshots=source_repositories.presentation_plan_snapshots,
+        presentations=source_repositories.presentations,
+        presentation_versions=source_repositories.presentation_versions,
+    )
     return AppContainer(
         artifact_service=artifact_service,
         session_task_service=session_task_service,
         task_source_service=task_source_service,
         presentation_catalog_service=presentation_catalog_service,
         deck_revision_service=deck_revision_service,
+        presentation_plan_snapshot_service=presentation_plan_snapshot_service,
     )
 
 

@@ -12,6 +12,7 @@ from backend.app.domain import (
     Document,
     DocumentVersion,
     Presentation,
+    PresentationPlanSnapshot,
     PresentationVersion,
     Session,
     StoredFile,
@@ -909,6 +910,136 @@ class PostgresPresentationVersionRepository(_PostgresRepositoryBase):
             )
             rows = cursor.fetchall()
         return [PresentationVersion(**row) for row in rows]
+
+class PostgresPresentationPlanSnapshotRepository(_PostgresRepositoryBase):
+    def _initialize_schema(self) -> None:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS presentation_plan_snapshots (
+                    id TEXT PRIMARY KEY,
+                    presentation_id TEXT NOT NULL,
+                    presentation_version_id TEXT,
+                    snapshot_json JSONB NOT NULL,
+                    created_from_task_id TEXT,
+                    change_summary TEXT,
+                    created_at TIMESTAMPTZ NOT NULL
+                )
+                """
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_presentation_plan_snapshots_presentation "
+                "ON presentation_plan_snapshots (presentation_id, created_at)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_presentation_plan_snapshots_version "
+                "ON presentation_plan_snapshots (presentation_version_id)"
+            )
+            connection.commit()
+
+    def create(self, snapshot: PresentationPlanSnapshot) -> PresentationPlanSnapshot:
+        with self._lock, self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO presentation_plan_snapshots
+                (id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at)
+                VALUES (%s, %s, %s, %s::jsonb, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    presentation_id = EXCLUDED.presentation_id,
+                    presentation_version_id = EXCLUDED.presentation_version_id,
+                    snapshot_json = EXCLUDED.snapshot_json,
+                    created_from_task_id = EXCLUDED.created_from_task_id,
+                    change_summary = EXCLUDED.change_summary,
+                    created_at = EXCLUDED.created_at
+                """,
+                (
+                    snapshot.id,
+                    snapshot.presentation_id,
+                    snapshot.presentation_version_id,
+                    json.dumps(snapshot.snapshot_json),
+                    snapshot.created_from_task_id,
+                    snapshot.change_summary,
+                    snapshot.created_at,
+                ),
+            )
+            connection.commit()
+        return snapshot
+
+    def get(self, snapshot_id: str) -> PresentationPlanSnapshot | None:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at
+                FROM presentation_plan_snapshots
+                WHERE id = %s
+                """,
+                (snapshot_id,),
+            )
+            row = cursor.fetchone()
+        return self._row_to_snapshot(row)
+
+    def list_by_presentation(self, presentation_id: str) -> list[PresentationPlanSnapshot]:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at
+                FROM presentation_plan_snapshots
+                WHERE presentation_id = %s
+                ORDER BY created_at ASC, id ASC
+                """,
+                (presentation_id,),
+            )
+            rows = cursor.fetchall()
+        return [snapshot for row in rows if (snapshot := self._row_to_snapshot(row)) is not None]
+
+    def get_latest_for_presentation(self, presentation_id: str) -> PresentationPlanSnapshot | None:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at
+                FROM presentation_plan_snapshots
+                WHERE presentation_id = %s
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+                """,
+                (presentation_id,),
+            )
+            row = cursor.fetchone()
+        return self._row_to_snapshot(row)
+
+    def get_by_version(self, presentation_version_id: str) -> PresentationPlanSnapshot | None:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, presentation_id, presentation_version_id, snapshot_json, created_from_task_id, change_summary, created_at
+                FROM presentation_plan_snapshots
+                WHERE presentation_version_id = %s
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+                """,
+                (presentation_version_id,),
+            )
+            row = cursor.fetchone()
+        return self._row_to_snapshot(row)
+
+    @staticmethod
+    def _row_to_snapshot(row: dict[str, object] | None) -> PresentationPlanSnapshot | None:
+        if row is None:
+            return None
+        snapshot_json = row["snapshot_json"]
+        if isinstance(snapshot_json, str):
+            snapshot_json = json.loads(snapshot_json)
+        return PresentationPlanSnapshot(
+            id=row["id"],
+            presentation_id=row["presentation_id"],
+            presentation_version_id=row["presentation_version_id"],
+            snapshot_json=snapshot_json,
+            created_from_task_id=row["created_from_task_id"],
+            change_summary=row["change_summary"],
+            created_at=row["created_at"],
+        )
+
+
 
 
 class PostgresArtifactSourceRepository(_PostgresRepositoryBase):

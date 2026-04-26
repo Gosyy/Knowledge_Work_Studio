@@ -8,6 +8,7 @@ from backend.app.domain.metadata.models import (
     ExecutionRun,
     LLMRun,
     Presentation,
+    PresentationPlanSnapshot,
     PresentationVersion,
     StoredFile,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "DocumentVersion",
     "ExecutionRun",
     "LLMRun",
+    "PresentationPlanSnapshot",
     "Presentation",
     "PresentationVersion",
     "Session",
