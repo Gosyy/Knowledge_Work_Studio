@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { PlanSnapshotInspector } from "@/components/presentations/plan-snapshot-inspector";
+import { RevisionActionPanel } from "@/components/presentations/revision-action-panel";
 import {
   formatBytes,
   formatDateTime,
@@ -197,14 +198,31 @@ export function PresentationRegistryPanel() {
             ))}
           </div>
 
-          <PresentationDetailCard presentation={state.selected} />
+          <PresentationDetailCard
+            presentation={state.selected}
+            onPresentationUpdated={(presentation) =>
+              setState((current) => ({
+                ...current,
+                selected: presentation,
+                presentations: current.presentations.map((item) =>
+                  item.id === presentation.id ? presentation : item,
+                ),
+              }))
+            }
+          />
         </div>
       ) : null}
     </section>
   );
 }
 
-function PresentationDetailCard({ presentation }: { presentation: PresentationSummary | null }) {
+function PresentationDetailCard({
+  presentation,
+  onPresentationUpdated,
+}: {
+  presentation: PresentationSummary | null;
+  onPresentationUpdated: (presentation: PresentationSummary) => void;
+}) {
   if (!presentation) {
     return (
       <aside style={{ border: "1px dashed #d1d5db", borderRadius: "0.5rem", padding: "1rem" }}>
@@ -252,6 +270,13 @@ function PresentationDetailCard({ presentation }: { presentation: PresentationSu
       )}
 
       <PlanSnapshotInspector presentation={presentation} />
+      <RevisionActionPanel
+        presentation={presentation}
+        onRevisionApplied={async () => {
+          const updated = await getPresentation(presentation.id);
+          onPresentationUpdated(updated);
+        }}
+      />
     </aside>
   );
 }

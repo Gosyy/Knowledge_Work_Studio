@@ -176,6 +176,75 @@ export async function getPresentationRevisionDiff(
   );
 }
 
+export type DeckRevisionResponse = {
+  presentation_id: string;
+  version_id: string;
+  version_number: number;
+  parent_version_id: string | null;
+  stored_file_id: string;
+  revised_slide_ids: string[];
+  scope: "slide" | "section";
+  change_summary: string | null;
+  created_at: string;
+  current_file_id: string;
+  previous_file_id: string | null;
+};
+
+export type DeckSlideRevisionRequest = {
+  instruction: string;
+  target_slide_id?: string | null;
+  target_slide_index?: number | null;
+  template_id?: string;
+  task_id?: string | null;
+  change_summary?: string | null;
+};
+
+export type DeckSectionRevisionRequest = {
+  instruction: string;
+  target_stage: string;
+  template_id?: string;
+  task_id?: string | null;
+  change_summary?: string | null;
+};
+
+function jsonRequestInit(payload: unknown): RequestInit {
+  return {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  };
+}
+
+export async function revisePresentationSlideWithoutPlan(
+  presentationId: string,
+  request: DeckSlideRevisionRequest,
+): Promise<DeckRevisionResponse> {
+  const safePresentationId = encodeURIComponent(presentationId.trim());
+  if (!safePresentationId) {
+    throw new Error("Presentation id is required to revise a slide.");
+  }
+  return requestJson<DeckRevisionResponse>(
+    `/presentations/${safePresentationId}/revisions/slide`,
+    jsonRequestInit(request),
+  );
+}
+
+export async function revisePresentationSectionWithoutPlan(
+  presentationId: string,
+  request: DeckSectionRevisionRequest,
+): Promise<DeckRevisionResponse> {
+  const safePresentationId = encodeURIComponent(presentationId.trim());
+  if (!safePresentationId) {
+    throw new Error("Presentation id is required to revise a section.");
+  }
+  return requestJson<DeckRevisionResponse>(
+    `/presentations/${safePresentationId}/revisions/section`,
+    jsonRequestInit(request),
+  );
+}
+
 export function formatBytes(sizeBytes: number | null): string {
   if (sizeBytes === null || !Number.isFinite(sizeBytes)) {
     return "unknown size";
