@@ -16,6 +16,8 @@ REQUIRED_FILES = (
 
 REQUIRED_BACKEND_SNIPPETS = (
     "FROM python:3.12-slim",
+    "COPY backend ./backend",
+    "COPY skills ./skills",
     "USER kwstudio",
     "HEALTHCHECK",
     "uvicorn",
@@ -34,8 +36,11 @@ REQUIRED_COMPOSE_SNIPPETS = (
     "postgres:",
     "backend:",
     "frontend:",
+    "DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-offline_intranet}",
     "DATABASE_URL: ${DATABASE_URL:?",
     "SECRET_KEY: ${SECRET_KEY:?",
+    "STORAGE_ROOT: ${STORAGE_ROOT:-/app/storage}",
+    "kw_storage:/app/storage",
     "condition: service_healthy",
 )
 
@@ -90,6 +95,21 @@ def validate_package(repo_root: Path) -> list[str]:
 
     if "CHANGE_ME" not in env_example:
         errors.append(".env.deploy.example must use explicit CHANGE_ME placeholders.")
+
+    if "DEPLOYMENT_MODE=offline_intranet" not in env_example:
+        errors.append(".env.deploy.example must use the approved offline_intranet deployment mode.")
+
+    if "LLM_PROVIDER=gigachat" not in env_example:
+        errors.append(".env.deploy.example must document the approved gigachat readiness provider.")
+
+    required_storage_env = (
+        "STORAGE_ROOT=/app/storage",
+        "UPLOADS_DIR=/app/storage/uploads",
+        "ARTIFACTS_DIR=/app/storage/artifacts",
+        "TEMP_DIR=/app/storage/temp",
+    )
+    if any(item not in env_example for item in required_storage_env):
+        errors.append(".env.deploy.example must align local storage paths with the backend volume.")
 
     for forbidden in FORBIDDEN_VALUES:
         if forbidden in compose or forbidden in env_example:

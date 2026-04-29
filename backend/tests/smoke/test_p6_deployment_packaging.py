@@ -36,6 +36,7 @@ def test_p6_backend_dockerfile_is_runtime_safe() -> None:
     assert "HEALTHCHECK" in content
     assert "backend.app.main:app" in content
     assert "COPY backend ./backend" in content
+    assert "COPY skills ./skills" in content
     assert "COPY . ." not in content
 
 
@@ -60,6 +61,13 @@ def test_p6_compose_uses_required_envs_and_healthchecks() -> None:
     assert "frontend:" in content
     assert "DATABASE_URL: ${DATABASE_URL:?" in content
     assert "SECRET_KEY: ${SECRET_KEY:?" in content
+    assert "STORAGE_ROOT: ${STORAGE_ROOT:-/app/storage}" in content
+    assert "UPLOADS_DIR: ${UPLOADS_DIR:-/app/storage/uploads}" in content
+    assert "ARTIFACTS_DIR: ${ARTIFACTS_DIR:-/app/storage/artifacts}" in content
+    assert "TEMP_DIR: ${TEMP_DIR:-/app/storage/temp}" in content
+    assert "kw_storage:/app/storage" in content
+    assert "DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-offline_intranet}" in content
+    assert "DEPLOYMENT_MODE: docker" not in content
     assert "condition: service_healthy" in content
     assert "kw_storage:" in content
     assert "postgres_data:" in content
@@ -82,3 +90,12 @@ def test_p6_validation_script_passes() -> None:
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert "[PASS] deployment packaging files are present" in result.stdout
+
+
+def test_p6_env_example_aligns_storage_volume_paths() -> None:
+    env_example = _read(".env.deploy.example")
+
+    assert "STORAGE_ROOT=/app/storage" in env_example
+    assert "UPLOADS_DIR=/app/storage/uploads" in env_example
+    assert "ARTIFACTS_DIR=/app/storage/artifacts" in env_example
+    assert "TEMP_DIR=/app/storage/temp" in env_example

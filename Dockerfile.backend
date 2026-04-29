@@ -16,6 +16,7 @@ RUN python -m pip install --upgrade pip \
     && python -m pip install -r requirements.txt
 
 COPY backend ./backend
+COPY skills ./skills
 COPY scripts/kw_deployment_preflight.py scripts/kw_operator_smoke.py scripts/kw_postgres_integration_gate.py ./scripts/
 
 RUN mkdir -p storage/uploads storage/artifacts storage/temp storage/logs \

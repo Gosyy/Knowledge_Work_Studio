@@ -25,9 +25,13 @@ services:
       - .env.deploy
     environment:
       APP_ENV: ${APP_ENV:-production}
-      DEPLOYMENT_MODE: docker
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-offline_intranet}
       METADATA_BACKEND: ${METADATA_BACKEND:-postgres}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      STORAGE_ROOT: ${STORAGE_ROOT:-/app/storage}
+      UPLOADS_DIR: ${UPLOADS_DIR:-/app/storage/uploads}
+      ARTIFACTS_DIR: ${ARTIFACTS_DIR:-/app/storage/artifacts}
+      TEMP_DIR: ${TEMP_DIR:-/app/storage/temp}
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
     volumes:
