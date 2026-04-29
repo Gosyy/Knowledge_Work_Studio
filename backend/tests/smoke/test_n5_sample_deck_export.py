@@ -317,6 +317,17 @@ def test_n5_sample_deck_export_is_deterministic_for_non_revision_samples() -> No
         assert first[name] == second[name]
 
 
+def test_n5_sample_deck_zip_metadata_is_deterministic() -> None:
+    sample = _media_image_sample()
+
+    with zipfile.ZipFile(BytesIO(sample.payload), "r") as pptx_zip:
+        infos = pptx_zip.infolist()
+
+    assert infos
+    assert {info.date_time for info in infos} == {(1980, 1, 1, 0, 0, 0)}
+    assert {info.compress_type for info in infos} == {zipfile.ZIP_DEFLATED}
+
+
 def test_n5_optional_libreoffice_visual_smoke(tmp_path: Path) -> None:
     office_binary = shutil.which("soffice") or shutil.which("libreoffice")
     if office_binary is None:
