@@ -18,6 +18,7 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_validate_deployment_package.py",
     "scripts/kw_schema_preflight.py",
     "scripts/kw_deployment_preflight.py",
+    "scripts/kw_runtime_diagnostics.py",
     "scripts/kw_operator_smoke.py",
     "frontend/playwright.config.ts",
     "frontend/tests/e2e/deck-revision-smoke.spec.ts",
@@ -29,6 +30,7 @@ REQUIRED_P_PHASE_FILES = (
     ".env.deploy.example",
     "docs/deployment-packaging.md",
     "docs/schema-lifecycle.md",
+    "docs/observability-baseline.md",
     "docs/artifact-delivery-hardening.md",
     "docs/revision-restore.md",
     "docs/version-timeline-ui.md",
@@ -208,6 +210,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "Postgres schema lifecycle preflight",
             (python, "scripts/kw_schema_preflight.py", "--repo-root", str(repo_root), "--explain"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Runtime diagnostics",
+            (python, "scripts/kw_runtime_diagnostics.py", "--repo-root", str(repo_root)),
             repo_root,
         )
     )

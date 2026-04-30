@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -21,12 +23,16 @@ async def readiness(response: Response) -> dict[str, Any]:
     readiness_result = build_deployment_readiness(get_settings())
     if readiness_result.status != "ready":
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
     logger.info(
         "readiness_evaluated",
         extra={
             "readiness_status": readiness_result.status,
             "readiness_error_count": len(readiness_result.errors),
             "readiness_warning_count": len(readiness_result.warnings),
+            "metadata_backend": readiness_result.metadata_backend,
+            "storage_backend": readiness_result.storage_backend,
+            "deployment_mode": readiness_result.deployment_mode,
         },
     )
     return readiness_result.as_dict()
