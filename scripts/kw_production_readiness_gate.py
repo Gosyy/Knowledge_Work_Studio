@@ -16,6 +16,7 @@ REQUIRED_P_PHASE_FILES = (
     ".github/workflows/frontend-e2e-smoke.yml",
     "scripts/kw_postgres_integration_gate.py",
     "scripts/kw_validate_deployment_package.py",
+    "scripts/kw_schema_preflight.py",
     "scripts/kw_deployment_preflight.py",
     "scripts/kw_operator_smoke.py",
     "frontend/playwright.config.ts",
@@ -27,6 +28,7 @@ REQUIRED_P_PHASE_FILES = (
     "docker-compose.deploy.yml",
     ".env.deploy.example",
     "docs/deployment-packaging.md",
+    "docs/schema-lifecycle.md",
     "docs/artifact-delivery-hardening.md",
     "docs/revision-restore.md",
     "docs/version-timeline-ui.md",
@@ -201,6 +203,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
                 repo_root,
             )
         )
+
+    steps.append(
+        GateStep(
+            "Postgres schema lifecycle preflight",
+            (python, "scripts/kw_schema_preflight.py", "--repo-root", str(repo_root), "--explain"),
+            repo_root,
+        )
+    )
 
     if args.postgres_mode == "safety":
         steps.append(
