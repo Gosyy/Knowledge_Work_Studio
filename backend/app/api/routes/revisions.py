@@ -10,10 +10,10 @@ from backend.app.api.schemas import (
     DeckRevisionResponseSchema,
     DeckRevisionSectionRequestSchema,
     DeckRevisionSlideRequestSchema,
+    PresentationPlanPayloadSchema,
     PresentationRestoreRequestSchema,
     PresentationRestoreResponseSchema,
     PresentationRevisionLineageItemSchema,
-    PresentationPlanPayloadSchema,
 )
 from backend.app.services.presentation_catalog_service import PresentationCatalogService
 from backend.app.services.slides_service import (
@@ -140,6 +140,11 @@ def restore_presentation_version(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Restore confirmation must be exactly RESTORE.",
         )
+    if request.confirmation_target_version_id is not None and request.confirmation_target_version_id != version_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Restore target version id confirmation must match the selected version id.",
+        )
 
     target_plan = plan_snapshot_service.get_plan_for_version(version_id)
     if target_plan is None:
@@ -155,7 +160,7 @@ def restore_presentation_version(
                 target_version_id=version_id,
                 owner_user_id=current_user_id,
                 task_id=request.task_id,
-                change_summary=request.change_summary,
+                change_summary=_restore_change_summary(request.change_summary, request.restore_reason),
             )
         )
         plan_snapshot_service.create_snapshot(
@@ -163,12 +168,12 @@ def restore_presentation_version(
             presentation_version_id=result.version.id,
             plan=target_plan,
             created_from_task_id=request.task_id,
-            change_summary=request.change_summary or result.version.change_summary,
+            change_summary=_restore_change_summary(request.change_summary, request.restore_reason)
+            or result.version.change_summary,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-
-    return _restore_response(result)
+    return _restore_response(result, actor_user_id=current_user_id, restore_reason=request.restore_reason)
 
 
 def _resolve_revision_plan(
@@ -179,7 +184,6 @@ def _resolve_revision_plan(
 ) -> PresentationPlan:
     if request_plan is not None:
         return request_plan.to_domain()
-
     plan = plan_snapshot_service.get_latest_plan(presentation_id)
     if plan is None:
         raise HTTPException(
@@ -224,7 +228,31 @@ def _revision_response(result: DeckRevisionResult) -> DeckRevisionResponseSchema
     )
 
 
-def _restore_response(result: DeckRestoreResult) -> PresentationRestoreResponseSchema:
+def _restore_change_summary(change_summary: str | None, restore_reason: str | None) -> str | None:
+    if change_summary:
+        return change_summary
+    if restore_reason:
+        return f"Restore requested: {restore_reason}"
+    return None
+
+
+def _restore_audit_summary(
+    *,
+    actor_user_id: str,
+    target_version_id: str,
+    restored_version_id: str,
+    previous_version_id: str | None,
+) -> str:
+    previous = previous_version_id or "no previous version"
+    return f"{actor_user_id} restored {target_version_id} after {previous} as {restored_version_id}"
+
+
+def _restore_response(
+    result: DeckRestoreResult,
+    *,
+    actor_user_id: str,
+    restore_reason: str | None,
+) -> PresentationRestoreResponseSchema:
     return PresentationRestoreResponseSchema(
         presentation_id=result.presentation.id,
         restored_version_id=result.version.id,
@@ -236,4 +264,12 @@ def _restore_response(result: DeckRestoreResult) -> PresentationRestoreResponseS
         previous_file_id=result.previous_file_id,
         change_summary=result.version.change_summary,
         created_at=result.version.created_at,
+        restored_by_user_id=actor_user_id,
+        restore_reason=restore_reason,
+        audit_summary=_restore_audit_summary(
+            actor_user_id=actor_user_id,
+            target_version_id=result.target_version.id,
+            restored_version_id=result.version.id,
+            previous_version_id=result.version.parent_version_id,
+        ),
     )

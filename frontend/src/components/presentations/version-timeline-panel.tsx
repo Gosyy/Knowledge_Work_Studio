@@ -9,16 +9,12 @@ import {
   restorePresentationVersion,
   type PresentationPlanDiff,
   type PresentationPlanSnapshot,
+  type PresentationRestoreResponse,
   type PresentationSummary,
   type PresentationVersionSummary,
-  type PresentationRestoreResponse,
 } from "@/lib/api/presentations";
 
-const mutedTextStyle = {
-  color: "#6b7280",
-  fontSize: "0.875rem",
-};
-
+const mutedTextStyle = { color: "#6b7280", fontSize: "0.875rem" };
 const buttonStyle = {
   border: "1px solid #111827",
   borderRadius: "0.375rem",
@@ -27,18 +23,16 @@ const buttonStyle = {
   padding: "0.45rem 0.7rem",
   cursor: "pointer",
 };
-
-const secondaryButtonStyle = {
-  ...buttonStyle,
-  background: "#ffffff",
-  color: "#111827",
+const secondaryButtonStyle = { ...buttonStyle, background: "#ffffff", color: "#111827" };
+const dangerButtonStyle = { ...buttonStyle, background: "#991b1b", borderColor: "#991b1b" };
+const inputStyle = {
+  border: "1px solid #d1d5db",
+  borderRadius: "0.375rem",
+  padding: "0.45rem 0.7rem",
+  width: "100%",
+  boxSizing: "border-box" as const,
 };
-
-const sectionStyle = {
-  borderTop: "1px solid #e5e7eb",
-  marginTop: "1rem",
-  paddingTop: "1rem",
-};
+const sectionStyle = { borderTop: "1px solid #e5e7eb", marginTop: "1rem", paddingTop: "1rem" };
 
 type TimelineState = {
   status: "idle" | "loading_versions" | "loading_plan" | "loading_diff" | "loaded" | "error";
@@ -57,6 +51,8 @@ export function VersionTimelinePanel({
   onRestoreApplied?: () => Promise<void> | void;
 }) {
   const [restoreConfirmation, setRestoreConfirmation] = useState("");
+  const [restoreTargetVersionId, setRestoreTargetVersionId] = useState("");
+  const [restoreReason, setRestoreReason] = useState("");
   const [restoreResult, setRestoreResult] = useState<PresentationRestoreResponse | null>(null);
   const [state, setState] = useState<TimelineState>({
     status: "idle",
@@ -72,9 +68,16 @@ export function VersionTimelinePanel({
     [state.versions],
   );
   const selectedVersion = state.versions.find((version) => version.id === state.selectedVersionId) ?? null;
+  const normalizedRestoreReason = restoreReason.trim();
   const canLoadSelectedPlan = Boolean(selectedVersion);
   const canLoadSelectedDiff = Boolean(selectedVersion?.parent_version_id);
-  const canRestoreSelected = Boolean(selectedVersion && restoreConfirmation.trim() === "RESTORE" && state.status !== "loading_diff");
+  const canRestoreSelected = Boolean(
+    selectedVersion &&
+      restoreConfirmation.trim() === "RESTORE" &&
+      restoreTargetVersionId.trim() === selectedVersion.id &&
+      normalizedRestoreReason.length >= 8 &&
+      state.status !== "loading_diff",
+  );
 
   async function loadVersions() {
     setState((current) => ({ ...current, status: "loading_versions", error: null }));
@@ -108,21 +111,17 @@ export function VersionTimelinePanel({
       error: null,
     }));
     setRestoreResult(null);
+    setRestoreConfirmation("");
+    setRestoreTargetVersionId("");
+    setRestoreReason("");
   }
 
   async function loadSelectedPlan() {
-    if (!selectedVersion) {
-      return;
-    }
+    if (!selectedVersion) return;
     setState((current) => ({ ...current, status: "loading_plan", error: null }));
     try {
       const selectedPlan = await getPresentationVersionPlan(presentation.id, selectedVersion.id);
-      setState((current) => ({
-        ...current,
-        status: "loaded",
-        error: null,
-        selectedPlan,
-      }));
+      setState((current) => ({ ...current, status: "loaded", error: null, selectedPlan }));
     } catch (error) {
       setState((current) => ({
         ...current,
@@ -132,15 +131,40 @@ export function VersionTimelinePanel({
     }
   }
 
-  async function restoreSelectedVersion() {
-    if (!selectedVersion) {
-      return;
-    }
-    if (restoreConfirmation.trim() !== "RESTORE") {
+  async function loadSelectedDiff() {
+    if (!selectedVersion?.parent_version_id) return;
+    setState((current) => ({ ...current, status: "loading_diff", error: null }));
+    try {
+      const selectedDiff = await getPresentationRevisionDiff(presentation.id, selectedVersion.id);
+      setState((current) => ({ ...current, status: "loaded", error: null, selectedDiff }));
+    } catch (error) {
       setState((current) => ({
         ...current,
         status: "error",
-        error: "Type RESTORE to confirm version restore.",
+        error: error instanceof Error ? error.message : "Unable to load selected version diff.",
+      }));
+    }
+  }
+
+  async function restoreSelectedVersion() {
+    if (!selectedVersion) return;
+    if (restoreConfirmation.trim() !== "RESTORE") {
+      setState((current) => ({ ...current, status: "error", error: "Type RESTORE to confirm version restore." }));
+      return;
+    }
+    if (restoreTargetVersionId.trim() !== selectedVersion.id) {
+      setState((current) => ({
+        ...current,
+        status: "error",
+        error: "Type the selected version id to confirm the restore target.",
+      }));
+      return;
+    }
+    if (normalizedRestoreReason.length < 8) {
+      setState((current) => ({
+        ...current,
+        status: "error",
+        error: "Enter a restore reason of at least 8 characters.",
       }));
       return;
     }
@@ -149,12 +173,16 @@ export function VersionTimelinePanel({
     try {
       const result = await restorePresentationVersion(presentation.id, selectedVersion.id, {
         confirmation: restoreConfirmation,
-        change_summary: `Restore to v${selectedVersion.version_number}`,
+        confirmation_target_version_id: restoreTargetVersionId.trim(),
+        restore_reason: normalizedRestoreReason,
+        change_summary: `Restore to v${selectedVersion.version_number}: ${normalizedRestoreReason}`,
       });
       const versions = await listPresentationVersions(presentation.id);
       const latest = [...versions].sort((left, right) => right.version_number - left.version_number)[0] ?? null;
       setRestoreResult(result);
       setRestoreConfirmation("");
+      setRestoreTargetVersionId("");
+      setRestoreReason("");
       setState((current) => ({
         ...current,
         status: "loaded",
@@ -174,103 +202,41 @@ export function VersionTimelinePanel({
     }
   }
 
-  async function loadSelectedDiff() {
-    if (!selectedVersion?.parent_version_id) {
-      return;
-    }
-    setState((current) => ({ ...current, status: "loading_diff", error: null }));
-    try {
-      const selectedDiff = await getPresentationRevisionDiff(presentation.id, selectedVersion.id);
-      setState((current) => ({
-        ...current,
-        status: "loaded",
-        error: null,
-        selectedDiff,
-      }));
-    } catch (error) {
-      setState((current) => ({
-        ...current,
-        status: "error",
-        error: error instanceof Error ? error.message : "Unable to load selected version diff.",
-      }));
-    }
-  }
-
   return (
-    <section style={sectionStyle} aria-labelledby="version-timeline-title">
-      <h4 id="version-timeline-title">Version timeline</h4>
+    <section style={sectionStyle} aria-labelledby={`timeline-${presentation.id}`}>
+      <h4 id={`timeline-${presentation.id}`}>Version timeline</h4>
       <p style={mutedTextStyle}>
-        Inspect saved presentation versions, select a historical version, and compare it with its parent.
+        Inspect saved presentation versions, select a historical version, compare it with its parent, and restore only
+        with explicit audit metadata.
       </p>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
-        <button
-          type="button"
-          style={buttonStyle}
-          onClick={() => void loadVersions()}
-          disabled={state.status === "loading_versions"}
-        >
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <button type="button" style={secondaryButtonStyle} onClick={() => void loadVersions()} disabled={state.status === "loading_versions"}>
           {state.status === "loading_versions" ? "Loading versions..." : "Load version timeline"}
         </button>
-        <button
-          type="button"
-          style={secondaryButtonStyle}
-          onClick={() => void loadSelectedPlan()}
-          disabled={!canLoadSelectedPlan || state.status === "loading_plan"}
-        >
+        <button type="button" style={secondaryButtonStyle} onClick={() => void loadSelectedPlan()} disabled={!canLoadSelectedPlan || state.status === "loading_plan"}>
           {state.status === "loading_plan" ? "Loading selected plan..." : "Load selected version plan"}
         </button>
-        <button
-          type="button"
-          style={secondaryButtonStyle}
-          onClick={() => void loadSelectedDiff()}
-          disabled={!canLoadSelectedDiff || state.status === "loading_diff"}
-        >
+        <button type="button" style={secondaryButtonStyle} onClick={() => void loadSelectedDiff()} disabled={!canLoadSelectedDiff || state.status === "loading_diff"}>
           {state.status === "loading_diff" ? "Loading selected diff..." : "Load selected version diff"}
         </button>
       </div>
 
-      {state.error ? (
-        <div role="alert" style={{ marginTop: "0.75rem", color: "#991b1b", background: "#fef2f2", padding: "0.75rem", borderRadius: "0.375rem" }}>
-          {state.error}
-        </div>
-      ) : null}
+      {state.error ? <p role="alert" style={{ color: "#b91c1c" }}>{state.error}</p> : null}
 
       {sortedVersions.length > 0 ? (
-        <ol style={{ paddingLeft: 0, listStyle: "none", marginTop: "0.75rem" }}>
+        <ol>
           {sortedVersions.map((version) => {
             const selected = version.id === state.selectedVersionId;
             return (
-              <li
-                key={version.id}
-                style={{
-                  border: selected ? "2px solid #111827" : "1px solid #e5e7eb",
-                  borderRadius: "0.5rem",
-                  padding: "0.75rem",
-                  marginBottom: "0.5rem",
-                  background: "#ffffff",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
-                  <div>
-                    <strong>v{version.version_number}</strong>
-                    <span style={mutedTextStyle}> · {version.id}</span>
-                  </div>
-                  <button
-                    type="button"
-                    style={selected ? buttonStyle : secondaryButtonStyle}
-                    aria-label={`Select version v${version.version_number}`}
-                    onClick={() => selectVersion(version.id)}
-                  >
-                    {selected ? "Selected" : "Select"}
-                  </button>
-                </div>
-                <div style={{ ...mutedTextStyle, marginTop: "0.35rem" }}>
-                  Parent: {version.parent_version_id ?? "none"} · File: {version.file_id}
-                </div>
-                <div style={{ ...mutedTextStyle, marginTop: "0.35rem" }}>
-                  {version.change_summary ?? "No change summary"} · {formatDateTime(version.created_at)}
-                </div>
+              <li key={version.id} style={{ marginTop: "0.5rem" }}>
+                <strong>v{version.version_number} · {version.id}</strong>{" "}
+                <button type="button" style={selected ? buttonStyle : secondaryButtonStyle} onClick={() => selectVersion(version.id)}>
+                  Select version v{version.version_number}
+                </button>
+                {selected ? <span style={mutedTextStyle}> Selected</span> : null}
+                <div style={mutedTextStyle}>Parent: {version.parent_version_id ?? "none"} · File: {version.file_id}</div>
+                <div style={mutedTextStyle}>{version.change_summary ?? "No change summary"} · {formatDateTime(version.created_at)}</div>
               </li>
             );
           })}
@@ -278,49 +244,47 @@ export function VersionTimelinePanel({
       ) : null}
 
       {state.status === "loaded" && sortedVersions.length === 0 ? (
-        <p style={{ ...mutedTextStyle, marginTop: "0.75rem" }}>No presentation versions are available.</p>
+        <p style={mutedTextStyle}>No presentation versions are available.</p>
       ) : null}
 
-      <div style={{ marginTop: "1rem", border: "1px solid #e5e7eb", borderRadius: "0.5rem", padding: "0.75rem", background: "#fff7ed" }}>
-        <h5 style={{ marginTop: 0 }}>Restore selected version</h5>
+      <section style={sectionStyle} aria-labelledby={`restore-${presentation.id}`}>
+        <h5 id={`restore-${presentation.id}`}>Restore selected version</h5>
         <p style={mutedTextStyle}>
-          This creates a new restore version and does not delete historical versions. Type RESTORE to enable the action.
+          This creates a new restore version and does not delete historical versions. Type RESTORE, type the selected
+          version id, and provide a restore reason to enable the action.
         </p>
-        <label>
-          <span style={{ display: "block", fontSize: "0.875rem", marginBottom: "0.25rem" }}>Restore confirmation</span>
-          <input
-            aria-label="Restore confirmation"
-            value={restoreConfirmation}
-            onChange={(event) => setRestoreConfirmation(event.target.value)}
-            placeholder="Type RESTORE"
-            style={{
-              border: "1px solid #d1d5db",
-              borderRadius: "0.375rem",
-              padding: "0.45rem 0.7rem",
-              width: "100%",
-              boxSizing: "border-box",
-            }}
-          />
+        <p style={mutedTextStyle}>Selected target: {selectedVersion ? `v${selectedVersion.version_number} · ${selectedVersion.id}` : "none"}</p>
+
+        <label style={{ display: "grid", gap: "0.25rem", marginTop: "0.5rem" }}>
+          Restore confirmation
+          <input value={restoreConfirmation} onChange={(event) => setRestoreConfirmation(event.target.value)} placeholder="Type RESTORE" style={inputStyle} />
         </label>
-        <button
-          type="button"
-          style={{ ...secondaryButtonStyle, marginTop: "0.5rem" }}
-          onClick={() => void restoreSelectedVersion()}
-          disabled={!canRestoreSelected}
-        >
+
+        <label style={{ display: "grid", gap: "0.25rem", marginTop: "0.5rem" }}>
+          Restore target version id
+          <input value={restoreTargetVersionId} onChange={(event) => setRestoreTargetVersionId(event.target.value)} placeholder={selectedVersion?.id ?? "Select a version first"} style={inputStyle} />
+        </label>
+
+        <label style={{ display: "grid", gap: "0.25rem", marginTop: "0.5rem" }}>
+          Restore reason
+          <textarea value={restoreReason} onChange={(event) => setRestoreReason(event.target.value)} placeholder="Explain why this restore is required." style={{ ...inputStyle, minHeight: "4rem" }} />
+        </label>
+
+        <button type="button" style={dangerButtonStyle} onClick={() => void restoreSelectedVersion()} disabled={!canRestoreSelected}>
           Restore selected version
         </button>
+
         {restoreResult ? (
-          <p style={{ ...mutedTextStyle, marginTop: "0.5rem" }}>
-            Restored v{restoreResult.target_version_number} as v{restoreResult.restored_version_number} · {restoreResult.restored_version_id}
-          </p>
+          <div role="status" style={{ marginTop: "0.75rem" }}>
+            <p>Restored v{restoreResult.target_version_number} as v{restoreResult.restored_version_number} · {restoreResult.restored_version_id}</p>
+            {restoreResult.audit_summary ? <p>Restore audit: {restoreResult.audit_summary}</p> : null}
+            {restoreResult.restore_reason ? <p>Restore reason: {restoreResult.restore_reason}</p> : null}
+          </div>
         ) : null}
-      </div>
+      </section>
 
       {selectedVersion && !selectedVersion.parent_version_id ? (
-        <p style={{ ...mutedTextStyle, marginTop: "0.75rem" }}>
-          Selected version has no parent, so selected diff is not available.
-        </p>
+        <p style={mutedTextStyle}>Selected version has no parent, so selected diff is not available.</p>
       ) : null}
 
       {state.selectedPlan ? <SelectedVersionPlanCard snapshot={state.selectedPlan} /> : null}
@@ -333,25 +297,18 @@ function SelectedVersionPlanCard({ snapshot }: { snapshot: PresentationPlanSnaps
   const slides = Array.isArray(snapshot.plan.slides) ? snapshot.plan.slides : [];
 
   return (
-    <article style={{ marginTop: "1rem", border: "1px solid #e5e7eb", borderRadius: "0.5rem", padding: "0.75rem", background: "#ffffff" }}>
-      <h5 style={{ marginTop: 0 }}>Selected version plan snapshot</h5>
-      <p style={mutedTextStyle}>
-        {snapshot.snapshot_id} · {snapshot.presentation_version_id ?? "no version"} · {formatDateTime(snapshot.created_at)}
-      </p>
-      <p>
-        <strong>{snapshot.plan.deck_title ?? "Untitled deck"}</strong>
-      </p>
-      <p style={mutedTextStyle}>
-        Target slides: {snapshot.plan.target_slide_count ?? "unknown"} · Snapshot slides: {slides.length}
-      </p>
+    <section style={sectionStyle}>
+      <h5>Selected version plan snapshot</h5>
+      <p style={mutedTextStyle}>{snapshot.snapshot_id} · {snapshot.presentation_version_id ?? "no version"} · {formatDateTime(snapshot.created_at)}</p>
+      <p>{snapshot.plan.deck_title ?? "Untitled deck"}</p>
+      <p style={mutedTextStyle}>Target slides: {snapshot.plan.target_slide_count ?? "unknown"} · Snapshot slides: {slides.length}</p>
       {slides.length > 0 ? (
-        <ol style={{ paddingLeft: "1.25rem" }}>
+        <ol>
           {slides.slice(0, 6).map((slide, index) => (
-            <li key={`${slide.slide_id ?? "slide"}-${index}`} style={{ marginBottom: "0.35rem" }}>
-              <strong>{slide.title ?? slide.slide_id ?? `Slide ${index + 1}`}</strong>
+            <li key={slide.slide_id ?? index}>
+              <span>{slide.title ?? slide.slide_id ?? `Slide ${index + 1}`}</span>
               <span style={mutedTextStyle}>
-                {" "}
-                · {slide.slide_type ?? "slide"} · {slide.story_arc_stage ?? "stage unknown"}
+                {" "}· {slide.slide_type ?? "slide"} · {slide.story_arc_stage ?? "stage unknown"}
               </span>
             </li>
           ))}
@@ -359,36 +316,29 @@ function SelectedVersionPlanCard({ snapshot }: { snapshot: PresentationPlanSnaps
       ) : (
         <p style={mutedTextStyle}>No slide outline is available in this snapshot.</p>
       )}
-    </article>
+    </section>
   );
 }
 
 function SelectedVersionDiffCard({ diff }: { diff: PresentationPlanDiff }) {
   return (
-    <article style={{ marginTop: "1rem", border: "1px solid #e5e7eb", borderRadius: "0.5rem", padding: "0.75rem", background: "#ffffff" }}>
-      <h5 style={{ marginTop: 0 }}>Selected version diff</h5>
-      <p style={mutedTextStyle}>
-        {diff.base_version_id} → {diff.compared_version_id} · {diff.changed_slide_count} changed slide(s)
-      </p>
+    <section style={sectionStyle}>
+      <h5>Selected version diff</h5>
+      <p style={mutedTextStyle}>{diff.base_version_id} → {diff.compared_version_id} · {diff.changed_slide_count} changed slide(s)</p>
       {diff.slide_deltas.length > 0 ? (
-        <ul style={{ paddingLeft: "1.25rem" }}>
+        <ul>
           {diff.slide_deltas.map((delta) => (
-            <li key={delta.slide_id} style={{ marginBottom: "0.75rem" }}>
-              <strong>{delta.slide_id}</strong>
-              <span style={mutedTextStyle}> · {delta.change_type}</span>
+            <li key={delta.slide_id}>
+              <strong>{delta.slide_id} · {delta.change_type}</strong>
               <div>{delta.title_before ?? "Untitled"} → {delta.title_after ?? "Untitled"}</div>
-              {delta.bullets_added.length > 0 ? (
-                <div style={mutedTextStyle}>Added bullets: {delta.bullets_added.join("; ")}</div>
-              ) : null}
-              {delta.bullets_removed.length > 0 ? (
-                <div style={mutedTextStyle}>Removed bullets: {delta.bullets_removed.join("; ")}</div>
-              ) : null}
+              {delta.bullets_added.length > 0 ? <div>Added bullets: {delta.bullets_added.join("; ")}</div> : null}
+              {delta.bullets_removed.length > 0 ? <div>Removed bullets: {delta.bullets_removed.join("; ")}</div> : null}
             </li>
           ))}
         </ul>
       ) : (
         <p style={mutedTextStyle}>No structural plan changes were detected for the selected version.</p>
       )}
-    </article>
+    </section>
   );
 }
