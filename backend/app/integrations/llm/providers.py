@@ -31,6 +31,10 @@ class GigaChatProviderError(RuntimeError):
     """Raised when the GigaChat provider cannot complete a normalized request."""
 
 
+class LiteLLMCompatibleProviderError(RuntimeError):
+    """Raised when the LiteLLM-compatible gateway cannot complete a normalized request."""
+
+
 @dataclass
 class GigaChatProvider:
     api_base_url: str
@@ -53,19 +57,16 @@ class GigaChatProvider:
             "messages": self._build_messages(request),
             "temperature": request.temperature,
         }
-
         response = self._post_chat_completion(payload)
         if response.status_code == 401:
             self._clear_token()
             response = self._post_chat_completion(payload)
-
         try:
             response.raise_for_status()
             response_payload = response.json()
             text = self._extract_text(response_payload)
         except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
             raise GigaChatProviderError("GigaChat completion request failed") from exc
-
         return LLMCompletionResult(
             text=text,
             provider=self.provider_name,
@@ -89,7 +90,6 @@ class GigaChatProvider:
         now = time.time()
         if self._access_token and self._token_expires_at - 30 > now:
             return self._access_token
-
         credentials = base64.b64encode(f"{self.client_id}:{self.client_secret}".encode("utf-8")).decode("ascii")
         response = self._client.post(
             self.auth_url,
@@ -107,7 +107,6 @@ class GigaChatProvider:
             token = str(payload["access_token"])
         except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
             raise GigaChatProviderError("GigaChat OAuth token request failed") from exc
-
         self._access_token = token
         self._token_expires_at = self._parse_expires_at(payload)
         return token
@@ -153,16 +152,89 @@ class GigaChatProvider:
     @staticmethod
     def _parse_expires_at(payload: dict[str, Any]) -> float:
         raw_expires_at = payload.get("expires_at")
-        if isinstance(raw_expires_at, int | float):
+        if isinstance(raw_expires_at, (int, float)):
             expires_at = float(raw_expires_at)
             if expires_at > 10_000_000_000:
                 expires_at = expires_at / 1000
             return expires_at
         expires_in = payload.get("expires_in")
-        if isinstance(expires_in, int | float):
+        if isinstance(expires_in, (int, float)):
             return time.time() + float(expires_in)
         return time.time() + 30 * 60
 
     def _clear_token(self) -> None:
         self._access_token = None
         self._token_expires_at = 0.0
+
+
+@dataclass
+class LiteLLMCompatibleProvider:
+    """OpenAI-compatible transport for an optional internal LiteLLM gateway.
+
+    This provider is intentionally a transport mode for KW Studio's default local
+    GigaChat deployment. It must point at a Server 2 intranet gateway that routes
+    to Server 3 GigaChat; it is not the default production provider and does not
+    permit internet-hosted model APIs in offline mode.
+    """
+
+    api_base_url: str
+    model_name: str
+    api_key: str = ""
+    timeout_seconds: float = 30.0
+    verify_ssl: bool = True
+    provider_name: str = "litellm-compatible"
+    http_client: httpx.Client | None = field(default=None, repr=False)
+
+    def complete(self, request: LLMCompletionRequest) -> LLMCompletionResult:
+        self._validate_config()
+        payload = {
+            "model": self.model_name,
+            "messages": GigaChatProvider._build_messages(request),
+            "temperature": request.temperature,
+        }
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        if self.api_key.strip():
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        response = self._client.post(self._chat_completions_url, headers=headers, json=payload)
+        try:
+            response.raise_for_status()
+            response_payload = response.json()
+            text = GigaChatProvider._extract_text(response_payload)
+        except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
+            raise LiteLLMCompatibleProviderError("LiteLLM-compatible completion request failed") from exc
+        return LLMCompletionResult(
+            text=text,
+            provider=self.provider_name,
+            model=str(response_payload.get("model") or self.model_name),
+            raw=response_payload,
+        )
+
+    @property
+    def _client(self) -> httpx.Client:
+        if self.http_client is None:
+            self.http_client = httpx.Client(timeout=self.timeout_seconds, verify=self.verify_ssl)
+        return self.http_client
+
+    @property
+    def _chat_completions_url(self) -> str:
+        base = self.api_base_url.rstrip("/")
+        if base.endswith("/chat/completions"):
+            return base
+        if base.endswith("/v1"):
+            return f"{base}/chat/completions"
+        return f"{base}/v1/chat/completions"
+
+    def _validate_config(self) -> None:
+        missing = [
+            name
+            for name, value in {
+                "litellm_gateway_url": self.api_base_url,
+                "litellm_gateway_model": self.model_name,
+            }.items()
+            if not str(value or "").strip()
+        ]
+        if missing:
+            raise ValueError(f"Missing LiteLLM-compatible provider configuration: {', '.join(missing)}")
