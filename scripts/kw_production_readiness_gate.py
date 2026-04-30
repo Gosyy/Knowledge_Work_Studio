@@ -76,6 +76,8 @@ SECRET_MARKER_ALLOWLIST_FILES = {
     "scripts/kw_validate_deployment_package.py",
     "backend/tests/smoke/test_p6_deployment_packaging.py",
     "backend/tests/smoke/test_p7_production_readiness_gate.py",
+    "scripts/kw_dependency_audit.py",
+    "backend/tests/smoke/test_r8_dependency_audit.py",
 }
 
 

@@ -131,3 +131,21 @@ def test_r8_dependency_audit_help_mentions_no_network_baseline() -> None:
 
     assert result.returncode == 0
     assert "without network access" in result.stdout
+
+def test_r8_dependency_audit_secret_marker_catalog_is_allowlisted_by_production_gate() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts" / "kw_production_readiness_gate.py"),
+            "--repo-root",
+            str(REPO_ROOT),
+            "--checks-only",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "kw_dependency_audit.py" not in result.stdout
+    assert "test_r8_dependency_audit.py" not in result.stdout
