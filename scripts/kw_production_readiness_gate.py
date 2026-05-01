@@ -20,6 +20,8 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_deployment_preflight.py",
     "scripts/kw_runtime_diagnostics.py",
     "scripts/kw_llm_topology_check.py",
+    "scripts/kw_litellm_gateway_check.py",
+    "backend/app/integrations/llm/litellm_gateway_contract.py",
     "scripts/kw_workflow_contracts_check.py", "scripts/kw_slides_plan_first_check.py",
     "scripts/kw_slides_task_events_check.py",
     "scripts/kw_slides_plan_editor_check.py",
@@ -38,6 +40,8 @@ REQUIRED_P_PHASE_FILES = (
     "docs/observability-baseline.md",
     "docs/offline-llm-topology.md",
     "docs/llm-provider-contract.md",
+    "docs/litellm-gateway-topology.md",
+    "docs/heavy-node-runtime.md",
     "docs/workflow-contracts.md", "docs/slides-plan-first-ux.md",
     "docs/slides-task-events-and-retry.md",
     "docs/slides-plan-editor-ui.md",
@@ -45,6 +49,7 @@ REQUIRED_P_PHASE_FILES = (
     "docs/artifact-delivery-hardening.md",
     "docs/revision-restore.md",
     "docs/version-timeline-ui.md",
+    "backend/tests/smoke/test_s9_litellm_gateway_contract.py",
 )
 
 SECRET_MARKERS = (
@@ -241,6 +246,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             repo_root,
         )
     )
+    steps.append(
+        GateStep(
+            "LiteLLM gateway optional transport contract",
+            (
+                python,
+                "scripts/kw_litellm_gateway_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--allow-placeholders",
+                "--require-ready",
+            ),
+            repo_root,
+        )
+    )
+
     steps.append(
         GateStep(
             "Workflow contracts registry",
