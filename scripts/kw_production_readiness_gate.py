@@ -269,6 +269,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+    steps.append(
+
+        GateStep(
+
+            "Slides adaptive/template render mode contract",
+
+            (python, "scripts/kw_slides_render_modes_check.py", "--repo-root", str(repo_root), "--require-ready"),
+
+            repo_root,
+
+        )
+
+    )
+
+
     if args.postgres_mode == "safety":
         steps.append(
             GateStep(
