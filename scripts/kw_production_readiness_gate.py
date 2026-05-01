@@ -40,6 +40,7 @@ REQUIRED_P_PHASE_FILES = (
     "docs/workflow-contracts.md", "docs/slides-plan-first-ux.md",
     "docs/slides-task-events-and-retry.md",
     "docs/slides-plan-editor-ui.md",
+    "docs/browser-evidence-capture.md",
     "docs/artifact-delivery-hardening.md",
     "docs/revision-restore.md",
     "docs/version-timeline-ui.md",
@@ -290,10 +291,42 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_slides_provenance_manifest_check.py",
+    "scripts/kw_browser_evidence_capture_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--mode",
                 "generation",
+                "--require-ready",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Browser evidence capture contract",
+            (
+                python,
+                "scripts/kw_browser_evidence_capture_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--mode",
+                "capture",
+                "--require-ready",
+            ),
+            repo_root,
+        )
+    )
+    steps.append(
+        GateStep(
+            "Browser evidence slides provenance link contract",
+            (
+                python,
+                "scripts/kw_browser_evidence_capture_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--mode",
+                "slides_link",
                 "--require-ready",
             ),
             repo_root,
