@@ -2,10 +2,8 @@
 
 ## Product identity
 
-KW Studio is an artifact-first offline/intranet knowledge-work studio.
+KW Studio is an artifact-first offline/intranet knowledge-work studio. It turns user files and natural-language tasks into finished, downloadable, versioned, and auditable work products:
 
-It turns user files and natural-language tasks into finished, downloadable,
-versioned, and auditable work products:
 - edited DOCX
 - summarized PDF
 - generated PPTX
@@ -18,6 +16,7 @@ versioned, and auditable work products:
 KW Studio v1 is a modular monolith.
 
 Do not turn it into:
+
 - a microservice platform;
 - a cloud deployment framework;
 - a general autonomous browser agent product;
@@ -27,6 +26,7 @@ Do not turn it into:
 ## Current status
 
 Accepted R-phase verdicts:
+
 - R1 — full-stack Docker Compose smoke gate
 - R2 — Postgres schema lifecycle and migration preflight
 - R3 — Artifact download UI and export history panel
@@ -37,9 +37,11 @@ Accepted R-phase verdicts:
 - R8 — Dependency and security baseline refresh
 
 Accepted R hotfixes:
+
 - R8 hotfix — Dependency audit accepts current repo lockfile package names and codex status docs are reconciled with accepted branch history
 
 Accepted S-phase verdicts in the current branch history:
+
 - S1 — Offline LLM topology contract
 - S2 — Workflow contract registry
 - S3 — Slides plan-first UX contract
@@ -48,16 +50,21 @@ Accepted S-phase verdicts in the current branch history:
 - S6 — Slides adaptive/template render mode contract
 - S7 — Slides source-to-artifact provenance manifest contract
 - S8 — Browser-assisted internal evidence capture workflow contract
-
-Next:
 - S9 — Optional LiteLLM-compatible gateway and heavy-node integrations
+- S10 — Optional multimodal/visual QA planning layer
 
-Do not introduce another `S2` or reuse an accepted S number for a different issue.
+Post-S10 planning checkpoint:
+
+- `S1` through `S10` are accepted.
+- Latest accepted S verdict: `S10 verdict: ACCEPT`.
+- No canonical `S11` task is allocated yet.
+- Choose the next phase/branch and write its scope before assigning another S number.
+
+Do not introduce another `S2`, duplicate a verdict intentionally, or reuse an accepted S number for a different issue.
 
 ## R-phase objective
 
-R-phase is operator foundation. It must make the existing deployable stack
-verifiable, operable, diagnosable, and safer.
+R-phase is operator foundation. It must make the existing deployable stack verifiable, operable, diagnosable, and safer.
 
 R-phase is not a product expansion phase.
 
@@ -66,10 +73,11 @@ R-phase is not a product expansion phase.
 Codex must not start step N+1 until step N has a committed verdict:
 
 ```text
-R<N> verdict: ACCEPT
+R verdict: ACCEPT
 ```
 
 Canonical R order:
+
 1. R1 — Full-stack Docker Compose smoke gate
 2. R2 — Postgres schema lifecycle and migration preflight
 3. R3 — Artifact download UI and export history panel
@@ -96,6 +104,7 @@ S-phase deliberately expands product/workflow capability after the operator foun
 The original planning draft and the accepted branch history diverged after S3. To avoid rewriting accepted history, the canonical sequence is the accepted implementation order below. Older references should be read through the mapping table in the next section.
 
 Accepted / current:
+
 1. S1 — Offline three-server LLM topology and local GigaChat hardening
 2. S2 — Workflow contract registry for DOCX/PDF/Slides/Data/Browser/LLM
 3. S3 — Slides outline-first / plan-first UX contract
@@ -104,10 +113,13 @@ Accepted / current:
 6. S6 — Slides adaptive/template render mode contract
 7. S7 — Slides source-to-artifact provenance manifest contract
 8. S8 — Browser-assisted internal evidence capture workflow contract
-
-Remaining / rebased:
 9. S9 — Optional LiteLLM-compatible gateway and heavy-node integrations
 10. S10 — Optional multimodal/visual QA planning layer
+
+Remaining / rebased:
+
+- None allocated in this document.
+- Do not allocate `S11` without a new planning checkpoint.
 
 ## Mapping from the original S planning draft
 
@@ -123,27 +135,70 @@ Remaining / rebased:
 | S8 — Optional LiteLLM-compatible gateway and heavy-node integrations | S9 | shifted by browser-assisted rebasing |
 | S9 — Optional multimodal/visual QA planning layer | S10 | shifted by browser-assisted rebasing |
 
-## S9 target: optional LiteLLM-compatible gateway and heavy-node integrations
+## Accepted S9 summary: optional LiteLLM-compatible gateway and heavy-node integrations
 
-S9 must be a contract and diagnostics step first, not a runtime rewrite.
+S9 is a contract and diagnostics step, not a runtime rewrite.
 
-Scope for S9:
+Accepted S9 scope:
+
 - keep direct local GigaChat as default production LLM transport;
 - document optional LiteLLM-compatible gateway on Server 2;
 - define configuration and routing contracts for `direct_gigachat` vs `litellm_gateway`;
 - add no-network diagnostics by default, with any endpoint probe behind an explicit flag;
-- integrate S9 checks into the production readiness gate only after focused S9 tests pass.
+- integrate S9 checks into the production readiness gate after focused S9 tests pass.
 
-Non-goals for S9:
+S9 non-goals:
+
 - do not replace GigaChat as the default production LLM;
 - do not make LiteLLM mandatory;
 - do not introduce internet dependency;
-- do not build heavy OCR/rerank/visual-QA runtime yet;
+- do not build heavy OCR/rerank/visual-QA runtime;
 - do not silently route prompts through a gateway when direct GigaChat is configured.
+
+## Accepted S10 summary: optional multimodal/visual QA planning layer
+
+S10 is a planning-only visual QA contract. It does not implement OCR, vision-model inference, screenshot parsing, or an external visual API.
+
+Accepted S10 scope:
+
+- define a visual QA planning manifest for slides and artifact workflows;
+- require artifact references instead of raw screenshots, raw pixels, or raw OCR text;
+- keep visual QA offline/intranet-ready;
+- mark Server 2 heavy runtime as optional future infrastructure;
+- integrate visual QA planning checks into production readiness;
+- preserve operator review and provenance linkage.
+
+S10 non-goals:
+
+- no OCR runtime;
+- no multimodal model runtime;
+- no external/cloud visual QA service;
+- no autonomous browser expansion;
+- no automatic rejection of generated artifacts without operator review.
+
+## Post-S10 planning rules
+
+Before starting another S-numbered task:
+
+1. Decide whether the next work belongs in `6_Stage_R` or a new branch.
+2. Decide whether the next sequence is `S11` or a new named phase.
+3. Write a docs-only planning checkpoint before implementation.
+4. Keep the accepted-history mapping intact.
+5. Keep using the full post-step gate:
+   - targeted tests;
+   - backend tests;
+   - frontend build;
+   - frontend E2E smoke;
+   - production readiness gate;
+   - GitHub push and verification;
+   - Docker check-only always;
+   - Docker runtime smoke with `--skip-build` when images are available;
+   - full Docker build only when npm registry/cache access is available.
 
 ## Product direction inherited from Kimi research
 
 Use Kimi-derived ideas as workflow patterns, not as cloud dependencies:
+
 - outline-first workflows;
 - editable plan before generation;
 - adaptive/template Slides modes;
@@ -151,23 +206,6 @@ Use Kimi-derived ideas as workflow patterns, not as cloud dependencies:
 - tool/workflow contracts;
 - approval boundaries;
 - long-running task event stream;
-- visual/multimodal QA later.
+- visual/multimodal QA planning and operator review.
 
 Do not introduce dependence on Kimi cloud, internet runtime, or external services.
-
-
-## S10 target: optional multimodal/visual QA planning layer
-S10 must be a planning contract first, not a runtime implementation.
-
-Scope for S10:
-- define visual QA plan manifests for generated artifacts;
-- keep all visual QA runtime optional and future-facing;
-- store artifact references and planned checks, not raw screenshots, raw pixels, or raw OCR text;
-- keep external visual APIs and internet dependency out of the default/offline path;
-- integrate S10 checks into the production readiness gate only after focused S10 tests pass.
-
-Non-goals for S10:
-- do not implement OCR, screenshot analysis, or multimodal model runtime;
-- do not require Server 2 heavy-node modules;
-- do not send artifacts to cloud visual APIs;
-- do not bypass operator review for visual QA findings.
