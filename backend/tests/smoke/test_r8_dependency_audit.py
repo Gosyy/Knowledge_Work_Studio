@@ -132,6 +132,15 @@ def test_r8_dependency_audit_help_mentions_no_network_baseline() -> None:
     assert result.returncode == 0
     assert "without network access" in result.stdout
 
+
+def test_r8_dependency_audit_accepts_current_repo_lockfile_package_names() -> None:
+    result = _run(REPO_ROOT)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "js-tokens" in (REPO_ROOT / "frontend" / "package-lock.json").read_text(encoding="utf-8")
+    assert "secret-key-name" not in result.stdout
+
+
 def test_r8_dependency_audit_secret_marker_catalog_is_allowlisted_by_production_gate() -> None:
     result = subprocess.run(
         [

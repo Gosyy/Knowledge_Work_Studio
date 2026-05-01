@@ -71,12 +71,48 @@ def _is_exact_version(value: str) -> bool:
     return re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?", value) is not None
 
 
+PACKAGE_NAME_MAP_PATHS = (
+    "frontend.package_json.dependencies",
+    "frontend.package_json.devDependencies",
+    "frontend.package_json.optionalDependencies",
+    "frontend.package_json.peerDependencies",
+)
+
+PACKAGE_LOCK_PACKAGE_MAP_PATH = "frontend.package_lock.packages"
+PACKAGE_LOCK_DEPENDENCY_MAP_SUFFIXES = (
+    ".dependencies",
+    ".devDependencies",
+    ".optionalDependencies",
+    ".peerDependencies",
+    ".peerDependenciesMeta",
+    ".bundledDependencies",
+)
+
+
+def _is_dependency_name_map_path(path: str) -> bool:
+    if path in PACKAGE_NAME_MAP_PATHS:
+        return True
+    return path.startswith(PACKAGE_LOCK_PACKAGE_MAP_PATH + ".") and path.endswith(PACKAGE_LOCK_DEPENDENCY_MAP_SUFFIXES)
+
+
+def _is_package_lock_entry_name(path: str, key: str) -> bool:
+    return path == PACKAGE_LOCK_PACKAGE_MAP_PATH and (key == "" or key.startswith("node_modules/"))
+
+
+def _should_scan_key_for_secret_name(path: str, key: str) -> bool:
+    if _is_package_lock_entry_name(path, key):
+        return False
+    if _is_dependency_name_map_path(path):
+        return False
+    return True
+
+
 def _scan_for_secret_markers(obj: Any, *, path: str = "root") -> list[AuditIssue]:
     issues: list[AuditIssue] = []
     if isinstance(obj, dict):
         for key, value in obj.items():
             key_path = f"{path}.{key}"
-            if SECRET_KEY_PATTERN.search(str(key)):
+            if _should_scan_key_for_secret_name(path, str(key)) and SECRET_KEY_PATTERN.search(str(key)):
                 issues.append(AuditIssue("secret-key-name", f"sensitive-looking metadata key found at {key_path}"))
             issues.extend(_scan_for_secret_markers(value, path=key_path))
     elif isinstance(obj, list):
