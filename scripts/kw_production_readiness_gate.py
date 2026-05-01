@@ -23,6 +23,7 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_workflow_contracts_check.py", "scripts/kw_slides_plan_first_check.py",
     "scripts/kw_slides_task_events_check.py",
     "scripts/kw_slides_plan_editor_check.py",
+    "scripts/kw_browser_evidence_capture_check.py",
     "scripts/kw_operator_smoke.py",
     "frontend/playwright.config.ts",
     "frontend/tests/e2e/deck-revision-smoke.spec.ts",
@@ -291,7 +292,6 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_slides_provenance_manifest_check.py",
-    "scripts/kw_browser_evidence_capture_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--mode",
