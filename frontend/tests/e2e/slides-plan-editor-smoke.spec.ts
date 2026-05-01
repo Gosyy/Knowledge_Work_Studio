@@ -66,8 +66,7 @@ test("slides plan editor edits saved plan and prepares retry payload", async ({ 
 
   await page.getByLabel("Editable deck title").fill("Edited Plan-First Deck");
   await page.getByLabel("Slide 2 title").fill("Edited analysis from saved plan");
-  await page.getByLabel("Slide 2 bullets").fill("Preserve saved plan provenance
-Retry only after operator review");
+  await page.getByLabel("Slide 2 bullets").fill("Preserve saved plan provenance\nRetry only after operator review");
   await page.getByLabel("Template mode").check();
   await page.getByLabel("Retry instruction").fill("Retry this saved plan with the selected template mode.");
 

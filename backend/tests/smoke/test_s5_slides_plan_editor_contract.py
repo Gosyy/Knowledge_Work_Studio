@@ -74,3 +74,24 @@ def test_s5_production_gate_runs_plan_editor_check() -> None:
     text = (REPO_ROOT / "scripts/kw_production_readiness_gate.py").read_text(encoding="utf-8")
     assert "scripts/kw_slides_plan_editor_check.py" in text
     assert "Slides plan editor UI contract" in text
+
+def test_s5_plan_editor_component_uses_escaped_newline_join_and_split() -> None:
+    component = REPO_ROOT / "frontend/src/components/presentations/slides-plan-editor-panel.tsx"
+    text = component.read_text(encoding="utf-8")
+    assert 'slide.bullets.join("\\n")' in text
+    assert '.split("\\n")' in text
+    assert 'slide.bullets.join("\\\\n")' not in text
+    assert '.split("\\\\n")' not in text
+
+def test_s5_plan_editor_component_and_e2e_use_escaped_newline_literals() -> None:
+    component = REPO_ROOT / "frontend/src/components/presentations/slides-plan-editor-panel.tsx"
+    component_text = component.read_text(encoding="utf-8")
+    assert 'slide.bullets.join("\\n")' in component_text
+    assert '.split("\\n")' in component_text
+    assert 'slide.bullets.join("\n")' not in component_text
+    assert '.split("\n")' not in component_text
+
+    e2e = REPO_ROOT / "frontend/tests/e2e/slides-plan-editor-smoke.spec.ts"
+    e2e_text = e2e.read_text(encoding="utf-8")
+    assert 'fill("Preserve saved plan provenance\\nRetry only after operator review")' in e2e_text
+    assert 'fill("Preserve saved plan provenance\nRetry only after operator review")' not in e2e_text

@@ -68,14 +68,12 @@ function planSlides(plan: PresentationPlanPayload | null): PresentationPlanSlide
 }
 
 function slideBulletsValue(slide: PresentationPlanSlide): string {
-  return Array.isArray(slide.bullets) ? slide.bullets.join("
-") : "";
+  return Array.isArray(slide.bullets) ? slide.bullets.join("\n") : "";
 }
 
 function parseBullets(value: string): string[] {
   return value
-    .split("
-")
+    .split("\n")
     .map((line) => normalizeText(line))
     .filter(Boolean);
 }
