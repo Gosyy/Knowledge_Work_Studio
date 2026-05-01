@@ -36,7 +36,10 @@ Accepted R-phase verdicts:
 - R7 — Observability baseline
 - R8 — Dependency and security baseline refresh
 
-Accepted S-phase verdicts in the current branch history/source archive:
+Accepted R hotfixes:
+- R8 hotfix — Dependency audit accepts current repo lockfile package names and codex status docs are reconciled with accepted branch history
+
+Accepted S-phase verdicts in the current branch history:
 - S1 — Offline LLM topology contract
 - S2 — Workflow contract registry
 - S3 — Slides plan-first UX contract
@@ -44,9 +47,12 @@ Accepted S-phase verdicts in the current branch history/source archive:
 - S5 — Slides plan editor UI
 - S6 — Slides adaptive/template render mode contract
 - S7 — Slides source-to-artifact provenance manifest contract
+- S8 — Browser-assisted internal evidence capture workflow contract
 
 Next:
-- Continue from the reconciled S sequence below. Do not introduce another `S2` or reuse an accepted S number for a different issue.
+- S9 — Optional LiteLLM-compatible gateway and heavy-node integrations
+
+Do not introduce another `S2` or reuse an accepted S number for a different issue.
 
 ## R-phase objective
 
@@ -97,9 +103,9 @@ Accepted / current:
 5. S5 — Slides plan editor UI
 6. S6 — Slides adaptive/template render mode contract
 7. S7 — Slides source-to-artifact provenance manifest contract
+8. S8 — Browser-assisted internal evidence capture workflow contract
 
 Remaining / rebased:
-8. S8 — Browser-assisted internal workflows
 9. S9 — Optional LiteLLM-compatible gateway and heavy-node integrations
 10. S10 — Optional multimodal/visual QA planning layer
 
@@ -113,9 +119,27 @@ Remaining / rebased:
 | S4 — Adaptive/template deck modes | S6 | implemented after plan editor UI as slides render mode contract |
 | S5 — Task event stream and failure recovery | S4 | implemented earlier as slides task events and saved-plan retry mechanics |
 | S6 — Source-to-artifact provenance | S7 | implemented as slides provenance manifest contract |
-| S7 — Browser-assisted internal workflows | S8 | not assigned to accepted S7; use next unclaimed slot |
+| S7 — Browser-assisted internal workflows | S8 | accepted as browser-assisted internal evidence capture workflow contract |
 | S8 — Optional LiteLLM-compatible gateway and heavy-node integrations | S9 | shifted by browser-assisted rebasing |
 | S9 — Optional multimodal/visual QA planning layer | S10 | shifted by browser-assisted rebasing |
+
+## S9 target: optional LiteLLM-compatible gateway and heavy-node integrations
+
+S9 must be a contract and diagnostics step first, not a runtime rewrite.
+
+Scope for S9:
+- keep direct local GigaChat as default production LLM transport;
+- document optional LiteLLM-compatible gateway on Server 2;
+- define configuration and routing contracts for `direct_gigachat` vs `litellm_gateway`;
+- add no-network diagnostics by default, with any endpoint probe behind an explicit flag;
+- integrate S9 checks into the production readiness gate only after focused S9 tests pass.
+
+Non-goals for S9:
+- do not replace GigaChat as the default production LLM;
+- do not make LiteLLM mandatory;
+- do not introduce internet dependency;
+- do not build heavy OCR/rerank/visual-QA runtime yet;
+- do not silently route prompts through a gateway when direct GigaChat is configured.
 
 ## Product direction inherited from Kimi research
 

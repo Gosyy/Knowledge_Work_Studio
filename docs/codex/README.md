@@ -5,9 +5,10 @@ This pack is the operating documentation for Codex work on KW Studio after the R
 Current verified branch state:
 - branch: `6_Stage_R`
 - R-phase status: `R1` through `R8` accepted
-- latest accepted S verdict represented by this source archive: `S7 verdict: ACCEPT`
-- current canonical S sequence: the implementation-history sequence in `R_AND_S_MASTER_PLAN.md`
-- next planning action: continue from the reconciled S sequence; do not re-use old S numbers with different meanings
+- R8 hotfix status: `R8 hotfix dependency audit and reconcile codex status docs` accepted
+- S-phase status: `S1` through `S8` accepted
+- latest accepted S verdict: `S8 verdict: ACCEPT`
+- next canonical S task: `S9 — Optional LiteLLM-compatible gateway and heavy-node integrations`
 
 One-line product identity:
 
@@ -28,4 +29,4 @@ Documents:
 - `ACCEPTANCE_GATES.md`
 
 Important status note:
-The original S plan used `S7` for browser-assisted internal workflows. The accepted branch history uses `S7` for the slides provenance manifest contract. The canonical plan now preserves the accepted history and rebases browser-assisted internal workflows to the next unclaimed S slot instead of renaming existing accepted commits.
+The original S plan used `S7` for browser-assisted internal workflows. The accepted branch history uses `S7` for the slides provenance manifest contract and `S8` for browser-assisted internal evidence capture workflows. The canonical plan preserves accepted history instead of renaming existing accepted commits. Continue with `S9` next.
