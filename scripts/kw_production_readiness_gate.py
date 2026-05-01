@@ -20,6 +20,7 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_deployment_preflight.py",
     "scripts/kw_runtime_diagnostics.py",
     "scripts/kw_llm_topology_check.py",
+    "scripts/kw_workflow_contracts_check.py",
     "scripts/kw_operator_smoke.py",
     "frontend/playwright.config.ts",
     "frontend/tests/e2e/deck-revision-smoke.spec.ts",
@@ -34,6 +35,7 @@ REQUIRED_P_PHASE_FILES = (
     "docs/observability-baseline.md",
     "docs/offline-llm-topology.md",
     "docs/llm-provider-contract.md",
+    "docs/workflow-contracts.md",
     "docs/artifact-delivery-hardening.md",
     "docs/revision-restore.md",
     "docs/version-timeline-ui.md",
@@ -230,6 +232,13 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "Offline LLM topology contract",
             (python, "scripts/kw_llm_topology_check.py", "--repo-root", str(repo_root), "--allow-placeholders", "--require-ready"),
+            repo_root,
+        )
+    )
+    steps.append(
+        GateStep(
+            "Workflow contracts registry",
+            (python, "scripts/kw_workflow_contracts_check.py", "--repo-root", str(repo_root), "--require-ready"),
             repo_root,
         )
     )
