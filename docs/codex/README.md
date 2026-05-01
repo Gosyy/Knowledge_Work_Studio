@@ -6,9 +6,9 @@ Current verified branch state:
 - branch: `6_Stage_R`
 - R-phase status: `R1` through `R8` accepted
 - R8 hotfix status: `R8 hotfix dependency audit and reconcile codex status docs` accepted
-- S-phase status: `S1` through `S8` accepted
-- latest accepted S verdict: `S8 verdict: ACCEPT`
-- next canonical S task: `S9 — Optional LiteLLM-compatible gateway and heavy-node integrations`
+- S-phase status: `S1` through `S9` accepted
+- latest accepted S verdict: `S9 verdict: ACCEPT`
+- next canonical S task: `S10 — Optional multimodal/visual QA planning layer`
 
 One-line product identity:
 

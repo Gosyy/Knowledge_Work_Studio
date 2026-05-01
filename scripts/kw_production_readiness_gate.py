@@ -21,6 +21,7 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_runtime_diagnostics.py",
     "scripts/kw_llm_topology_check.py",
     "scripts/kw_litellm_gateway_check.py",
+    "scripts/kw_visual_qa_planning_check.py",
     "backend/app/integrations/llm/litellm_gateway_contract.py",
     "scripts/kw_workflow_contracts_check.py", "scripts/kw_slides_plan_first_check.py",
     "scripts/kw_slides_task_events_check.py",
@@ -41,6 +42,7 @@ REQUIRED_P_PHASE_FILES = (
     "docs/offline-llm-topology.md",
     "docs/llm-provider-contract.md",
     "docs/litellm-gateway-topology.md",
+    "docs/visual-qa-planning.md",
     "docs/heavy-node-runtime.md",
     "docs/workflow-contracts.md", "docs/slides-plan-first-ux.md",
     "docs/slides-task-events-and-retry.md",
@@ -347,6 +349,37 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
                 str(repo_root),
                 "--mode",
                 "slides_link",
+                "--require-ready",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Visual QA planning contract",
+            (
+                python,
+                "scripts/kw_visual_qa_planning_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--mode",
+                "slides",
+                "--require-ready",
+            ),
+            repo_root,
+        )
+    )
+    steps.append(
+        GateStep(
+            "Visual QA artifact planning contract",
+            (
+                python,
+                "scripts/kw_visual_qa_planning_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--mode",
+                "artifact",
                 "--require-ready",
             ),
             repo_root,

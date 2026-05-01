@@ -154,3 +154,20 @@ Use Kimi-derived ideas as workflow patterns, not as cloud dependencies:
 - visual/multimodal QA later.
 
 Do not introduce dependence on Kimi cloud, internet runtime, or external services.
+
+
+## S10 target: optional multimodal/visual QA planning layer
+S10 must be a planning contract first, not a runtime implementation.
+
+Scope for S10:
+- define visual QA plan manifests for generated artifacts;
+- keep all visual QA runtime optional and future-facing;
+- store artifact references and planned checks, not raw screenshots, raw pixels, or raw OCR text;
+- keep external visual APIs and internet dependency out of the default/offline path;
+- integrate S10 checks into the production readiness gate only after focused S10 tests pass.
+
+Non-goals for S10:
+- do not implement OCR, screenshot analysis, or multimodal model runtime;
+- do not require Server 2 heavy-node modules;
+- do not send artifacts to cloud visual APIs;
+- do not bypass operator review for visual QA findings.
