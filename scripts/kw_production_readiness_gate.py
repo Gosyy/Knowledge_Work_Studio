@@ -20,7 +20,7 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_deployment_preflight.py",
     "scripts/kw_runtime_diagnostics.py",
     "scripts/kw_llm_topology_check.py",
-    "scripts/kw_workflow_contracts_check.py",
+    "scripts/kw_workflow_contracts_check.py", "scripts/kw_slides_plan_first_check.py",
     "scripts/kw_operator_smoke.py",
     "frontend/playwright.config.ts",
     "frontend/tests/e2e/deck-revision-smoke.spec.ts",
@@ -35,7 +35,7 @@ REQUIRED_P_PHASE_FILES = (
     "docs/observability-baseline.md",
     "docs/offline-llm-topology.md",
     "docs/llm-provider-contract.md",
-    "docs/workflow-contracts.md",
+    "docs/workflow-contracts.md", "docs/slides-plan-first-ux.md",
     "docs/artifact-delivery-hardening.md",
     "docs/revision-restore.md",
     "docs/version-timeline-ui.md",
@@ -243,6 +243,13 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+    steps.append(
+        GateStep(
+            "Slides plan-first UX contract",
+            (python, "scripts/kw_slides_plan_first_check.py", "--repo-root", str(repo_root), "--require-ready"),
+            repo_root,
+        )
+    )
     if args.postgres_mode == "safety":
         steps.append(
             GateStep(
