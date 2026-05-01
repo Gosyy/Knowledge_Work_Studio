@@ -284,6 +284,22 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
     )
 
 
+    steps.append(
+        GateStep(
+            "Slides provenance manifest contract",
+            (
+                python,
+                "scripts/kw_slides_provenance_manifest_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--mode",
+                "generation",
+                "--require-ready",
+            ),
+            repo_root,
+        )
+    )
+
     if args.postgres_mode == "safety":
         steps.append(
             GateStep(
