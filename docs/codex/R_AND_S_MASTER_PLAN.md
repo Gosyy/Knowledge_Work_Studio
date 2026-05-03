@@ -209,3 +209,36 @@ Use Kimi-derived ideas as workflow patterns, not as cloud dependencies:
 - visual/multimodal QA planning and operator review.
 
 Do not introduce dependence on Kimi cloud, internet runtime, or external services.
+## Runtime Foundation phase checkpoint
+
+Runtime Foundation is the next named phase after the accepted post-S10 planning
+checkpoint. It is not an `S11` continuation.
+
+Branch policy:
+
+- accepted R/S checkpoint branch: `6_Stage_R`
+- accepted R/S checkpoint commit: `d034314`
+- Runtime Foundation branch: `7_Runtime_Foundation`
+- `6_Stage_R` remains the accepted R/S checkpoint
+- do not rewrite accepted R/S history
+- do not force-push unless explicitly instructed by the project owner
+
+Runtime Foundation order:
+
+1. RF0 — Runtime Foundation checkpoint and repository hygiene
+2. RF1 — Offline dependency and Docker reproducibility hardening
+3. RF2 — Slides runtime continuation
+4. RF3 — Real document ingestion for DOCX and PDF
+5. RF4 — Local GigaChat integration hardening
+
+RF0 is docs/hygiene-only. Runtime implementation starts after RF0 is accepted
+and a deploy/test baseline is reviewed.
+
+RF1 and RF2 are the first runtime streams:
+
+- RF1 prioritizes maximum operator stability in offline/intranet environments.
+- RF2 prioritizes maximum product value for slides generation, retry, revision,
+  artifact history, and provenance workflows.
+
+RF3 and RF4 follow as required foundations for real document processing and the
+local GigaChat production path.
