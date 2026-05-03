@@ -125,6 +125,33 @@ Acceptance:
 - `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
 - the full post-RF1.3 runner passes before the verdict commit is considered accepted.
 
+### RF1.4 — Offline bundle verification CLI and template generation
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF1.4 full runner, and a separate `RF1.4 verdict: ACCEPT` commit.
+
+Scope:
+- add a no-network CLI for offline bundle policy checks;
+- add template generation for an operator-provided `offline_bootstrap/` directory;
+- add bundle layout and manifest verification;
+- add smoke tests using temporary bundle directories;
+- update git hygiene so root-level `offline_bootstrap/` is ignored;
+- wire the RF1.4 policy check into production readiness gates.
+
+Non-goals:
+- do not download Python wheels;
+- do not run npm install/cache commands;
+- do not pull or save Docker images;
+- do not install Playwright browsers;
+- do not change dependency versions;
+- do not change Docker build logic;
+- do not change runtime behavior.
+
+Acceptance:
+- `python3 scripts/kw_offline_bootstrap_bundle_tool.py check-policy --repo-root . --require-ready --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf1_4_offline_bootstrap_bundle_tooling.py -q` passes;
+- `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
+- the full post-RF1.4 runner passes before the verdict commit is considered accepted.
+
 ### RF1 — Offline dependency and Docker reproducibility hardening
 
 Goal: make KW Studio deployment predictable in offline/intranet environments.

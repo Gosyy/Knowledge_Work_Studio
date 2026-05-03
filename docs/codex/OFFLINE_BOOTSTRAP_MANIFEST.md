@@ -136,3 +136,9 @@ RF1.4 may implement operator tooling for preparing or verifying real offline art
 - documenting exact online bootstrap and offline transfer commands.
 
 RF1.4 must still avoid hidden public internet use in default production runtime.
+
+## RF1.4 bundle tooling
+
+RF1.4 adds `scripts/kw_offline_bootstrap_bundle_tool.py`.
+
+The tool can create a template bundle and verify bundle layout/manifest structure. It does not download dependencies, run package managers, pull Docker images, install browsers, or change runtime behavior.
