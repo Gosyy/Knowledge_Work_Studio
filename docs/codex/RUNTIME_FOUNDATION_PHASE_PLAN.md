@@ -120,6 +120,30 @@ Non-goals:
 - do not change slides or document runtime behavior except where strictly
   needed for offline dependency validation.
 
+### RF1.2 — Offline bootstrap bundle policy and cache strategy
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF1.2 full runner, and a separate `RF1.2 verdict: ACCEPT` commit.
+
+Scope:
+- define explicit offline/bootstrap modes: check-only, skip-build runtime smoke, online bootstrap preparation, offline build, and offline runtime;
+- define the canonical operator bundle layout under `offline_bootstrap/`;
+- define cache strategies for Python wheelhouse, npm cache/local registry, Docker image archives/internal registry, and Playwright browser binaries;
+- add a no-network strategy check and smoke test;
+- wire the strategy check into production readiness gates.
+
+Non-goals:
+- do not create or commit actual wheelhouses, npm caches, Docker archives, browser binaries, or local registry data;
+- do not change dependency versions;
+- do not change Docker build logic;
+- do not change runtime behavior;
+- do not resolve npm audit findings in RF1.2.
+
+Acceptance:
+- `python3 scripts/kw_offline_bootstrap_bundle_check.py --repo-root . --require-ready` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf1_2_offline_bootstrap_bundle.py -q` passes;
+- `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
+- the full post-RF1.2 runner passes before the verdict commit is considered accepted.
+
 ### RF2 — Slides runtime continuation
 
 Goal: turn the accepted slides contracts into a more practical runtime workflow.

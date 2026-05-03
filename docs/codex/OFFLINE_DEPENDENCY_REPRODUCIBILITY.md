@@ -153,3 +153,17 @@ RF1.1 is accepted when:
 - the smoke test for the inventory check passes;
 - the production readiness gate includes the inventory check;
 - the full post-RF1.1 runner passes before the verdict commit is considered accepted.
+
+## RF1.2 bootstrap bundle strategy
+
+RF1.2 adds the canonical offline bootstrap bundle policy in `docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_STRATEGY.md`.
+
+RF1.1 remains the dependency-surface inventory. RF1.2 does not change dependency versions or runtime behavior. It defines the operator bundle layout and separates five modes:
+
+- check-only;
+- skip-build runtime smoke;
+- online bootstrap preparation;
+- offline build;
+- offline runtime.
+
+The main RF1.2 deliverable is a no-network strategy check that confirms the policy is present and consistent with the current Python, npm, Docker, Compose, and Playwright dependency surfaces.
