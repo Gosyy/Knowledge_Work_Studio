@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -18,6 +19,7 @@ REQUIRED_POLICY_FILES = (
     "docs/codex/OFFLINE_BOOTSTRAP_MANIFEST.md",
     "docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_TOOLING.md",
     "docs/codex/OFFLINE_BOOTSTRAP_OPERATOR_RUNBOOK.md",
+    "docs/codex/OFFLINE_BOOTSTRAP_INTEGRITY.md",
     "scripts/kw_offline_bootstrap_manifest_check.py",
     "requirements.txt",
     "frontend/package.json",
@@ -85,6 +87,8 @@ ARTIFACT_PRESENCE_RULES = {
         "description": "Checksum inventory must exist and be non-empty.",
     },
 }
+
+SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
 def read_text(path: Path) -> str:
@@ -279,12 +283,109 @@ def validate_artifact_presence(bundle_dir: Path) -> list[str]:
     return errors
 
 
+def _normalize_checksum_path(raw_path: str) -> str:
+    value = raw_path.strip()
+    if value.startswith("*"):
+        value = value[1:]
+    if value.startswith("./"):
+        value = value[2:]
+    return value
+
+
+def parse_sha256sums(bundle_dir: Path) -> tuple[list[dict[str, str]], list[str]]:
+    checksum_path = bundle_dir / "checks/sha256sums.txt"
+    errors: list[str] = []
+    entries: list[dict[str, str]] = []
+
+    if not checksum_path.exists():
+        return entries, ["missing checksum file: checks/sha256sums.txt"]
+    if checksum_path.stat().st_size <= 0:
+        return entries, ["checksum file is empty: checks/sha256sums.txt"]
+
+    for line_number, raw_line in enumerate(checksum_path.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        match = re.match(r"^([0-9a-fA-F]{64})\s+(.+)$", line)
+        if not match:
+            errors.append(f"checks/sha256sums.txt:{line_number}: malformed sha256sum entry")
+            continue
+
+        digest = match.group(1).lower()
+        rel_path = _normalize_checksum_path(match.group(2))
+        if not rel_path:
+            errors.append(f"checks/sha256sums.txt:{line_number}: empty relative path")
+            continue
+        if Path(rel_path).is_absolute():
+            errors.append(f"checks/sha256sums.txt:{line_number}: absolute paths are not allowed: {rel_path}")
+            continue
+        if ".." in Path(rel_path).parts:
+            errors.append(f"checks/sha256sums.txt:{line_number}: parent traversal is not allowed: {rel_path}")
+            continue
+        if rel_path == "checks/sha256sums.txt":
+            errors.append(f"checks/sha256sums.txt:{line_number}: checksum file must not include itself")
+            continue
+        if not SHA256_RE.match(digest):
+            errors.append(f"checks/sha256sums.txt:{line_number}: invalid sha256 digest")
+            continue
+
+        entries.append({"sha256": digest, "path": rel_path})
+
+    if not entries and not errors:
+        errors.append("checksum file contains no checksum entries")
+
+    return entries, errors
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def validate_checksums(bundle_dir: Path) -> dict[str, Any]:
+    errors = validate_bundle_dir(bundle_dir)
+    entries, parse_errors = parse_sha256sums(bundle_dir)
+    errors.extend(parse_errors)
+
+    checked: list[str] = []
+    mismatches: list[str] = []
+
+    for entry in entries:
+        rel_path = entry["path"]
+        expected = entry["sha256"]
+        target = bundle_dir / rel_path
+        if not target.exists():
+            errors.append(f"checksum target is missing: {rel_path}")
+            continue
+        if not target.is_file():
+            errors.append(f"checksum target is not a file: {rel_path}")
+            continue
+
+        actual = sha256_file(target)
+        checked.append(rel_path)
+        if actual != expected:
+            mismatches.append(rel_path)
+            errors.append(f"checksum mismatch for {rel_path}: expected {expected}, got {actual}")
+
+    return {
+        "checked_files": checked,
+        "checked_file_count": len(checked),
+        "mismatches": mismatches,
+        "errors": errors,
+        "status": "ready" if not errors else "failed",
+    }
+
+
 def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
     errors: list[str] = []
 
     for rel in REQUIRED_POLICY_FILES:
         if not (repo_root / rel).exists():
-            errors.append(f"missing required RF1.5 policy surface: {rel}")
+            errors.append(f"missing required RF1.6 policy surface: {rel}")
 
     tooling_doc = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_TOOLING.md"
     if tooling_doc.exists():
@@ -297,25 +398,36 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
             "RF1.5 artifact presence checks",
             "verify-artifacts",
             "print-runbook",
-            "RF1.5 handoff",
+            "RF1.6 checksum and integrity verification",
+            "verify-checksums",
         ):
-            if phrase not in doc and phrase != "RF1.5 handoff":
-                errors.append(f"RF1.4/RF1.5 tooling doc is missing phrase: {phrase}")
+            if phrase not in doc:
+                errors.append(f"offline bootstrap bundle tooling doc is missing phrase: {phrase}")
 
     runbook = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_OPERATOR_RUNBOOK.md"
     if runbook.exists():
         doc = read_text(runbook)
         for phrase in (
             "RF1.5 checkpoint",
-            "Python wheelhouse preparation command",
-            "npm cache preparation command",
-            "Docker image preparation commands",
-            "Playwright browser preparation command",
-            "Artifact presence verification",
-            "RF1.6 handoff",
+            "RF1.6 checksum verification commands",
+            "verify-checksums",
+            "does not change runtime behavior",
         ):
             if phrase not in doc:
-                errors.append(f"RF1.5 operator runbook is missing phrase: {phrase}")
+                errors.append(f"offline bootstrap operator runbook is missing phrase: {phrase}")
+
+    integrity = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_INTEGRITY.md"
+    if integrity.exists():
+        doc = read_text(integrity)
+        for phrase in (
+            "RF1.6 checkpoint",
+            "verify-checksums",
+            "checks/sha256sums.txt",
+            "Production readiness gates must not require a real local `offline_bootstrap/` directory",
+            "RF1.7 handoff",
+        ):
+            if phrase not in doc:
+                errors.append(f"offline bootstrap integrity doc is missing phrase: {phrase}")
 
     gitignore = read_text(repo_root / ".gitignore") if (repo_root / ".gitignore").exists() else ""
     if "offline_bootstrap/" not in gitignore:
@@ -351,10 +463,13 @@ def runbook_commands() -> dict[str, list[str]]:
             "cd frontend && PLAYWRIGHT_BROWSERS_PATH=/path/to/offline_bootstrap/playwright/browsers npx playwright install chromium",
         ],
         "checksums": [
-            "cd /path/to/offline_bootstrap && find . -type f -print0 | sort -z | xargs -0 sha256sum > checks/sha256sums.txt",
+            "cd /path/to/offline_bootstrap && find . -type f ! -path './checks/sha256sums.txt' -print0 | sort -z | xargs -0 sha256sum > checks/sha256sums.txt",
         ],
         "verify_artifacts": [
             "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-artifacts --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+        ],
+        "verify_checksums": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-checksums --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
         ],
     }
 
@@ -378,7 +493,7 @@ def create_template(repo_root: Path, bundle_dir: Path, force: bool, mode: str) -
     write_text(
         bundle_dir / "README.md",
         "# KW Studio offline bootstrap bundle template\n\n"
-        "This directory is an operator artifact generated by RF1.4/RF1.5 tooling.\n\n"
+        "This directory is an operator artifact generated by RF1.4/RF1.5/RF1.6 tooling.\n\n"
         "The template copies lock/source files and creates placeholder manifests. It does not contain real dependency artifacts until an operator explicitly prepares them.\n\n"
         "Do not commit this directory to git.\n",
     )
@@ -387,7 +502,7 @@ def create_template(repo_root: Path, bundle_dir: Path, force: bool, mode: str) -
     copy_text_file(repo_root / "frontend/package-lock.json", bundle_dir / "npm/package-lock.json")
     write_text(bundle_dir / "docker/images-manifest.txt", "\n".join(current_docker_images(repo_root)))
     write_text(bundle_dir / "playwright/browsers-manifest.txt", "operator-managed Playwright browser cache placeholder")
-    write_text(bundle_dir / "checks/sha256sums.txt", "RF1.4 template placeholder; generate real checksums in a later operator step")
+    write_text(bundle_dir / "checks/sha256sums.txt", "RF1.6 template placeholder; generate real checksums after artifact preparation")
     write_text(bundle_dir / "manifest.json", json.dumps(build_manifest_template(repo_root, mode), indent=2, sort_keys=True))
 
     errors = validate_bundle_dir(bundle_dir)
@@ -413,7 +528,16 @@ def command_check_policy(args: argparse.Namespace) -> int:
         "runtime_changed_by_rf1_4": False,
         "dependency_versions_changed_by_rf1_4": False,
         "bundle_required": False,
-        "commands": ["check-policy", "check-artifact-policy", "create-template", "verify-bundle", "verify-artifacts", "print-runbook"],
+        "commands": [
+            "check-policy",
+            "check-artifact-policy",
+            "check-integrity-policy",
+            "create-template",
+            "verify-bundle",
+            "verify-artifacts",
+            "verify-checksums",
+            "print-runbook",
+        ],
         "errors": errors,
         "status": "ready" if not errors else "failed",
     }
@@ -433,6 +557,25 @@ def command_check_artifact_policy(args: argparse.Namespace) -> int:
         "artifact_presence_requires_bundle_dir": True,
         "presence_rules": ARTIFACT_PRESENCE_RULES,
         "runbook_commands_documented": True,
+        "errors": errors,
+        "status": "ready" if not errors else "failed",
+    }
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if not errors else 2
+
+
+def command_check_integrity_policy(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    errors = validate_policy(repo_root, require_ready=args.require_ready)
+    report = {
+        "mode": "offline-bundle-checksum-integrity-policy",
+        "network_required": False,
+        "runtime_changed_by_rf1_6": False,
+        "dependency_versions_changed_by_rf1_6": False,
+        "bundle_required_for_readiness": False,
+        "checksum_verification_requires_bundle_dir": True,
+        "checksum_file": "checks/sha256sums.txt",
+        "hash_algorithm": "sha256",
         "errors": errors,
         "status": "ready" if not errors else "failed",
     }
@@ -485,6 +628,23 @@ def command_verify_artifacts(args: argparse.Namespace) -> int:
     return 0 if not errors else 2
 
 
+def command_verify_checksums(args: argparse.Namespace) -> int:
+    bundle_dir = Path(args.bundle_dir).expanduser().resolve()
+    validation = validate_checksums(bundle_dir)
+    report = {
+        "mode": "offline-bundle-checksum-verification",
+        "bundle_dir": str(bundle_dir),
+        "network_required": False,
+        "downloads_performed": False,
+        "package_managers_run": False,
+        "docker_pull_or_save_run": False,
+        "playwright_install_run": False,
+        **validation,
+    }
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if not report["errors"] else 2
+
+
 def command_print_runbook(args: argparse.Namespace) -> int:
     report = {
         "mode": "offline-bootstrap-runbook-commands",
@@ -500,7 +660,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="KW Studio offline bootstrap bundle template and verification tool.")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    policy = sub.add_parser("check-policy", help="Validate repository RF1.4/RF1.5 bundle tooling policy.")
+    policy = sub.add_parser("check-policy", help="Validate repository RF1.4/RF1.5/RF1.6 bundle tooling policy.")
     policy.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
     policy.add_argument("--require-ready", action="store_true")
     policy.add_argument("--json", action="store_true")
@@ -511,6 +671,12 @@ def build_parser() -> argparse.ArgumentParser:
     artifact_policy.add_argument("--require-ready", action="store_true")
     artifact_policy.add_argument("--json", action="store_true")
     artifact_policy.set_defaults(func=command_check_artifact_policy)
+
+    integrity_policy = sub.add_parser("check-integrity-policy", help="Validate RF1.6 checksum integrity policy without requiring a bundle.")
+    integrity_policy.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    integrity_policy.add_argument("--require-ready", action="store_true")
+    integrity_policy.add_argument("--json", action="store_true")
+    integrity_policy.set_defaults(func=command_check_integrity_policy)
 
     create = sub.add_parser("create-template", help="Create an offline_bootstrap template directory without downloads.")
     create.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
@@ -530,6 +696,12 @@ def build_parser() -> argparse.ArgumentParser:
     verify_artifacts.add_argument("--bundle-dir", required=True)
     verify_artifacts.add_argument("--json", action="store_true")
     verify_artifacts.set_defaults(func=command_verify_artifacts)
+
+    verify_checksums = sub.add_parser("verify-checksums", help="Verify checks/sha256sums.txt against bundle files.")
+    verify_checksums.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    verify_checksums.add_argument("--bundle-dir", required=True)
+    verify_checksums.add_argument("--json", action="store_true")
+    verify_checksums.set_defaults(func=command_verify_checksums)
 
     runbook = sub.add_parser("print-runbook", help="Print documented operator preparation commands as JSON.")
     runbook.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))

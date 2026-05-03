@@ -122,3 +122,11 @@ RF1.5 adds `verify-artifacts`, `check-artifact-policy`, and `print-runbook` supp
 The artifact presence check is explicit and requires `--bundle-dir`. Production readiness uses only the no-network policy check and does not require a real operator bundle.
 
 RF1.5 also adds `docs/codex/OFFLINE_BOOTSTRAP_OPERATOR_RUNBOOK.md`, which documents example operator commands for preparing Python wheelhouse, npm cache, Docker image archives, Playwright browser binaries, and checksums. These commands are documented for operator use and are not executed by readiness gates.
+
+## RF1.6 checksum and integrity verification
+
+RF1.6 adds `check-integrity-policy` and `verify-checksums` support to `scripts/kw_offline_bootstrap_bundle_tool.py`.
+
+The readiness gate uses only `check-integrity-policy`; it does not require a real `offline_bootstrap/` bundle. Operators explicitly run `verify-checksums --bundle-dir ...` after preparing and transferring a bundle.
+
+RF1.6 verifies SHA-256 checksums listed in `checks/sha256sums.txt`. It does not download dependencies, run package managers, pull/save Docker images, install browsers, or change runtime behavior.

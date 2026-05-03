@@ -181,6 +181,33 @@ Acceptance:
 - `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
 - the full post-RF1.5 runner passes before the verdict commit is considered accepted.
 
+### RF1.6 — Offline checksum and artifact integrity verification
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF1.6 full runner, and a separate `RF1.6 verdict: ACCEPT` commit.
+
+Scope:
+- add checksum integrity policy for operator-provided `offline_bootstrap/` bundles;
+- add `check-integrity-policy` and `verify-checksums` CLI surfaces;
+- parse and validate SHA-256 entries from `checks/sha256sums.txt`;
+- reject malformed hashes, missing files, absolute paths, and parent traversal;
+- cover valid and corrupted checksum scenarios with temporary smoke-test fixtures;
+- wire only the no-network RF1.6 policy check into production readiness gates.
+
+Non-goals:
+- do not download Python wheels;
+- do not run npm install/cache commands;
+- do not pull or save Docker images;
+- do not install Playwright browsers;
+- do not change dependency versions;
+- do not change Docker build logic;
+- do not change runtime behavior.
+
+Acceptance:
+- `python3 scripts/kw_offline_bootstrap_bundle_tool.py check-integrity-policy --repo-root . --require-ready --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf1_6_offline_bundle_integrity.py -q` passes;
+- `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
+- the full post-RF1.6 runner passes before the verdict commit is considered accepted.
+
 ### RF1 — Offline dependency and Docker reproducibility hardening
 
 Goal: make KW Studio deployment predictable in offline/intranet environments.

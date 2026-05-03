@@ -155,3 +155,25 @@ Do not commit:
 ## RF1.6 handoff
 
 RF1.6 may add deeper offline artifact verification, such as checksum validation, expected Docker image digest checks, wheelhouse package enumeration, npm cache inventory checks, or documented offline build commands. Any network use must remain explicit and separate from default offline runtime.
+
+## RF1.6 checksum verification commands
+
+After preparing artifact payloads, generate checksums without including the checksum file itself:
+
+```bash
+cd /path/to/offline_bootstrap
+find . -type f ! -path './checks/sha256sums.txt' -print0 \
+  | sort -z \
+  | xargs -0 sha256sum > checks/sha256sums.txt
+```
+
+Verify checksums in the offline environment:
+
+```bash
+python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-checksums \
+  --repo-root . \
+  --bundle-dir /path/to/offline_bootstrap \
+  --json
+```
+
+RF1.6 does not generate artifacts automatically and does not change runtime behavior.
