@@ -705,3 +705,26 @@ Non-goals:
 
 Default next step after RF2.6:
 - RF2.7 — slides runtime closure and readiness for RF2 closure.
+
+
+### RF2.7 — Slides runtime closure and readiness for RF2 closure
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.7 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.7 verdict: ACCEPT` commit.
+
+Scope:
+- close RF2 slides runtime foundation after RF2.0-RF2.6;
+- verify approved-plan generation, saved-plan retry, local render-mode hardening, and provenance manifest runtime links through one closure/readiness gate;
+- keep RF2.7 as a closure gate, not K-phase product-power work.
+
+Non-goals:
+- no K-phase work;
+- no Kimi-level claim;
+- no public endpoint;
+- no schema migration;
+- no queue/event-store migration;
+- no dependency or Docker changes;
+- no visual QA runtime;
+- no `npm audit fix --force`.
+
+Default next route after RF2.7:
+- RF2_closure -> RF3 -> RF4 -> RF_closure -> K0.

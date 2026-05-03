@@ -14,6 +14,10 @@ from backend.app.services.slides_service.render_mode_runtime import (
     RenderModeRuntimeResult,
     resolve_render_mode_runtime,
 )
+from backend.app.services.slides_service.runtime_closure import (
+    SlidesRuntimeClosureReadiness,
+    build_slides_runtime_closure_readiness,
+)
 from backend.app.services.slides_service.provenance_manifest_runtime import (
     SlidesGenerationProvenanceRuntimeResult,
     SlidesRetryProvenanceRuntimeResult,
@@ -321,6 +325,10 @@ class SlidesService:
                 workflow_id="slides.service.render_mode_runtime",
             )
         )
+
+    def rf2_runtime_closure_readiness(self) -> SlidesRuntimeClosureReadiness:
+        """Return RF2 slides runtime closure/readiness state without starting K-phase."""
+        return build_slides_runtime_closure_readiness()
 
     def _attach_generated_visuals(
         self,

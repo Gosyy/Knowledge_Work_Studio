@@ -249,9 +249,28 @@ Wire render mode metadata into generated artifact output while keeping templates
 
 Generate the provenance manifest as an actual registered artifact linked to the generated PPTX and source plan.
 
-### RF2.7 — Product UX polish for slides generation lifecycle
+### RF2.7 — Slides runtime closure and readiness for RF2 closure
 
-Tighten UI feedback around plan approval, generation, retry, artifact download, and errors.
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.7 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.7 verdict: ACCEPT` commit.
+
+Scope:
+- consolidate RF2.0-RF2.6 as the slides runtime foundation;
+- add a closure/readiness gate for approved-plan generation, saved-plan retry, local render mode hardening, and downloadable provenance manifests;
+- prove generation and retry provenance paths through service-level smoke;
+- keep K-phase product-power work deferred.
+
+Non-goals:
+- no K-phase work;
+- no Kimi-level claim;
+- no public endpoint;
+- no schema migration;
+- no queue/event-store migration;
+- no dependency or Docker changes;
+- no visual QA runtime;
+- no `npm audit fix --force`.
+
+Default next route after RF2.7:
+- RF2_closure -> RF3 -> RF4 -> RF_closure -> K0.
 
 ## Acceptance policy for RF2.0
 

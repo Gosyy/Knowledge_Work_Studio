@@ -74,9 +74,19 @@ from backend.app.services.slides_service.render_mode_runtime import (
     resolve_render_mode_runtime,
     slides_render_mode_runtime_capabilities,
 )
+from backend.app.services.slides_service.runtime_closure import (
+    RF2_SLIDES_RUNTIME_NEXT_ROUTE,
+    SlidesRuntimeClosureReadiness,
+    build_slides_runtime_closure_readiness,
+    validate_slides_runtime_closure_readiness,
+)
 from backend.app.services.slides_service.service import SlidesService, SlidesTransformOutput
 
 __all__ = [
+    "validate_slides_runtime_closure_readiness",
+    "build_slides_runtime_closure_readiness",
+    "SlidesRuntimeClosureReadiness",
+    "RF2_SLIDES_RUNTIME_NEXT_ROUTE",
     "verify_manifest_digest",
     "emit_retry_provenance_manifest",
     "emit_generation_provenance_manifest",
