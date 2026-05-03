@@ -339,6 +339,34 @@ Acceptance:
 - `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
 - the full post-RF1.2 runner passes before the verdict commit is considered accepted.
 
+
+### RF2.0 — Slides runtime phase kickoff and scope checkpoint
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.0 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.0 verdict: ACCEPT` commit.
+
+Scope:
+- create the RF2 slides runtime phase plan;
+- add a no-network RF2.0 checkpoint validator;
+- preserve RF1 offline/intranet foundation constraints;
+- preserve accepted S3-S7 slides contract surfaces;
+- prepare the next step, RF2.1, as runtime capability inventory and baseline smoke.
+
+Non-goals:
+- do not change renderer behavior;
+- do not change slides task runtime behavior;
+- do not change dependency versions;
+- do not change Dockerfiles;
+- do not change LLM topology;
+- do not run `npm audit fix --force`;
+- do not start RF2.1 until RF2.0 is accepted.
+
+Acceptance:
+- `python3 scripts/kw_slides_runtime_phase_check.py --repo-root . --require-ready --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf2_0_slides_runtime_phase.py -q` passes;
+- existing S3-S7 slides contract checks pass;
+- production readiness includes the RF2.0 checkpoint;
+- full post-RF2.0 runner and Docker runtime smoke pass before final acceptance.
+
 ### RF2 — Slides runtime continuation
 
 Goal: turn the accepted slides contracts into a more practical runtime workflow.

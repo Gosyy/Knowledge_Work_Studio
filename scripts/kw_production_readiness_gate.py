@@ -31,6 +31,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/OFFLINE_BOOTSTRAP_ARTIFACT_INVENTORY.md",
     "docs/codex/OFFLINE_BOOTSTRAP_BUILD_READINESS.md",
     "docs/codex/OFFLINE_BOOTSTRAP_RF1_CLOSURE.md",
+    "docs/codex/SLIDES_RUNTIME_PHASE_PLAN.md",
+    "scripts/kw_slides_runtime_phase_check.py",
+    "backend/tests/smoke/test_rf2_0_slides_runtime_phase.py",
     "backend/tests/smoke/test_rf1_9_offline_operator_command_groups.py",
     "backend/tests/smoke/test_rf1_8_offline_build_readiness.py",
     "backend/tests/smoke/test_rf1_7_offline_artifact_inventory.py",
@@ -526,6 +529,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
                 python,
                 "scripts/kw_offline_bootstrap_bundle_tool.py",
                 "check-closure-policy",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Slides runtime phase checkpoint",
+            (
+                python,
+                "scripts/kw_slides_runtime_phase_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
