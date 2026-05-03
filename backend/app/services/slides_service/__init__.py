@@ -3,6 +3,12 @@ from backend.app.services.slides_service.approved_plan import (
     ApprovedPlanRenderResult,
     render_approved_plan_to_pptx,
 )
+from backend.app.services.slides_service.approved_plan_lifecycle import (
+    ApprovedPlanLifecycleRequest,
+    ApprovedPlanLifecycleResult,
+    SlidesTaskEvent,
+    render_approved_plan_with_lifecycle,
+)
 from backend.app.services.slides_service.entrypoint import SlidesGenerateRequest, SlidesGenerateResult, SlidesServiceEntrypoint
 from backend.app.services.slides_service.generator import generate_pptx_from_outline, generate_pptx_from_plan
 from backend.app.services.slides_service.image_pipeline import (
@@ -49,6 +55,10 @@ from backend.app.services.slides_service.source_grounding import (
 from backend.app.services.slides_service.service import SlidesService, SlidesTransformOutput
 
 __all__ = [
+    "render_approved_plan_with_lifecycle",
+    "SlidesTaskEvent",
+    "ApprovedPlanLifecycleResult",
+    "ApprovedPlanLifecycleRequest",
     "render_approved_plan_to_pptx",
     "ApprovedPlanRenderResult",
     "ApprovedPlanRenderRequest",

@@ -168,6 +168,39 @@ RF2.2a does not change slides runtime behavior, dependencies, Dockerfiles, LLM t
 
 Make runtime registration of plan snapshots and safe task events concrete where it is currently contract-only.
 
+
+### RF2.3 — Plan snapshot persistence and task event stream runtime wiring
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.3 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.3 verdict: ACCEPT` commit.
+
+Scope:
+- wire RF2.2 approved-plan render output into an additive lifecycle runtime;
+- introduce `render_approved_plan_with_lifecycle`;
+- persist approved `PresentationPlan` through `PresentationPlanSnapshotService`;
+- register the generated PPTX through the existing artifact service path;
+- emit an append-only safe task event tuple following the S4 slides event contract;
+- wire official composition so `SlidesService` receives plan snapshot and artifact services.
+
+Non-goals:
+- do not add a public API endpoint yet;
+- do not add a DB schema migration;
+- do not implement saved-plan retry yet;
+- do not emit the downloadable provenance manifest yet;
+- do not implement visual QA runtime;
+- do not improve renderer quality to Kimi-level;
+- do not change dependencies;
+- do not change Dockerfiles;
+- do not run `npm audit fix --force`.
+
+Acceptance:
+- `python3 scripts/kw_slides_approved_plan_lifecycle_check.py --repo-root . --require-ready --json` passes;
+- RF2.3 smoke tests prove snapshot persistence, artifact registration, event order, and safe payload;
+- production readiness includes RF2.3;
+- full post-RF2.3 runner and Docker runtime smoke pass before final acceptance.
+
+Default next step after RF2.3:
+- RF2.4 — Saved-plan retry runtime path.
+
 ### RF2.4 — Saved-plan retry runtime path
 
 Implement retry-from-saved-plan behavior using existing plan snapshots and explicit operator instruction.

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 
 from backend.app.services.slides_service.approved_plan import ApprovedPlanRenderRequest, ApprovedPlanRenderResult, render_approved_plan_to_pptx
+from backend.app.services.slides_service.approved_plan_lifecycle import ApprovedPlanLifecycleRequest, ApprovedPlanLifecycleResult, render_approved_plan_with_lifecycle
 from backend.app.services.slides_service.generator import generate_pptx_from_plan
 from backend.app.services.slides_service.image_pipeline import DeterministicPatternImageProvider, SlideImageProvider, SlideImageRegistry
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, build_presentation_plan, plan_to_outline
@@ -27,6 +28,8 @@ class SlidesService:
 
     image_provider: SlideImageProvider = field(default_factory=DeterministicPatternImageProvider)
     image_registry: SlideImageRegistry | None = None
+    plan_snapshot_service: object | None = None
+    artifact_service: object | None = None
 
     def generate_deck(
         self,
@@ -102,6 +105,52 @@ class SlidesService:
                 artifact_filename=artifact_filename,
                 operator_user_id=operator_user_id,
             )
+        )
+
+
+    def generate_deck_from_approved_plan_with_lifecycle(
+        self,
+        plan: PresentationPlan,
+        *,
+        session_id: str,
+        task_id: str,
+        presentation_id: str,
+        approval_status: str = "approved",
+        render_mode: str = "adaptive",
+        template_id: str = "business_clean",
+        presentation_version_id: str | None = None,
+        plan_snapshot_id: str | None = None,
+        change_summary: str = "Approved plan rendered to deterministic PPTX.",
+        artifact_filename: str = "approved-plan-deck.pptx",
+        operator_user_id: str = "user_local_default",
+    ) -> ApprovedPlanLifecycleResult:
+        """Render an approved plan and wire snapshot/artifact/event lifecycle.
+
+        RF2.3 intentionally does not add a public API endpoint, migration,
+        retry runtime, provenance artifact, or Kimi-level quality claim.
+        """
+        if self.plan_snapshot_service is None:
+            raise ValueError("Slides approved-plan lifecycle requires plan_snapshot_service.")
+        if self.artifact_service is None:
+            raise ValueError("Slides approved-plan lifecycle requires artifact_service.")
+
+        return render_approved_plan_with_lifecycle(
+            ApprovedPlanLifecycleRequest(
+                plan=plan,
+                session_id=session_id,
+                task_id=task_id,
+                presentation_id=presentation_id,
+                approval_status=approval_status,
+                render_mode=render_mode,
+                template_id=template_id,
+                presentation_version_id=presentation_version_id,
+                plan_snapshot_id=plan_snapshot_id,
+                change_summary=change_summary,
+                artifact_filename=artifact_filename,
+                operator_user_id=operator_user_id,
+            ),
+            plan_snapshot_service=self.plan_snapshot_service,  # type: ignore[arg-type]
+            artifact_service=self.artifact_service,  # type: ignore[arg-type]
         )
 
     def _attach_generated_visuals(
