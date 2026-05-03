@@ -119,6 +119,37 @@ Add or harden a minimal offline PPTX generation path from an approved plan.
 
 Non-goal: no new AI dependency and no renderer rewrite.
 
+
+### RF2.2 — Minimal deterministic PPTX generation from approved plan
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.2 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.2 verdict: ACCEPT` commit.
+
+Scope:
+- add an additive backend runtime path for approved `PresentationPlan` rendering;
+- introduce `ApprovedPlanRenderRequest` and `ApprovedPlanRenderResult`;
+- add `render_approved_plan_to_pptx`;
+- add `SlidesService.generate_deck_from_approved_plan`;
+- return deterministic PPTX bytes, sha256, size, slide count, render mode, template id, safe metadata, and safe event hints.
+
+Non-goals:
+- do not add a public API endpoint yet;
+- do not persist generated artifacts yet;
+- do not emit downloadable provenance manifest yet;
+- do not implement saved-plan retry yet;
+- do not implement visual QA runtime;
+- do not claim Kimi-level slides quality;
+- do not change dependency versions;
+- do not change Dockerfiles;
+- do not run `npm audit fix --force`.
+
+Acceptance:
+- `python3 scripts/kw_slides_approved_plan_runtime_check.py --repo-root . --require-ready --json` passes;
+- smoke tests prove deterministic approved-plan PPTX rendering;
+- unapproved plans are rejected;
+- template mode requires explicit local template id;
+- production readiness includes RF2.2;
+- full post-RF2.2 runner and Docker runtime smoke pass before final acceptance.
+
 ### RF2.3 — Plan snapshot persistence and task event stream runtime wiring
 
 Make runtime registration of plan snapshots and safe task events concrete where it is currently contract-only.

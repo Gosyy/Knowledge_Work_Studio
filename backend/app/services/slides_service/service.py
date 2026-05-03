@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
+from backend.app.services.slides_service.approved_plan import ApprovedPlanRenderRequest, ApprovedPlanRenderResult, render_approved_plan_to_pptx
 from backend.app.services.slides_service.generator import generate_pptx_from_plan
 from backend.app.services.slides_service.image_pipeline import DeterministicPatternImageProvider, SlideImageProvider, SlideImageRegistry
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, build_presentation_plan, plan_to_outline
@@ -66,6 +67,41 @@ class SlidesService:
             template_id=template_id,
             generated_media_file_ids=stored_file_ids,
             source_grounding_metadata=grounding.as_metadata(),
+        )
+
+
+    def generate_deck_from_approved_plan(
+        self,
+        plan: PresentationPlan,
+        *,
+        plan_snapshot_id: str,
+        approval_status: str = "approved",
+        render_mode: str = "adaptive",
+        template_id: str = "business_clean",
+        session_id: str | None = None,
+        task_id: str | None = None,
+        presentation_id: str | None = None,
+        artifact_filename: str = "approved-plan-deck.pptx",
+        operator_user_id: str = "user_local_default",
+    ) -> ApprovedPlanRenderResult:
+        """Render an already-approved plan into deterministic PPTX bytes.
+
+        This additive RF2.2 path intentionally does not persist artifacts,
+        emit provenance manifests, call an LLM, or change the supplied plan.
+        """
+        return render_approved_plan_to_pptx(
+            ApprovedPlanRenderRequest(
+                plan=plan,
+                plan_snapshot_id=plan_snapshot_id,
+                approval_status=approval_status,
+                render_mode=render_mode,  # type: ignore[arg-type]
+                template_id=template_id,
+                session_id=session_id,
+                task_id=task_id,
+                presentation_id=presentation_id,
+                artifact_filename=artifact_filename,
+                operator_user_id=operator_user_id,
+            )
         )
 
     def _attach_generated_visuals(

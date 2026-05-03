@@ -33,6 +33,10 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/OFFLINE_BOOTSTRAP_RF1_CLOSURE.md",
     "docs/codex/SLIDES_RUNTIME_PHASE_PLAN.md",
     "docs/codex/SLIDES_RUNTIME_CAPABILITY_INVENTORY.md",
+    "docs/codex/SLIDES_APPROVED_PLAN_RUNTIME.md",
+    "backend/app/services/slides_service/approved_plan.py",
+    "scripts/kw_slides_approved_plan_runtime_check.py",
+    "backend/tests/smoke/test_rf2_2_slides_approved_plan_runtime.py",
     "scripts/kw_slides_runtime_inventory_check.py",
     "backend/tests/smoke/test_rf2_1_slides_runtime_inventory.py",
     "docs/codex/CONTROLLED_DEPENDENCY_SECURITY_ASSESSMENT.md",
@@ -580,6 +584,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_slides_runtime_inventory_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Slides approved-plan deterministic PPTX runtime",
+            (
+                python,
+                "scripts/kw_slides_approved_plan_runtime_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
