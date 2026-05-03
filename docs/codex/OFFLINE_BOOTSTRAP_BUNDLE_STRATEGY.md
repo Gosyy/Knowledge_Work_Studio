@@ -202,3 +202,9 @@ RF1.2 intentionally stops at policy and validation. RF1.3 may implement operator
 - verifying that an offline bundle contains all required sections;
 - checking local wheelhouse/cache/image/browser availability without using the public internet;
 - documenting exact operator commands for online bootstrap, offline transfer, offline build, and offline runtime smoke.
+
+## RF1.3 manifest validation tooling
+
+RF1.3 adds `docs/codex/OFFLINE_BOOTSTRAP_MANIFEST.md` and `scripts/kw_offline_bootstrap_manifest_check.py`.
+
+RF1.2 remains the bundle strategy. RF1.3 defines the portable `manifest.json` schema and validates either repository policy or an operator-provided bundle directory. It does not generate real wheelhouses, npm caches, Docker archives, or Playwright browser caches.

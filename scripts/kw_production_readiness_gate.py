@@ -24,6 +24,9 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_visual_qa_planning_check.py",
     "scripts/kw_offline_dependency_inventory_check.py", "docs/codex/OFFLINE_DEPENDENCY_REPRODUCIBILITY.md",
     "docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_STRATEGY.md",
+    "docs/codex/OFFLINE_BOOTSTRAP_MANIFEST.md",
+    "scripts/kw_offline_bootstrap_manifest_check.py",
+    "backend/tests/smoke/test_rf1_3_offline_bootstrap_manifest.py",
     "scripts/kw_offline_bootstrap_bundle_check.py",
     "backend/tests/smoke/test_rf1_2_offline_bootstrap_bundle.py", "backend/tests/smoke/test_rf1_offline_dependency_inventory.py", "backend/app/integrations/llm/litellm_gateway_contract.py",
     "scripts/kw_workflow_contracts_check.py", "scripts/kw_slides_plan_first_check.py",
@@ -408,6 +411,19 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_offline_bootstrap_bundle_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+            ),
+            repo_root,
+        )
+    )
+    steps.append(
+        GateStep(
+            "Offline bootstrap manifest validation contract",
+            (
+                python,
+                "scripts/kw_offline_bootstrap_manifest_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
