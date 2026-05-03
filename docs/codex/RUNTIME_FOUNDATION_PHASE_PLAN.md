@@ -624,3 +624,38 @@ Acceptance:
 
 Default next step after RF2.3:
 - RF2.4 — Saved-plan retry runtime path.
+
+### RF2.4 — Saved-plan retry runtime path
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.4 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.4 verdict: ACCEPT` commit.
+
+Scope:
+- load a saved `PresentationPlanSnapshot`;
+- deserialize and validate the saved `PresentationPlan`;
+- require explicit operator retry instruction;
+- require render mode confirmation;
+- regenerate deterministic PPTX bytes from the saved plan;
+- register a new artifact through the existing artifact service path;
+- persist a new plan snapshot;
+- emit the S4 retry event sequence with safe payload only;
+- record parent links and retry instruction digest without storing raw operator instruction.
+
+Non-goals:
+- do not add a public API endpoint yet;
+- do not add a DB schema migration;
+- do not add a queue/event-store migration;
+- do not emit the downloadable provenance manifest yet;
+- do not implement visual QA runtime;
+- do not improve renderer quality to Kimi-level;
+- do not change dependencies;
+- do not change Dockerfiles;
+- do not run `npm audit fix --force`.
+
+Acceptance:
+- `python3 scripts/kw_slides_saved_plan_retry_check.py --repo-root . --require-ready --json` passes;
+- RF2.4 smoke tests prove saved snapshot loading, explicit operator instruction, new artifact, new snapshot, retry parent links, retry event order, and safe payload;
+- production readiness includes RF2.4;
+- full post-RF2.4 runner and Docker runtime smoke pass before final acceptance.
+
+Default next step after RF2.4:
+- RF2.5 — Adaptive/template local render mode runtime hardening.

@@ -52,9 +52,17 @@ from backend.app.services.slides_service.source_grounding import (
     build_source_grounded_plan,
     render_slide_citations_xml,
 )
+from backend.app.services.slides_service.saved_plan_retry import (
+    SavedPlanRetryRequest,
+    SavedPlanRetryResult,
+    retry_saved_plan_with_lifecycle,
+)
 from backend.app.services.slides_service.service import SlidesService, SlidesTransformOutput
 
 __all__ = [
+    "retry_saved_plan_with_lifecycle",
+    "SavedPlanRetryResult",
+    "SavedPlanRetryRequest",
     "render_approved_plan_with_lifecycle",
     "SlidesTaskEvent",
     "ApprovedPlanLifecycleResult",

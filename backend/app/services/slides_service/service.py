@@ -4,6 +4,7 @@ from dataclasses import dataclass, field, replace
 
 from backend.app.services.slides_service.approved_plan import ApprovedPlanRenderRequest, ApprovedPlanRenderResult, render_approved_plan_to_pptx
 from backend.app.services.slides_service.approved_plan_lifecycle import ApprovedPlanLifecycleRequest, ApprovedPlanLifecycleResult, render_approved_plan_with_lifecycle
+from backend.app.services.slides_service.saved_plan_retry import SavedPlanRetryRequest, SavedPlanRetryResult, retry_saved_plan_with_lifecycle
 from backend.app.services.slides_service.generator import generate_pptx_from_plan
 from backend.app.services.slides_service.image_pipeline import DeterministicPatternImageProvider, SlideImageProvider, SlideImageRegistry
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, build_presentation_plan, plan_to_outline
@@ -146,6 +147,53 @@ class SlidesService:
                 presentation_version_id=presentation_version_id,
                 plan_snapshot_id=plan_snapshot_id,
                 change_summary=change_summary,
+                artifact_filename=artifact_filename,
+                operator_user_id=operator_user_id,
+            ),
+            plan_snapshot_service=self.plan_snapshot_service,  # type: ignore[arg-type]
+            artifact_service=self.artifact_service,  # type: ignore[arg-type]
+        )
+
+
+    def retry_deck_from_saved_plan(
+        self,
+        *,
+        saved_plan_snapshot_id: str,
+        session_id: str,
+        retry_task_id: str,
+        parent_task_id: str,
+        presentation_id: str,
+        operator_instruction: str,
+        render_mode: str = "adaptive",
+        template_id: str = "business_clean",
+        new_plan_snapshot_id: str | None = None,
+        new_presentation_version_id: str | None = None,
+        artifact_filename: str = "retry-from-saved-plan.pptx",
+        operator_user_id: str = "user_local_default",
+    ) -> SavedPlanRetryResult:
+        """Regenerate a deck from a saved plan snapshot.
+
+        RF2.4 intentionally does not add a public API endpoint, migration,
+        queue/event-store runtime, provenance artifact, visual QA runtime, or
+        Kimi-level quality claim.
+        """
+        if self.plan_snapshot_service is None:
+            raise ValueError("Slides saved-plan retry requires plan_snapshot_service.")
+        if self.artifact_service is None:
+            raise ValueError("Slides saved-plan retry requires artifact_service.")
+
+        return retry_saved_plan_with_lifecycle(
+            SavedPlanRetryRequest(
+                saved_plan_snapshot_id=saved_plan_snapshot_id,
+                session_id=session_id,
+                retry_task_id=retry_task_id,
+                parent_task_id=parent_task_id,
+                presentation_id=presentation_id,
+                operator_instruction=operator_instruction,
+                render_mode=render_mode,  # type: ignore[arg-type]
+                template_id=template_id,
+                new_plan_snapshot_id=new_plan_snapshot_id,
+                new_presentation_version_id=new_presentation_version_id,
                 artifact_filename=artifact_filename,
                 operator_user_id=operator_user_id,
             ),
