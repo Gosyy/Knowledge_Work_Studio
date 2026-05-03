@@ -551,3 +551,44 @@ Acceptance:
 - template mode requires explicit local template id;
 - production readiness includes RF2.2;
 - full post-RF2.2 runner and Docker runtime smoke pass before final acceptance.
+
+### RF2.2a — RF-to-K transition guard and Kimi-level Product Power roadmap
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.2a full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.2a verdict: ACCEPT` commit.
+
+RF2.2a transition guard rules:
+- K-phase is the product-power phase.
+- The project must finish RF0-RF4 before K-phase.
+- RF remains foundation/runtime work; K-phase owns Kimi-level Product Power work.
+
+Purpose:
+- make the RF -> K transition explicit;
+- accept the default route: finish RF0-RF4, run RF closure, then start K-phase;
+- define K-phase as the Product Power phase for Kimi-level slides work;
+- prevent RF from absorbing open-ended K-phase product work;
+- require future new-chat migration prompts to include this roadmap.
+
+Scope:
+- add `docs/codex/K_PHASE_PRODUCT_POWER_PLAN.md`;
+- add `docs/codex/RF_EXIT_TO_K_PHASE_CRITERIA.md`;
+- add a no-network transition guard checker;
+- wire the guard into production readiness;
+- update RF2/RF docs to point to the K-phase roadmap.
+
+Non-goals:
+- do not change backend runtime;
+- do not change frontend runtime;
+- do not change dependencies;
+- do not change Dockerfiles;
+- do not change LLM topology;
+- do not start K-phase yet;
+- do not run `npm audit fix --force`.
+
+Acceptance:
+- `python3 scripts/kw_rf_to_k_transition_check.py --repo-root . --require-ready --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf2_2a_rf_to_k_transition.py -q` passes;
+- production readiness includes RF2.2a;
+- full post-RF2.2a runner and Docker runtime smoke pass before final acceptance.
+
+Default next step after RF2.2a:
+- RF2.3 — Plan snapshot persistence and task event stream runtime wiring.

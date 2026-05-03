@@ -150,6 +150,20 @@ Acceptance:
 - production readiness includes RF2.2;
 - full post-RF2.2 runner and Docker runtime smoke pass before final acceptance.
 
+
+### RF2.2a — RF-to-K transition guard and Kimi-level Product Power roadmap
+
+RF2.2a establishes the transition guard between RF and the later K-phase.
+
+RF2.2a confirms:
+- Kimi-level is deferred to K-phase;
+- K-phase is for Product Power work, not RF foundation work;
+- RF2 must not absorb open-ended K-phase product-power work;
+- RF2.3 remains the next runtime implementation step after RF2.2a;
+- future new-chat migration prompts must include the RF-to-K route.
+
+RF2.2a does not change slides runtime behavior, dependencies, Dockerfiles, LLM topology, or frontend runtime.
+
 ### RF2.3 — Plan snapshot persistence and task event stream runtime wiring
 
 Make runtime registration of plan snapshots and safe task events concrete where it is currently contract-only.
