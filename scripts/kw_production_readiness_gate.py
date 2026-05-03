@@ -116,6 +116,10 @@ REQUIRED_P_PHASE_FILES = (
     "docs/artifact-delivery-hardening.md",
     "docs/revision-restore.md",
     "docs/version-timeline-ui.md",
+    "docs/codex/GIGACHAT_RUNTIME_HARDENING.md",
+    "backend/app/integrations/llm/gigachat_runtime.py",
+    "scripts/kw_gigachat_runtime_hardening_check.py",
+    "backend/tests/smoke/test_rf4_gigachat_runtime_hardening.py",
     "backend/tests/smoke/test_s9_litellm_gateway_contract.py",
 )
 
@@ -755,6 +759,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_docx_pdf_real_ingestion_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "GigaChat runtime hardening",
+            (
+                python,
+                "scripts/kw_gigachat_runtime_hardening_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

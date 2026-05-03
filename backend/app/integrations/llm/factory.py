@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from backend.app.core.config import Settings
 from backend.app.integrations.llm.interfaces import LLMProvider
+from backend.app.integrations.llm.gigachat_runtime import validate_llm_runtime_selection
 from backend.app.integrations.llm.providers import FakeLLMProvider, GigaChatProvider, LiteLLMCompatibleProvider
 
 
 def build_llm_provider(settings: Settings) -> LLMProvider:
+    validate_llm_runtime_selection(settings)
     provider = settings.llm_provider.strip().lower()
     transport_mode = settings.llm_transport_mode.strip().lower()
 

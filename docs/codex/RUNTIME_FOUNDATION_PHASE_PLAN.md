@@ -474,23 +474,39 @@ Non-goals:
 
 ### RF4 — Local GigaChat integration hardening
 
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF4 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF4 verdict: ACCEPT` commit.
+
 Goal: make the direct local GigaChat production path reliable and diagnosable.
 
-Scope candidates:
+Scope:
 
-- configuration validation for direct local GigaChat;
-- endpoint diagnostics and timeouts;
-- mocked success/failure tests;
-- no silent fallback;
-- no silent LiteLLM override;
-- clear operator errors when the local endpoint is unavailable.
+- validate direct local GigaChat configuration for offline/intranet runtime;
+- require Server 3 GigaChat endpoints to be private/internal in production offline mode;
+- add mocked endpoint diagnostics for success and timeout/failure modes;
+- prevent silent fake/noop fallback in production offline mode;
+- preserve LiteLLM-compatible gateway as explicit optional Server 2 transport only;
+- keep operator diagnostics redacted and free from raw secret values.
 
 Non-goals:
 
 - do not make LiteLLM mandatory;
 - do not replace GigaChat as default production LLM;
+- do not introduce cloud LLM providers;
 - do not introduce internet runtime;
-- do not mix providers silently.
+- do not mix providers silently;
+- do not add public API endpoints;
+- do not add DB schema migrations;
+- do not change dependency versions;
+- do not change Dockerfiles;
+- do not start K-phase.
+
+Acceptance:
+
+- `python3 scripts/kw_gigachat_runtime_hardening_check.py --repo-root . --require-ready --json` passes;
+- RF4 smoke tests pass;
+- existing GigaChat provider/factory/topology tests pass;
+- production readiness includes RF4;
+- full post-RF4 runner and Docker runtime smoke pass before final acceptance.
 
 ## Baseline after RF0
 

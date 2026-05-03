@@ -57,14 +57,16 @@ class GigaChatProvider:
             "messages": self._build_messages(request),
             "temperature": request.temperature,
         }
-        response = self._post_chat_completion(payload)
-        if response.status_code == 401:
-            self._clear_token()
-            response = self._post_chat_completion(payload)
         try:
+            response = self._post_chat_completion(payload)
+            if response.status_code == 401:
+                self._clear_token()
+                response = self._post_chat_completion(payload)
             response.raise_for_status()
             response_payload = response.json()
             text = self._extract_text(response_payload)
+        except httpx.TimeoutException as exc:
+            raise GigaChatProviderError("GigaChat completion request timed out") from exc
         except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
             raise GigaChatProviderError("GigaChat completion request failed") from exc
         return LLMCompletionResult(
@@ -91,20 +93,22 @@ class GigaChatProvider:
         if self._access_token and self._token_expires_at - 30 > now:
             return self._access_token
         credentials = base64.b64encode(f"{self.client_id}:{self.client_secret}".encode("utf-8")).decode("ascii")
-        response = self._client.post(
-            self.auth_url,
-            headers={
-                "Authorization": f"Basic {credentials}",
-                "Accept": "application/json",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "RqUID": str(uuid4()),
-            },
-            data={"scope": self.scope},
-        )
         try:
+            response = self._client.post(
+                self.auth_url,
+                headers={
+                    "Authorization": f"Basic {credentials}",
+                    "Accept": "application/json",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "RqUID": str(uuid4()),
+                },
+                data={"scope": self.scope},
+            )
             response.raise_for_status()
             payload = response.json()
             token = str(payload["access_token"])
+        except httpx.TimeoutException as exc:
+            raise GigaChatProviderError("GigaChat OAuth token request timed out") from exc
         except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
             raise GigaChatProviderError("GigaChat OAuth token request failed") from exc
         self._access_token = token
