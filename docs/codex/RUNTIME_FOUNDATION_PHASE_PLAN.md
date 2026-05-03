@@ -681,3 +681,27 @@ Non-goals:
 
 Default next step after RF2.5:
 - RF2.6 — Slides provenance manifest emitted as downloadable artifact.
+
+### RF2.6 — Slides provenance manifest emitted as downloadable artifact
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.6 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.6 verdict: ACCEPT` commit.
+
+Scope:
+- emit downloadable JSON provenance manifests for approved-plan lifecycle artifacts;
+- emit downloadable JSON provenance manifests for saved-plan retry artifacts;
+- link PPTX artifact, plan snapshot, render mode, local template metadata, append-only event refs, checksum, and manifest digest;
+- include retry parent lineage and retry instruction digest only;
+- keep RF2.6 additive and runtime-foundation scoped.
+
+Non-goals:
+- no K-phase work;
+- no Kimi-level claim;
+- no public endpoint;
+- no schema migration;
+- no queue/event-store migration;
+- no dependency or Docker changes;
+- no visual QA runtime;
+- no `npm audit fix --force`.
+
+Default next step after RF2.6:
+- RF2.7 — slides runtime closure and readiness for RF2 closure.

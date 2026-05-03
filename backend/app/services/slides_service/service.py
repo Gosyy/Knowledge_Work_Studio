@@ -14,6 +14,12 @@ from backend.app.services.slides_service.render_mode_runtime import (
     RenderModeRuntimeResult,
     resolve_render_mode_runtime,
 )
+from backend.app.services.slides_service.provenance_manifest_runtime import (
+    SlidesGenerationProvenanceRuntimeResult,
+    SlidesRetryProvenanceRuntimeResult,
+    emit_generation_provenance_manifest,
+    emit_retry_provenance_manifest,
+)
 
 
 @dataclass(frozen=True)
@@ -160,6 +166,54 @@ class SlidesService:
         )
 
 
+    def generate_deck_from_approved_plan_with_provenance(
+        self,
+        plan: PresentationPlan,
+        *,
+        session_id: str,
+        task_id: str,
+        presentation_id: str,
+        approval_status: str = "approved",
+        render_mode: str = "adaptive",
+        template_id: str = "business_clean",
+        presentation_version_id: str | None = None,
+        plan_snapshot_id: str | None = None,
+        change_summary: str = "Approved plan rendered to deterministic PPTX with provenance manifest.",
+        artifact_filename: str = "approved-plan-deck.pptx",
+        provenance_manifest_filename: str | None = None,
+        operator_user_id: str = "user_local_default",
+    ) -> SlidesGenerationProvenanceRuntimeResult:
+        """Render an approved plan and emit a downloadable provenance manifest artifact.
+
+        RF2.6 is additive over RF2.3 lifecycle wiring: it keeps the public API,
+        schema, queue/event-store, dependency, Docker, visual QA, and Kimi-level
+        scope unchanged.
+        """
+        lifecycle_result = self.generate_deck_from_approved_plan_with_lifecycle(
+            plan,
+            session_id=session_id,
+            task_id=task_id,
+            presentation_id=presentation_id,
+            approval_status=approval_status,
+            render_mode=render_mode,
+            template_id=template_id,
+            presentation_version_id=presentation_version_id,
+            plan_snapshot_id=plan_snapshot_id,
+            change_summary=change_summary,
+            artifact_filename=artifact_filename,
+            operator_user_id=operator_user_id,
+        )
+        provenance_result = emit_generation_provenance_manifest(
+            lifecycle_result,
+            artifact_service=self.artifact_service,  # type: ignore[arg-type]
+            manifest_filename=provenance_manifest_filename,
+        )
+        return SlidesGenerationProvenanceRuntimeResult(
+            lifecycle_result=lifecycle_result,
+            provenance_result=provenance_result,
+        )
+
+
     def retry_deck_from_saved_plan(
         self,
         *,
@@ -204,6 +258,49 @@ class SlidesService:
             ),
             plan_snapshot_service=self.plan_snapshot_service,  # type: ignore[arg-type]
             artifact_service=self.artifact_service,  # type: ignore[arg-type]
+        )
+
+
+    def retry_deck_from_saved_plan_with_provenance(
+        self,
+        *,
+        saved_plan_snapshot_id: str,
+        session_id: str,
+        retry_task_id: str,
+        parent_task_id: str,
+        presentation_id: str,
+        operator_instruction: str,
+        render_mode: str = "adaptive",
+        template_id: str = "business_clean",
+        new_plan_snapshot_id: str | None = None,
+        new_presentation_version_id: str | None = None,
+        artifact_filename: str = "retry-from-saved-plan.pptx",
+        provenance_manifest_filename: str | None = None,
+        operator_user_id: str = "user_local_default",
+    ) -> SlidesRetryProvenanceRuntimeResult:
+        """Regenerate from a saved plan and emit a downloadable provenance manifest artifact."""
+        retry_result = self.retry_deck_from_saved_plan(
+            saved_plan_snapshot_id=saved_plan_snapshot_id,
+            session_id=session_id,
+            retry_task_id=retry_task_id,
+            parent_task_id=parent_task_id,
+            presentation_id=presentation_id,
+            operator_instruction=operator_instruction,
+            render_mode=render_mode,
+            template_id=template_id,
+            new_plan_snapshot_id=new_plan_snapshot_id,
+            new_presentation_version_id=new_presentation_version_id,
+            artifact_filename=artifact_filename,
+            operator_user_id=operator_user_id,
+        )
+        provenance_result = emit_retry_provenance_manifest(
+            retry_result,
+            artifact_service=self.artifact_service,  # type: ignore[arg-type]
+            manifest_filename=provenance_manifest_filename,
+        )
+        return SlidesRetryProvenanceRuntimeResult(
+            retry_result=retry_result,
+            provenance_result=provenance_result,
         )
 
     def validate_render_mode_runtime(

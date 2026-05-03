@@ -57,6 +57,17 @@ from backend.app.services.slides_service.saved_plan_retry import (
     SavedPlanRetryResult,
     retry_saved_plan_with_lifecycle,
 )
+from backend.app.services.slides_service.provenance_manifest_runtime import (
+    PROVENANCE_MANIFEST_CONTENT_TYPE,
+    SlidesGenerationProvenanceRuntimeResult,
+    SlidesProvenanceManifestEmissionResult,
+    SlidesRetryProvenanceRuntimeResult,
+    build_generation_provenance_manifest,
+    build_retry_provenance_manifest,
+    emit_generation_provenance_manifest,
+    emit_retry_provenance_manifest,
+    verify_manifest_digest,
+)
 from backend.app.services.slides_service.render_mode_runtime import (
     RenderModeRuntimeRequest,
     RenderModeRuntimeResult,
@@ -66,6 +77,15 @@ from backend.app.services.slides_service.render_mode_runtime import (
 from backend.app.services.slides_service.service import SlidesService, SlidesTransformOutput
 
 __all__ = [
+    "verify_manifest_digest",
+    "emit_retry_provenance_manifest",
+    "emit_generation_provenance_manifest",
+    "build_retry_provenance_manifest",
+    "build_generation_provenance_manifest",
+    "SlidesRetryProvenanceRuntimeResult",
+    "SlidesProvenanceManifestEmissionResult",
+    "SlidesGenerationProvenanceRuntimeResult",
+    "PROVENANCE_MANIFEST_CONTENT_TYPE",
     "slides_render_mode_runtime_capabilities",
     "resolve_render_mode_runtime",
     "RenderModeRuntimeResult",
