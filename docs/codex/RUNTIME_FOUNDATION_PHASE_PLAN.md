@@ -367,6 +367,44 @@ Acceptance:
 - production readiness includes the RF1.10 assessment policy check;
 - full post-RF1.10 runner and Docker runtime smoke pass before final acceptance.
 
+
+### RF2.1 — Slides runtime capability inventory and baseline smoke
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.1 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.1 verdict: ACCEPT` commit.
+
+Scope:
+- inventory current slides service/API/frontend/test runtime surfaces;
+- run a no-network baseline PPTX smoke through existing `SlidesService.generate_deck`;
+- classify capabilities as baseline-runtime-ready, partial runtime, product gap, or contract-only;
+- explicitly record that the current deterministic generator is not proven Kimi-grade;
+- explicitly record that the whole slides product loop is not proven Kimi-level;
+- prepare the RF2.2 handoff for deterministic PPTX generation from an approved plan.
+
+Non-goals:
+- do not claim Kimi-level slides quality from generator existence alone;
+- do not treat generator maturity as whole-project maturity;
+- do not change renderer behavior;
+- do not change service/API behavior;
+- do not change persistence behavior;
+- do not change frontend behavior;
+- do not change dependency versions;
+- do not change Dockerfiles;
+- do not change LLM topology;
+- do not run `npm audit fix --force`.
+
+Acceptance:
+- `python3 scripts/kw_slides_runtime_inventory_check.py --repo-root . --require-ready --json` passes;
+- checker reports `kimi_grade_supported: false`;
+- checker reports `current_generator_grade: baseline_deterministic_not_kimi_grade`;
+- checker reports `whole_project_kimi_level_supported: false`;
+- checker reports `product_loop_grade: baseline_inventory_not_kimi_level_project`;
+- `python3 -m pytest backend/tests/smoke/test_rf2_1_slides_runtime_inventory.py -q` passes;
+- selected existing slides service PPTX smoke passes;
+- S3-S7 slides contract checks pass;
+- RF2.0 checkpoint check passes;
+- production readiness includes the RF2.1 inventory checkpoint;
+- full post-RF2.1 runner and Docker runtime smoke pass before final acceptance.
+
 ### RF2.0 — Slides runtime phase kickoff and scope checkpoint
 
 Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.0 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.0 verdict: ACCEPT` commit.
