@@ -266,8 +266,13 @@ def validate_manifest_payload(payload: Any) -> list[str]:
     else:
         if not str(kw_studio.get("commit", "")).strip():
             errors.append("manifest kw_studio.commit is required")
-        if str(kw_studio.get("branch", "")).strip() != "7_Runtime_Foundation":
-            errors.append("manifest kw_studio.branch must be 7_Runtime_Foundation")
+        branch = str(kw_studio.get("branch", "")).strip()
+        allowed_branches = {"7_Runtime_Foundation", "8_K_Phase"}
+        if branch not in allowed_branches:
+            errors.append(
+                "manifest kw_studio.branch must be one of: "
+                + ", ".join(sorted(allowed_branches))
+            )
 
     prepared = payload.get("prepared")
     if not isinstance(prepared, dict):
