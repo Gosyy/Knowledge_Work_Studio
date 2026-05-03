@@ -39,6 +39,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/slides_service/saved_plan_retry.py",
     "scripts/kw_slides_saved_plan_retry_check.py",
     "backend/tests/smoke/test_rf2_4_slides_saved_plan_retry.py",
+    "docs/codex/SLIDES_RENDER_MODE_RUNTIME_HARDENING.md",
+    "backend/app/services/slides_service/render_mode_runtime.py",
+    "scripts/kw_slides_render_mode_runtime_check.py",
+    "backend/tests/smoke/test_rf2_5_slides_render_mode_runtime.py",
     "backend/app/services/slides_service/approved_plan_lifecycle.py",
     "scripts/kw_slides_approved_plan_lifecycle_check.py",
     "backend/tests/smoke/test_rf2_3_slides_approved_plan_lifecycle.py",
@@ -659,6 +663,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_slides_saved_plan_retry_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Slides render mode runtime hardening",
+            (
+                python,
+                "scripts/kw_slides_render_mode_runtime_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

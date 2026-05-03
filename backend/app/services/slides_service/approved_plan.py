@@ -5,6 +5,10 @@ from hashlib import sha256
 from typing import Literal
 
 from backend.app.services.slides_service.generator import generate_pptx_from_plan
+from backend.app.services.slides_service.render_mode_runtime import (
+    RenderModeRuntimeRequest,
+    resolve_render_mode_runtime,
+)
 from backend.app.services.slides_service.outline import PresentationPlan, SlideOutlineItem, plan_to_outline
 
 
@@ -58,8 +62,20 @@ def render_approved_plan_to_pptx(request: ApprovedPlanRenderRequest) -> Approved
     """
 
     _validate_request(request)
+    render_mode_runtime = resolve_render_mode_runtime(
+        RenderModeRuntimeRequest(
+            render_mode=request.render_mode,
+            template_id=request.template_id,
+            plan_snapshot_id=request.plan_snapshot_id,
+            approved_plan=request.approval_status == "approved",
+            workflow_id="slides.approved_plan_runtime",
+        )
+    )
 
-    artifact_content = generate_pptx_from_plan(request.plan, template_id=request.template_id)
+    artifact_content = generate_pptx_from_plan(
+        request.plan,
+        template_id=render_mode_runtime.resolved_template_id,
+    )
     digest = sha256(artifact_content).hexdigest()
     slide_count = len(request.plan.slides)
     outline = plan_to_outline(request.plan)
@@ -70,8 +86,8 @@ def render_approved_plan_to_pptx(request: ApprovedPlanRenderRequest) -> Approved
         "presentation_id": request.presentation_id,
         "session_id": request.session_id,
         "task_id": request.task_id,
-        "render_mode": request.render_mode,
-        "template_id": request.template_id,
+        "render_mode": render_mode_runtime.render_mode,
+        "template_id": render_mode_runtime.resolved_template_id,
         "slide_count": slide_count,
         "artifact_filename": request.artifact_filename,
         "content_type": PPTX_CONTENT_TYPE,
@@ -82,6 +98,10 @@ def render_approved_plan_to_pptx(request: ApprovedPlanRenderRequest) -> Approved
         "network_required": False,
         "kimi_grade_supported": False,
         "whole_project_kimi_level_supported": False,
+        **render_mode_runtime.as_safe_metadata(),
+        "runtime_changed_by_rf2_5": True,
+        "dependency_versions_changed_by_rf2_5": False,
+        "dockerfiles_changed_by_rf2_5": False,
     }
 
     return ApprovedPlanRenderResult(
@@ -92,8 +112,8 @@ def render_approved_plan_to_pptx(request: ApprovedPlanRenderRequest) -> Approved
         size_bytes=len(artifact_content),
         slide_count=slide_count,
         plan_snapshot_id=request.plan_snapshot_id,
-        render_mode=request.render_mode,
-        template_id=request.template_id,
+        render_mode=render_mode_runtime.render_mode,
+        template_id=render_mode_runtime.resolved_template_id,
         outline=outline,
         safe_metadata=metadata,
         safe_event_types=SAFE_APPROVED_PLAN_RENDER_EVENTS,
@@ -110,11 +130,7 @@ def _validate_request(request: ApprovedPlanRenderRequest) -> None:
     if request.render_mode not in ALLOWED_RENDER_MODES:
         raise ValueError(f"Unsupported render mode: {request.render_mode!r}.")
 
-    if request.render_mode == "template" and not request.template_id.strip():
-        raise ValueError("Template render mode requires an explicit local template_id.")
-
-    if not request.template_id.strip():
-        raise ValueError("Approved-plan rendering requires a local template_id.")
+    # RF2.5 validates local template policy centrally in render_mode_runtime.
 
     if not request.plan.slides:
         raise ValueError("Approved-plan rendering requires at least one planned slide.")

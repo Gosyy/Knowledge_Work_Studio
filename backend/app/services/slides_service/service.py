@@ -9,6 +9,11 @@ from backend.app.services.slides_service.generator import generate_pptx_from_pla
 from backend.app.services.slides_service.image_pipeline import DeterministicPatternImageProvider, SlideImageProvider, SlideImageRegistry
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, build_presentation_plan, plan_to_outline
 from backend.app.services.slides_service.source_grounding import build_source_grounded_plan
+from backend.app.services.slides_service.render_mode_runtime import (
+    RenderModeRuntimeRequest,
+    RenderModeRuntimeResult,
+    resolve_render_mode_runtime,
+)
 
 
 @dataclass(frozen=True)
@@ -199,6 +204,25 @@ class SlidesService:
             ),
             plan_snapshot_service=self.plan_snapshot_service,  # type: ignore[arg-type]
             artifact_service=self.artifact_service,  # type: ignore[arg-type]
+        )
+
+    def validate_render_mode_runtime(
+        self,
+        *,
+        render_mode: str = "adaptive",
+        template_id: str | None = "business_clean",
+        plan_snapshot_id: str | None = None,
+        approved_plan: bool = True,
+    ) -> RenderModeRuntimeResult:
+        """Validate RF2.5 adaptive/template local render mode policy."""
+        return resolve_render_mode_runtime(
+            RenderModeRuntimeRequest(
+                render_mode=render_mode,
+                template_id=template_id,
+                plan_snapshot_id=plan_snapshot_id,
+                approved_plan=approved_plan,
+                workflow_id="slides.service.render_mode_runtime",
+            )
         )
 
     def _attach_generated_visuals(

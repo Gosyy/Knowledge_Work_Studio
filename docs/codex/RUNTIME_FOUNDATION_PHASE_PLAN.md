@@ -659,3 +659,25 @@ Acceptance:
 
 Default next step after RF2.4:
 - RF2.5 — Adaptive/template local render mode runtime hardening.
+
+### RF2.5 — Adaptive/template local render mode runtime hardening
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.5 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.5 verdict: ACCEPT` commit.
+
+Scope:
+- harden adaptive/template render-mode handling after RF2.4 retry;
+- enforce local bundled template registry usage;
+- require explicit local `template_id` for template mode;
+- reject external template URLs, filesystem paths, traversal references, and unknown ids;
+- propagate safe render-mode metadata through approved-plan and retry lifecycle results.
+
+Non-goals:
+- no K-phase work;
+- no Kimi-level claim;
+- no public endpoint;
+- no schema migration;
+- no dependency or Docker changes;
+- no `npm audit fix --force`.
+
+Default next step after RF2.5:
+- RF2.6 — Slides provenance manifest emitted as downloadable artifact.

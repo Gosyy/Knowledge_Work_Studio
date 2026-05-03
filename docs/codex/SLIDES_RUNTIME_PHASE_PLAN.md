@@ -274,3 +274,35 @@ Do not start RF2.1 until RF2.0 is accepted.
 After RF2.0 acceptance, recommended next step:
 
 RF2.1 — Slides runtime capability inventory and baseline smoke.
+
+### RF2.5 — Adaptive/template local render mode runtime hardening
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.5 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.5 verdict: ACCEPT` commit.
+
+Scope:
+- add a shared runtime policy resolver for `adaptive` and `template` render modes;
+- enforce local bundled template ids for both approved-plan render and saved-plan retry;
+- allow adaptive mode to resolve a local default template when no explicit template id is supplied;
+- require explicit local template id for template mode;
+- reject URL, filesystem path, traversal, and unknown template references;
+- add safe render-mode policy metadata to approved-plan lifecycle and retry metadata.
+
+Non-goals:
+- do not add a public API endpoint;
+- do not add a DB schema migration;
+- do not add queue/event-store migration;
+- do not emit downloadable provenance manifest yet;
+- do not implement visual QA runtime;
+- do not improve renderer quality to Kimi-level;
+- do not change dependencies;
+- do not change Dockerfiles;
+- do not run `npm audit fix --force`.
+
+Acceptance:
+- `python3 scripts/kw_slides_render_mode_runtime_check.py --repo-root . --require-ready --json` passes;
+- smoke tests prove adaptive/template local-only behavior and safe metadata;
+- production readiness includes RF2.5;
+- full post-RF2.5 runner and Docker runtime smoke pass before final acceptance.
+
+Default next step after RF2.5:
+- RF2.6 — Slides provenance manifest emitted as downloadable artifact.

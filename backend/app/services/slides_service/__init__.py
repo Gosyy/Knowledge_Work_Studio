@@ -57,9 +57,19 @@ from backend.app.services.slides_service.saved_plan_retry import (
     SavedPlanRetryResult,
     retry_saved_plan_with_lifecycle,
 )
+from backend.app.services.slides_service.render_mode_runtime import (
+    RenderModeRuntimeRequest,
+    RenderModeRuntimeResult,
+    resolve_render_mode_runtime,
+    slides_render_mode_runtime_capabilities,
+)
 from backend.app.services.slides_service.service import SlidesService, SlidesTransformOutput
 
 __all__ = [
+    "slides_render_mode_runtime_capabilities",
+    "resolve_render_mode_runtime",
+    "RenderModeRuntimeResult",
+    "RenderModeRuntimeRequest",
     "retry_saved_plan_with_lifecycle",
     "SavedPlanRetryResult",
     "SavedPlanRetryRequest",
