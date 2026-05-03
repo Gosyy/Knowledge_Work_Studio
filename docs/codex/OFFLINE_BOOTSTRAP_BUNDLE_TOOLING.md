@@ -138,3 +138,11 @@ RF1.7 adds `check-inventory-policy`, `expected-profile`, and `inventory-summary`
 The readiness gate uses only `check-inventory-policy`; it does not require a real `offline_bootstrap/` bundle. Operators explicitly run `inventory-summary --bundle-dir ...` to review bundle contents.
 
 RF1.7 derives the expected offline profile from `requirements.txt`, `frontend/package.json`, `frontend/package-lock.json`, Dockerfiles, Compose, and Playwright config. It does not download dependencies, run package managers, pull/save Docker images, install browsers, or change runtime behavior.
+
+## RF1.8 bundle readiness report and offline build dry-run
+
+RF1.8 adds `check-readiness-policy`, `bundle-readiness-report`, and `offline-build-dry-run` support to `scripts/kw_offline_bootstrap_bundle_tool.py`.
+
+The readiness gate uses only `check-readiness-policy`; it does not require a real `offline_bootstrap/` bundle. Operators explicitly run `bundle-readiness-report --bundle-dir ...` to aggregate layout, artifact presence, checksum, inventory, and expected profile status.
+
+RF1.8 is read-only. It does not download dependencies, run package managers, pull/save Docker images, install browsers, run builds, or change runtime behavior.

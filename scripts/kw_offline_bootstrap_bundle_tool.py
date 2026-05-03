@@ -21,6 +21,7 @@ REQUIRED_POLICY_FILES = (
     "docs/codex/OFFLINE_BOOTSTRAP_OPERATOR_RUNBOOK.md",
     "docs/codex/OFFLINE_BOOTSTRAP_INTEGRITY.md",
     "docs/codex/OFFLINE_BOOTSTRAP_ARTIFACT_INVENTORY.md",
+    "docs/codex/OFFLINE_BOOTSTRAP_BUILD_READINESS.md",
     "scripts/kw_offline_bootstrap_manifest_check.py",
     "requirements.txt",
     "frontend/package.json",
@@ -473,8 +474,6 @@ def inventory_summary(repo_root: Path, bundle_dir: Path) -> dict[str, Any]:
     missing_expected_images = sorted(expected_images.difference(manifest_set))
 
     checksum_entries, checksum_parse_errors = parse_sha256sums(bundle_dir)
-    # Template bundles may have placeholder checksum files. Inventory summaries should report checksum parse issues
-    # without turning them into hard failures; verify-checksums remains the strict integrity gate.
     checksum_summary = {
         "entry_count": len(checksum_entries),
         "parse_errors": checksum_parse_errors,
@@ -514,12 +513,99 @@ def inventory_summary(repo_root: Path, bundle_dir: Path) -> dict[str, Any]:
     return summary
 
 
+def offline_build_recipe(repo_root: Path, bundle_dir: Path | None = None) -> dict[str, Any]:
+    bundle_arg = str(bundle_dir) if bundle_dir else "/path/to/offline_bootstrap"
+    return {
+        "mode": "offline-build-dry-run",
+        "network_required": False,
+        "commands_are_not_executed": True,
+        "runtime_changed_by_rf1_8": False,
+        "dependency_versions_changed_by_rf1_8": False,
+        "steps": [
+            {
+                "step_id": "verify_bundle_layout",
+                "description": "Verify bundle layout and manifest before using the bundle.",
+                "command": f"python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-bundle --repo-root . --bundle-dir {bundle_arg} --json",
+            },
+            {
+                "step_id": "verify_artifact_presence",
+                "description": "Verify that required artifact directories contain payloads.",
+                "command": f"python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-artifacts --repo-root . --bundle-dir {bundle_arg} --json",
+            },
+            {
+                "step_id": "verify_checksums",
+                "description": "Verify checks/sha256sums.txt against bundle files.",
+                "command": f"python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-checksums --repo-root . --bundle-dir {bundle_arg} --json",
+            },
+            {
+                "step_id": "review_inventory",
+                "description": "Review expected profile and operator bundle inventory summary.",
+                "command": f"python3 scripts/kw_offline_bootstrap_bundle_tool.py inventory-summary --repo-root . --bundle-dir {bundle_arg} --json",
+            },
+            {
+                "step_id": "load_docker_images_if_required",
+                "description": "Operator loads prepared Docker image archives manually when the offline host lacks images.",
+                "command": "for image_archive in offline_bootstrap/docker/images/*.tar; do docker load -i \"$image_archive\"; done",
+            },
+            {
+                "step_id": "compose_check_only",
+                "description": "Validate Compose/runtime packaging without starting services.",
+                "command": "python3 scripts/kw_fullstack_compose_smoke.py --repo-root . --check-only",
+            },
+            {
+                "step_id": "runtime_smoke_skip_build",
+                "description": "Run runtime smoke using already available Docker images.",
+                "command": "python3 scripts/kw_fullstack_compose_smoke.py --repo-root . --skip-build --timeout 1200",
+            },
+        ],
+        "notes": [
+            "This is a dry-run recipe only; RF1.8 does not execute these commands.",
+            "Any online preparation must happen explicitly outside default offline runtime.",
+            "Do not run npm audit fix --force without a separate controlled patch.",
+        ],
+        "expected_profile": expected_offline_profile(repo_root),
+    }
+
+
+def bundle_readiness_report(repo_root: Path, bundle_dir: Path) -> dict[str, Any]:
+    layout_errors = validate_bundle_dir(bundle_dir)
+    artifact_errors = validate_artifact_presence(bundle_dir)
+    checksum_report = validate_checksums(bundle_dir)
+    inventory = inventory_summary(repo_root, bundle_dir)
+
+    sections = {
+        "layout": {"status": "ready" if not layout_errors else "failed", "errors": layout_errors},
+        "artifact_presence": {"status": "ready" if not artifact_errors else "failed", "errors": artifact_errors},
+        "checksum_integrity": checksum_report,
+        "inventory": inventory,
+        "expected_profile": expected_offline_profile(repo_root),
+        "dry_run_recipe": offline_build_recipe(repo_root, bundle_dir),
+    }
+
+    all_errors: list[str] = []
+    for section_name in ("layout", "artifact_presence", "checksum_integrity", "inventory"):
+        errors = sections[section_name].get("errors", [])
+        all_errors.extend(f"{section_name}: {error}" for error in errors)
+
+    return {
+        "mode": "offline-bundle-readiness-report",
+        "bundle_dir": str(bundle_dir),
+        "network_required": False,
+        "commands_executed": False,
+        "runtime_changed_by_rf1_8": False,
+        "dependency_versions_changed_by_rf1_8": False,
+        "sections": sections,
+        "errors": all_errors,
+        "status": "ready" if not all_errors else "failed",
+    }
+
+
 def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
     errors: list[str] = []
 
     for rel in REQUIRED_POLICY_FILES:
         if not (repo_root / rel).exists():
-            errors.append(f"missing required RF1.7 policy surface: {rel}")
+            errors.append(f"missing required RF1.8 policy surface: {rel}")
 
     tooling_doc = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_TOOLING.md"
     if tooling_doc.exists():
@@ -531,12 +617,14 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
             "verify-bundle",
             "RF1.5 artifact presence checks",
             "verify-artifacts",
-            "print-runbook",
             "RF1.6 checksum and integrity verification",
             "verify-checksums",
             "RF1.7 artifact inventory summaries",
             "inventory-summary",
             "expected-profile",
+            "RF1.8 bundle readiness report",
+            "bundle-readiness-report",
+            "offline-build-dry-run",
         ):
             if phrase not in doc:
                 errors.append(f"offline bootstrap bundle tooling doc is missing phrase: {phrase}")
@@ -548,25 +636,27 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
             "RF1.5 checkpoint",
             "RF1.6 checksum verification commands",
             "RF1.7 artifact inventory commands",
-            "inventory-summary",
-            "expected-profile",
+            "RF1.8 bundle readiness report and dry-run commands",
+            "bundle-readiness-report",
+            "offline-build-dry-run",
             "does not change runtime behavior",
         ):
             if phrase not in doc:
                 errors.append(f"offline bootstrap operator runbook is missing phrase: {phrase}")
 
-    integrity = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_INTEGRITY.md"
-    if integrity.exists():
-        doc = read_text(integrity)
+    build_readiness = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_BUILD_READINESS.md"
+    if build_readiness.exists():
+        doc = read_text(build_readiness)
         for phrase in (
-            "RF1.6 checkpoint",
-            "verify-checksums",
-            "checks/sha256sums.txt",
+            "RF1.8 checkpoint",
+            "bundle-readiness-report",
+            "offline-build-dry-run",
+            "commands_are_not_executed",
             "Production readiness gates must not require a real local `offline_bootstrap/` directory",
-            "RF1.7 handoff",
+            "RF1.9 handoff",
         ):
             if phrase not in doc:
-                errors.append(f"offline bootstrap integrity doc is missing phrase: {phrase}")
+                errors.append(f"offline build readiness doc is missing phrase: {phrase}")
 
     inventory = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_ARTIFACT_INVENTORY.md"
     if inventory.exists():
@@ -605,6 +695,10 @@ def runbook_commands() -> dict[str, list[str]]:
         ],
         "inventory": [
             "python3 scripts/kw_offline_bootstrap_bundle_tool.py inventory-summary --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+        ],
+        "readiness": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py bundle-readiness-report --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py offline-build-dry-run --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
         ],
         "python": [
             "python3 -m pip download --requirement requirements.txt --dest /path/to/offline_bootstrap/python/wheelhouse",
@@ -663,7 +757,7 @@ def create_template(repo_root: Path, bundle_dir: Path, force: bool, mode: str) -
     copy_text_file(repo_root / "frontend/package-lock.json", bundle_dir / "npm/package-lock.json")
     write_text(bundle_dir / "docker/images-manifest.txt", "\n".join(current_docker_images(repo_root)))
     write_text(bundle_dir / "playwright/browsers-manifest.txt", "operator-managed Playwright browser cache placeholder")
-    write_text(bundle_dir / "checks/sha256sums.txt", "RF1.7 template placeholder; generate real checksums after artifact preparation")
+    write_text(bundle_dir / "checks/sha256sums.txt", "RF1.8 template placeholder; generate real checksums after artifact preparation")
     write_text(bundle_dir / "manifest.json", json.dumps(build_manifest_template(repo_root, mode), indent=2, sort_keys=True))
 
     errors = validate_bundle_dir(bundle_dir)
@@ -694,12 +788,15 @@ def command_check_policy(args: argparse.Namespace) -> int:
             "check-artifact-policy",
             "check-integrity-policy",
             "check-inventory-policy",
+            "check-readiness-policy",
             "expected-profile",
             "create-template",
             "verify-bundle",
             "verify-artifacts",
             "verify-checksums",
             "inventory-summary",
+            "bundle-readiness-report",
+            "offline-build-dry-run",
             "print-runbook",
         ],
         "errors": errors,
@@ -760,6 +857,26 @@ def command_check_inventory_policy(args: argparse.Namespace) -> int:
         "inventory_summary_requires_bundle_dir": True,
         "expected_profile_available": not errors,
         "expected_docker_images": profile["docker"]["expected_images"],
+        "errors": errors,
+        "status": "ready" if not errors else "failed",
+    }
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if not errors else 2
+
+
+def command_check_readiness_policy(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    errors = validate_policy(repo_root, require_ready=args.require_ready)
+    recipe = offline_build_recipe(repo_root, None)
+    report = {
+        "mode": "offline-bundle-readiness-report-policy",
+        "network_required": False,
+        "runtime_changed_by_rf1_8": False,
+        "dependency_versions_changed_by_rf1_8": False,
+        "bundle_required_for_readiness": False,
+        "bundle_readiness_report_requires_bundle_dir": True,
+        "offline_build_dry_run_available": True,
+        "dry_run_step_count": len(recipe["steps"]),
         "errors": errors,
         "status": "ready" if not errors else "failed",
     }
@@ -848,6 +965,22 @@ def command_inventory_summary(args: argparse.Namespace) -> int:
     return 0 if not report["errors"] else 2
 
 
+def command_bundle_readiness_report(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    bundle_dir = Path(args.bundle_dir).expanduser().resolve()
+    report = bundle_readiness_report(repo_root, bundle_dir)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if not report["errors"] else 2
+
+
+def command_offline_build_dry_run(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    bundle_dir = Path(args.bundle_dir).expanduser().resolve() if args.bundle_dir else None
+    report = offline_build_recipe(repo_root, bundle_dir)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
 def command_print_runbook(args: argparse.Namespace) -> int:
     report = {
         "mode": "offline-bootstrap-runbook-commands",
@@ -887,6 +1020,12 @@ def build_parser() -> argparse.ArgumentParser:
     inventory_policy.add_argument("--json", action="store_true")
     inventory_policy.set_defaults(func=command_check_inventory_policy)
 
+    readiness_policy = sub.add_parser("check-readiness-policy", help="Validate RF1.8 bundle readiness report policy without requiring a bundle.")
+    readiness_policy.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    readiness_policy.add_argument("--require-ready", action="store_true")
+    readiness_policy.add_argument("--json", action="store_true")
+    readiness_policy.set_defaults(func=command_check_readiness_policy)
+
     expected = sub.add_parser("expected-profile", help="Print expected offline profile derived from repository sources.")
     expected.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
     expected.add_argument("--json", action="store_true")
@@ -922,6 +1061,18 @@ def build_parser() -> argparse.ArgumentParser:
     inventory.add_argument("--bundle-dir", required=True)
     inventory.add_argument("--json", action="store_true")
     inventory.set_defaults(func=command_inventory_summary)
+
+    readiness = sub.add_parser("bundle-readiness-report", help="Aggregate bundle layout, artifacts, checksums, inventory, and recipe status.")
+    readiness.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    readiness.add_argument("--bundle-dir", required=True)
+    readiness.add_argument("--json", action="store_true")
+    readiness.set_defaults(func=command_bundle_readiness_report)
+
+    dry_run = sub.add_parser("offline-build-dry-run", help="Print offline build/runtime recipe without executing commands.")
+    dry_run.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    dry_run.add_argument("--bundle-dir", default=None)
+    dry_run.add_argument("--json", action="store_true")
+    dry_run.set_defaults(func=command_offline_build_dry_run)
 
     runbook = sub.add_parser("print-runbook", help="Print documented operator preparation commands as JSON.")
     runbook.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))

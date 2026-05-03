@@ -236,6 +236,34 @@ Acceptance:
 - `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
 - the full post-RF1.7 runner passes before the verdict commit is considered accepted.
 
+### RF1.8 — Offline build recipe dry-run and bundle readiness report
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF1.8 full runner, and a separate `RF1.8 verdict: ACCEPT` commit.
+
+Scope:
+- add a no-network readiness policy check for the RF1 offline bundle report layer;
+- add `bundle-readiness-report` to aggregate layout, artifact presence, checksum, inventory, and expected profile status;
+- add `offline-build-dry-run` to print operator build/runtime recipe steps without executing them;
+- cover ready and not-ready bundles with temporary smoke-test fixtures;
+- wire only the no-network RF1.8 policy check into production readiness gates.
+
+Non-goals:
+- do not download Python wheels;
+- do not run npm install/cache commands;
+- do not pull or save Docker images;
+- do not install Playwright browsers;
+- do not run offline build commands automatically;
+- do not resolve npm audit findings;
+- do not change dependency versions;
+- do not change Docker build logic;
+- do not change runtime behavior.
+
+Acceptance:
+- `python3 scripts/kw_offline_bootstrap_bundle_tool.py check-readiness-policy --repo-root . --require-ready --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf1_8_offline_build_readiness.py -q` passes;
+- `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
+- the full post-RF1.8 runner passes before the verdict commit is considered accepted.
+
 ### RF1 — Offline dependency and Docker reproducibility hardening
 
 Goal: make KW Studio deployment predictable in offline/intranet environments.

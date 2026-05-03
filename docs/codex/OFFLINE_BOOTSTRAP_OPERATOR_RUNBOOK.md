@@ -198,3 +198,25 @@ python3 scripts/kw_offline_bootstrap_bundle_tool.py inventory-summary \
 ```
 
 RF1.7 inventory commands are read-only. They do not download dependencies, run package managers, pull Docker images, install browsers, or change runtime behavior.
+
+## RF1.8 bundle readiness report and dry-run commands
+
+Generate a consolidated readiness report:
+
+```bash
+python3 scripts/kw_offline_bootstrap_bundle_tool.py bundle-readiness-report \
+  --repo-root . \
+  --bundle-dir /path/to/offline_bootstrap \
+  --json
+```
+
+Print the offline build/runtime recipe without executing it:
+
+```bash
+python3 scripts/kw_offline_bootstrap_bundle_tool.py offline-build-dry-run \
+  --repo-root . \
+  --bundle-dir /path/to/offline_bootstrap \
+  --json
+```
+
+RF1.8 commands are read-only. They do not download dependencies, run package managers, pull Docker images, install browsers, run builds, or change runtime behavior.
