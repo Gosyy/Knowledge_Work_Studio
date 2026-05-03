@@ -340,6 +340,33 @@ Acceptance:
 - the full post-RF1.2 runner passes before the verdict commit is considered accepted.
 
 
+
+### RF1.10 — Controlled dependency/security baseline assessment without forced upgrades
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF1.10 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF1.10 verdict: ACCEPT` commit.
+
+Scope:
+- add a no-network dependency/security assessment policy;
+- report current frontend, Python, and Docker dependency surfaces;
+- allow optional read-only npm audit JSON summarization;
+- preserve the rule that `npm audit fix --force` is forbidden without a separate controlled patch;
+- keep dependency/security analysis separate from RF2 slides runtime work.
+
+Non-goals:
+- do not run `npm audit fix`;
+- do not run `npm audit fix --force`;
+- do not change `frontend/package.json`;
+- do not change `frontend/package-lock.json`;
+- do not change `requirements.txt`;
+- do not change Dockerfiles;
+- do not change runtime behavior.
+
+Acceptance:
+- `python3 scripts/kw_controlled_dependency_security_assessment.py --repo-root . --require-ready --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf1_10_controlled_dependency_security_assessment.py -q` passes;
+- production readiness includes the RF1.10 assessment policy check;
+- full post-RF1.10 runner and Docker runtime smoke pass before final acceptance.
+
 ### RF2.0 — Slides runtime phase kickoff and scope checkpoint
 
 Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2.0 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2.0 verdict: ACCEPT` commit.

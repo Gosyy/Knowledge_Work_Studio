@@ -32,6 +32,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/OFFLINE_BOOTSTRAP_BUILD_READINESS.md",
     "docs/codex/OFFLINE_BOOTSTRAP_RF1_CLOSURE.md",
     "docs/codex/SLIDES_RUNTIME_PHASE_PLAN.md",
+    "docs/codex/CONTROLLED_DEPENDENCY_SECURITY_ASSESSMENT.md",
+    "scripts/kw_controlled_dependency_security_assessment.py",
+    "backend/tests/smoke/test_rf1_10_controlled_dependency_security_assessment.py",
     "scripts/kw_slides_runtime_phase_check.py",
     "backend/tests/smoke/test_rf2_0_slides_runtime_phase.py",
     "backend/tests/smoke/test_rf1_9_offline_operator_command_groups.py",
@@ -544,6 +547,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_slides_runtime_phase_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Controlled dependency/security baseline assessment",
+            (
+                python,
+                "scripts/kw_controlled_dependency_security_assessment.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
