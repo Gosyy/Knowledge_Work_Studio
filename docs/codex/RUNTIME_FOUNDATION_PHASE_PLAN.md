@@ -76,6 +76,29 @@ RF0 is accepted only when:
 - production readiness `--checks-only` passes;
 - a functional commit and a separate verdict commit are pushed.
 
+### RF1.1 — Offline dependency inventory and reproducibility policy checkpoint
+
+Status: in progress in this patch; accepted only after the functional commit, targeted checks, production readiness gate wiring, and a separate `RF1.1 verdict: ACCEPT` commit.
+
+Scope:
+- create the canonical offline dependency reproducibility policy;
+- inventory Python, frontend npm, Docker image, Compose, and browser/E2E dependency surfaces;
+- add a no-network inventory check that reports current reproducibility gaps without changing runtime behavior;
+- wire the inventory check into production readiness gates;
+- keep RF1.1 documentation/check-only, with no Docker build rewrite and no dependency upgrades.
+
+Non-goals:
+- do not resolve npm audit findings in RF1.1;
+- do not change package versions in RF1.1;
+- do not introduce package mirrors or registries in RF1.1;
+- do not change slides, document, browser, or LLM runtime behavior in RF1.1.
+
+Acceptance:
+- `python3 scripts/kw_offline_dependency_inventory_check.py --repo-root . --require-ready` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf1_offline_dependency_inventory.py -q` passes;
+- `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
+- the full post-RF1.1 runner passes before the verdict commit is considered accepted.
+
 ### RF1 — Offline dependency and Docker reproducibility hardening
 
 Goal: make KW Studio deployment predictable in offline/intranet environments.

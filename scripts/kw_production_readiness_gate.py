@@ -22,7 +22,7 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_llm_topology_check.py",
     "scripts/kw_litellm_gateway_check.py",
     "scripts/kw_visual_qa_planning_check.py",
-    "backend/app/integrations/llm/litellm_gateway_contract.py",
+    "scripts/kw_offline_dependency_inventory_check.py", "docs/codex/OFFLINE_DEPENDENCY_REPRODUCIBILITY.md", "backend/tests/smoke/test_rf1_offline_dependency_inventory.py", "backend/app/integrations/llm/litellm_gateway_contract.py",
     "scripts/kw_workflow_contracts_check.py", "scripts/kw_slides_plan_first_check.py",
     "scripts/kw_slides_task_events_check.py",
     "scripts/kw_slides_plan_editor_check.py",
@@ -380,6 +380,20 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
                 str(repo_root),
                 "--mode",
                 "artifact",
+                "--require-ready",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Offline dependency inventory contract",
+            (
+                python,
+                "scripts/kw_offline_dependency_inventory_check.py",
+                "--repo-root",
+                str(repo_root),
                 "--require-ready",
             ),
             repo_root,
