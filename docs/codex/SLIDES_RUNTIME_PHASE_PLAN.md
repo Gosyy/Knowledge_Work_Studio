@@ -272,6 +272,33 @@ Non-goals:
 Default next route after RF2.7:
 - RF2_closure -> RF3 -> RF4 -> RF_closure -> K0.
 
+
+### RF2_closure — Final slides runtime foundation closure checkpoint
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF2_closure full runner, Docker runtime smoke with `--skip-build`, and a separate `RF2_closure verdict: ACCEPT` commit.
+
+Scope:
+- close RF2.0-RF2.7 as the slides runtime foundation;
+- verify all RF2 checkers from RF2.0 through RF2.7 still report ready;
+- record that approved-plan rendering, lifecycle registration, saved-plan retry, local render-mode hardening, and downloadable provenance manifest runtime links are foundation-ready;
+- hand off to RF3 without starting K-phase.
+
+Non-goals:
+- no new runtime feature;
+- no K-phase work;
+- no Kimi-level claim;
+- no public endpoint;
+- no schema migration;
+- no queue/event-store migration;
+- no dependency or Docker changes;
+- no visual QA runtime;
+- no `npm audit fix --force`.
+
+RF2_closure accepted next route: RF3 -> RF4 -> RF_closure -> K0.
+
+Default next step after RF2_closure:
+- RF3 — Real document ingestion for DOCX and PDF.
+
 ## Acceptance policy for RF2.0
 
 RF2.0 is accepted when:

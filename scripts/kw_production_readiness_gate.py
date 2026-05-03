@@ -42,6 +42,10 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/SLIDES_RENDER_MODE_RUNTIME_HARDENING.md",
     "docs/codex/SLIDES_PROVENANCE_MANIFEST_RUNTIME.md",
     "docs/codex/SLIDES_RUNTIME_RF2_CLOSURE.md",
+    "docs/codex/SLIDES_RUNTIME_RF2_FINAL_CLOSURE.md",
+    "backend/app/services/slides_service/rf2_final_closure.py",
+    "scripts/kw_slides_rf2_closure_check.py",
+    "backend/tests/smoke/test_rf2_closure_slides_runtime.py",
     "backend/app/services/slides_service/runtime_closure.py",
     "scripts/kw_slides_runtime_closure_check.py",
     "backend/tests/smoke/test_rf2_7_slides_runtime_closure.py",
@@ -716,6 +720,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_slides_runtime_closure_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Slides RF2 final closure checkpoint",
+            (
+                python,
+                "scripts/kw_slides_rf2_closure_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

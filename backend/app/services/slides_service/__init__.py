@@ -80,9 +80,17 @@ from backend.app.services.slides_service.runtime_closure import (
     build_slides_runtime_closure_readiness,
     validate_slides_runtime_closure_readiness,
 )
+from backend.app.services.slides_service.rf2_final_closure import (
+    RF2FinalClosureReport,
+    build_rf2_final_closure_report,
+    validate_rf2_final_closure_report,
+)
 from backend.app.services.slides_service.service import SlidesService, SlidesTransformOutput
 
 __all__ = [
+    "validate_rf2_final_closure_report",
+    "build_rf2_final_closure_report",
+    "RF2FinalClosureReport",
     "validate_slides_runtime_closure_readiness",
     "build_slides_runtime_closure_readiness",
     "SlidesRuntimeClosureReadiness",
