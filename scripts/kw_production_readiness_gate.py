@@ -30,6 +30,8 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/OFFLINE_BOOTSTRAP_INTEGRITY.md",
     "docs/codex/OFFLINE_BOOTSTRAP_ARTIFACT_INVENTORY.md",
     "docs/codex/OFFLINE_BOOTSTRAP_BUILD_READINESS.md",
+    "docs/codex/OFFLINE_BOOTSTRAP_RF1_CLOSURE.md",
+    "backend/tests/smoke/test_rf1_9_offline_operator_command_groups.py",
     "backend/tests/smoke/test_rf1_8_offline_build_readiness.py",
     "backend/tests/smoke/test_rf1_7_offline_artifact_inventory.py",
     "backend/tests/smoke/test_rf1_6_offline_bundle_integrity.py",
@@ -509,6 +511,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
                 python,
                 "scripts/kw_offline_bootstrap_bundle_tool.py",
                 "check-readiness-policy",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+    steps.append(
+        GateStep(
+            "Offline operator command groups and RF1 closure policy contract",
+            (
+                python,
+                "scripts/kw_offline_bootstrap_bundle_tool.py",
+                "check-closure-policy",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

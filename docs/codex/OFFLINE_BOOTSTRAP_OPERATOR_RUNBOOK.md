@@ -220,3 +220,32 @@ python3 scripts/kw_offline_bootstrap_bundle_tool.py offline-build-dry-run \
 ```
 
 RF1.8 commands are read-only. They do not download dependencies, run package managers, pull Docker images, install browsers, run builds, or change runtime behavior.
+
+## RF1.9 operator command groups and closure commands
+
+Print grouped RF1 operator commands:
+
+```bash
+python3 scripts/kw_offline_bootstrap_bundle_tool.py operator-command-groups \
+  --repo-root . \
+  --json
+```
+
+Print the RF1 closure report:
+
+```bash
+python3 scripts/kw_offline_bootstrap_bundle_tool.py rf1-closure-report \
+  --repo-root . \
+  --json
+```
+
+Run the RF1.9 no-network closure policy check:
+
+```bash
+python3 scripts/kw_offline_bootstrap_bundle_tool.py check-closure-policy \
+  --repo-root . \
+  --require-ready \
+  --json
+```
+
+RF1.9 commands are read-only metadata/reporting commands. They do not download dependencies, run package managers, pull Docker images, install browsers, run builds, change runtime behavior, or run `npm audit fix --force`.

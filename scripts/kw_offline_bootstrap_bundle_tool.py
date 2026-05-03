@@ -22,6 +22,7 @@ REQUIRED_POLICY_FILES = (
     "docs/codex/OFFLINE_BOOTSTRAP_INTEGRITY.md",
     "docs/codex/OFFLINE_BOOTSTRAP_ARTIFACT_INVENTORY.md",
     "docs/codex/OFFLINE_BOOTSTRAP_BUILD_READINESS.md",
+    "docs/codex/OFFLINE_BOOTSTRAP_RF1_CLOSURE.md",
     "scripts/kw_offline_bootstrap_manifest_check.py",
     "requirements.txt",
     "frontend/package.json",
@@ -89,6 +90,18 @@ ARTIFACT_PRESENCE_RULES = {
         "description": "Checksum inventory must exist and be non-empty.",
     },
 }
+
+RF1_CHECKPOINTS = (
+    "RF1.1 dependency inventory and reproducibility policy",
+    "RF1.2 offline bootstrap bundle strategy",
+    "RF1.3 manifest schema and validation",
+    "RF1.4 template generation and bundle verification CLI",
+    "RF1.5 artifact presence checks and operator runbook commands",
+    "RF1.6 checksum and artifact integrity verification",
+    "RF1.7 artifact inventory summaries and expected profile",
+    "RF1.8 build recipe dry-run and bundle readiness report",
+    "RF1.9 operator command groups and RF1 closure checkpoint",
+)
 
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
@@ -229,7 +242,7 @@ def build_manifest_template(repo_root: Path, mode: str) -> dict[str, Any]:
         "checks": {
             "sha256sums": "checks/sha256sums.txt",
         },
-        "rf1_4": {
+        "rf1": {
             "template_only": True,
             "downloads_performed": False,
             "package_managers_run": False,
@@ -600,12 +613,99 @@ def bundle_readiness_report(repo_root: Path, bundle_dir: Path) -> dict[str, Any]
     }
 
 
+def operator_command_groups(repo_root: Path) -> dict[str, Any]:
+    return {
+        "mode": "offline-operator-command-groups",
+        "network_required_by_command_printer": False,
+        "commands_are_not_executed": True,
+        "runtime_changed_by_rf1_9": False,
+        "dependency_versions_changed_by_rf1_9": False,
+        "groups": {
+            "policy_checks": [
+                "python3 scripts/kw_offline_dependency_inventory_check.py --repo-root . --require-ready",
+                "python3 scripts/kw_offline_bootstrap_bundle_check.py --repo-root . --require-ready",
+                "python3 scripts/kw_offline_bootstrap_manifest_check.py --repo-root . --require-ready",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py check-policy --repo-root . --require-ready --json",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py check-artifact-policy --repo-root . --require-ready --json",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py check-integrity-policy --repo-root . --require-ready --json",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py check-inventory-policy --repo-root . --require-ready --json",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py check-readiness-policy --repo-root . --require-ready --json",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py check-closure-policy --repo-root . --require-ready --json",
+            ],
+            "template_and_layout": [
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py create-template --repo-root . --bundle-dir /path/to/offline_bootstrap",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-bundle --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+            ],
+            "artifact_preparation_explicit_online_or_mirror": [
+                "python3 -m pip download --requirement requirements.txt --dest /path/to/offline_bootstrap/python/wheelhouse",
+                "cd frontend && npm ci --cache /path/to/offline_bootstrap/npm/cache --prefer-offline --no-audit --no-fund",
+                "docker pull python:3.12-slim && docker save python:3.12-slim -o /path/to/offline_bootstrap/docker/images/python-3.12-slim.tar",
+                "docker pull node:20-alpine && docker save node:20-alpine -o /path/to/offline_bootstrap/docker/images/node-20-alpine.tar",
+                "docker pull postgres:16 && docker save postgres:16 -o /path/to/offline_bootstrap/docker/images/postgres-16.tar",
+                "cd frontend && PLAYWRIGHT_BROWSERS_PATH=/path/to/offline_bootstrap/playwright/browsers npx playwright install chromium",
+            ],
+            "artifact_verification": [
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-artifacts --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+                "cd /path/to/offline_bootstrap && find . -type f ! -path './checks/sha256sums.txt' -print0 | sort -z | xargs -0 sha256sum > checks/sha256sums.txt",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-checksums --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py expected-profile --repo-root . --json",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py inventory-summary --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+                "python3 scripts/kw_offline_bootstrap_bundle_tool.py bundle-readiness-report --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+            ],
+            "runtime_smoke": [
+                "python3 scripts/kw_fullstack_compose_smoke.py --repo-root . --check-only",
+                "python3 scripts/kw_fullstack_compose_smoke.py --repo-root . --skip-build --timeout 1200",
+            ],
+            "cleanup_and_hygiene": [
+                "rm -f .env.deploy .npmrc .proxy.env .proxy.env.example",
+                "git restore frontend/next-env.d.ts 2>/dev/null || true",
+                "git status --short",
+            ],
+            "next_phase_options": [
+                "RF2 slides runtime continuation and maximum product value",
+                "controlled dependency/security step without npm audit fix --force",
+                "docs-only branch/phase checkpoint before runtime work",
+            ],
+        },
+        "notes": [
+            "This command prints command groups only; it does not execute them.",
+            "Commands in artifact_preparation_explicit_online_or_mirror are explicit operator actions and may require online or intranet mirror access.",
+            "Do not run npm audit fix --force without a separate controlled patch.",
+        ],
+        "expected_profile": expected_offline_profile(repo_root),
+    }
+
+
+def rf1_closure_report(repo_root: Path) -> dict[str, Any]:
+    groups = operator_command_groups(repo_root)
+    return {
+        "mode": "rf1-closure-report",
+        "network_required": False,
+        "commands_are_not_executed": True,
+        "runtime_changed_by_rf1_9": False,
+        "dependency_versions_changed_by_rf1_9": False,
+        "branch": current_branch(repo_root),
+        "commit": current_commit(repo_root),
+        "rf1_checkpoints": list(RF1_CHECKPOINTS),
+        "operator_command_group_count": len(groups["groups"]),
+        "required_post_acceptance_checks": [
+            "full KWS runner PASS",
+            "Docker runtime smoke --skip-build PASS",
+            "remote 7_Runtime_Foundation matches local RF1.9 verdict commit",
+            "working tree clean after cleanup",
+        ],
+        "next_phase_options": groups["groups"]["next_phase_options"],
+        "npm_audit_force_policy": "forbidden_without_separate_controlled_patch",
+        "status": "ready",
+    }
+
+
 def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
     errors: list[str] = []
 
     for rel in REQUIRED_POLICY_FILES:
         if not (repo_root / rel).exists():
-            errors.append(f"missing required RF1.8 policy surface: {rel}")
+            errors.append(f"missing required RF1.9 policy surface: {rel}")
 
     tooling_doc = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_TOOLING.md"
     if tooling_doc.exists():
@@ -625,6 +725,10 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
             "RF1.8 bundle readiness report",
             "bundle-readiness-report",
             "offline-build-dry-run",
+            "RF1.9 operator command groups",
+            "operator-command-groups",
+            "rf1-closure-report",
+            "check-closure-policy",
         ):
             if phrase not in doc:
                 errors.append(f"offline bootstrap bundle tooling doc is missing phrase: {phrase}")
@@ -637,12 +741,31 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
             "RF1.6 checksum verification commands",
             "RF1.7 artifact inventory commands",
             "RF1.8 bundle readiness report and dry-run commands",
-            "bundle-readiness-report",
-            "offline-build-dry-run",
+            "RF1.9 operator command groups and closure commands",
+            "operator-command-groups",
+            "rf1-closure-report",
+            "check-closure-policy",
             "does not change runtime behavior",
+            "npm audit fix --force",
         ):
             if phrase not in doc:
                 errors.append(f"offline bootstrap operator runbook is missing phrase: {phrase}")
+
+    closure = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_RF1_CLOSURE.md"
+    if closure.exists():
+        doc = read_text(closure)
+        for phrase in (
+            "RF1.9 checkpoint",
+            "operator-command-groups",
+            "rf1-closure-report",
+            "check-closure-policy",
+            "RF1 closure criteria",
+            "RF2",
+            "controlled dependency/security step",
+            "npm audit fix --force",
+        ):
+            if phrase not in doc:
+                errors.append(f"RF1 closure doc is missing phrase: {phrase}")
 
     build_readiness = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_BUILD_READINESS.md"
     if build_readiness.exists():
@@ -658,22 +781,6 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
             if phrase not in doc:
                 errors.append(f"offline build readiness doc is missing phrase: {phrase}")
 
-    inventory = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_ARTIFACT_INVENTORY.md"
-    if inventory.exists():
-        doc = read_text(inventory)
-        for phrase in (
-            "RF1.7 checkpoint",
-            "Expected profile",
-            "inventory-summary",
-            "expected-profile",
-            "python:3.12-slim",
-            "node:20-alpine",
-            "postgres:16",
-            "RF1.8 handoff",
-        ):
-            if phrase not in doc:
-                errors.append(f"offline artifact inventory doc is missing phrase: {phrase}")
-
     gitignore = read_text(repo_root / ".gitignore") if (repo_root / ".gitignore").exists() else ""
     if "offline_bootstrap/" not in gitignore:
         errors.append(".gitignore must ignore offline_bootstrap/ operator bundles")
@@ -685,48 +792,8 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
 
 
 def runbook_commands() -> dict[str, list[str]]:
-    return {
-        "template": [
-            "python3 scripts/kw_offline_bootstrap_bundle_tool.py create-template --repo-root . --bundle-dir /path/to/offline_bootstrap",
-            "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-bundle --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
-        ],
-        "profile": [
-            "python3 scripts/kw_offline_bootstrap_bundle_tool.py expected-profile --repo-root . --json",
-        ],
-        "inventory": [
-            "python3 scripts/kw_offline_bootstrap_bundle_tool.py inventory-summary --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
-        ],
-        "readiness": [
-            "python3 scripts/kw_offline_bootstrap_bundle_tool.py bundle-readiness-report --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
-            "python3 scripts/kw_offline_bootstrap_bundle_tool.py offline-build-dry-run --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
-        ],
-        "python": [
-            "python3 -m pip download --requirement requirements.txt --dest /path/to/offline_bootstrap/python/wheelhouse",
-        ],
-        "npm": [
-            "cd frontend && npm ci --cache /path/to/offline_bootstrap/npm/cache --prefer-offline --no-audit --no-fund",
-        ],
-        "docker": [
-            "docker pull python:3.12-slim",
-            "docker pull node:20-alpine",
-            "docker pull postgres:16",
-            "docker save python:3.12-slim -o /path/to/offline_bootstrap/docker/images/python-3.12-slim.tar",
-            "docker save node:20-alpine -o /path/to/offline_bootstrap/docker/images/node-20-alpine.tar",
-            "docker save postgres:16 -o /path/to/offline_bootstrap/docker/images/postgres-16.tar",
-        ],
-        "playwright": [
-            "cd frontend && PLAYWRIGHT_BROWSERS_PATH=/path/to/offline_bootstrap/playwright/browsers npx playwright install chromium",
-        ],
-        "checksums": [
-            "cd /path/to/offline_bootstrap && find . -type f ! -path './checks/sha256sums.txt' -print0 | sort -z | xargs -0 sha256sum > checks/sha256sums.txt",
-        ],
-        "verify_artifacts": [
-            "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-artifacts --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
-        ],
-        "verify_checksums": [
-            "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-checksums --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
-        ],
-    }
+    groups = operator_command_groups(Path.cwd())["groups"]
+    return {name: list(commands) for name, commands in groups.items()}
 
 
 def create_template(repo_root: Path, bundle_dir: Path, force: bool, mode: str) -> dict[str, Any]:
@@ -757,7 +824,7 @@ def create_template(repo_root: Path, bundle_dir: Path, force: bool, mode: str) -
     copy_text_file(repo_root / "frontend/package-lock.json", bundle_dir / "npm/package-lock.json")
     write_text(bundle_dir / "docker/images-manifest.txt", "\n".join(current_docker_images(repo_root)))
     write_text(bundle_dir / "playwright/browsers-manifest.txt", "operator-managed Playwright browser cache placeholder")
-    write_text(bundle_dir / "checks/sha256sums.txt", "RF1.8 template placeholder; generate real checksums after artifact preparation")
+    write_text(bundle_dir / "checks/sha256sums.txt", "RF1.9 template placeholder; generate real checksums after artifact preparation")
     write_text(bundle_dir / "manifest.json", json.dumps(build_manifest_template(repo_root, mode), indent=2, sort_keys=True))
 
     errors = validate_bundle_dir(bundle_dir)
@@ -789,6 +856,7 @@ def command_check_policy(args: argparse.Namespace) -> int:
             "check-integrity-policy",
             "check-inventory-policy",
             "check-readiness-policy",
+            "check-closure-policy",
             "expected-profile",
             "create-template",
             "verify-bundle",
@@ -797,6 +865,8 @@ def command_check_policy(args: argparse.Namespace) -> int:
             "inventory-summary",
             "bundle-readiness-report",
             "offline-build-dry-run",
+            "operator-command-groups",
+            "rf1-closure-report",
             "print-runbook",
         ],
         "errors": errors,
@@ -877,6 +947,40 @@ def command_check_readiness_policy(args: argparse.Namespace) -> int:
         "bundle_readiness_report_requires_bundle_dir": True,
         "offline_build_dry_run_available": True,
         "dry_run_step_count": len(recipe["steps"]),
+        "errors": errors,
+        "status": "ready" if not errors else "failed",
+    }
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if not errors else 2
+
+
+def command_check_closure_policy(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    errors = validate_policy(repo_root, require_ready=args.require_ready)
+    groups = operator_command_groups(repo_root)
+    closure = rf1_closure_report(repo_root)
+    required_groups = {
+        "policy_checks",
+        "template_and_layout",
+        "artifact_preparation_explicit_online_or_mirror",
+        "artifact_verification",
+        "runtime_smoke",
+        "cleanup_and_hygiene",
+        "next_phase_options",
+    }
+    missing_groups = sorted(required_groups.difference(groups["groups"]))
+    errors.extend(f"missing operator command group: {name}" for name in missing_groups)
+    report = {
+        "mode": "offline-rf1-closure-policy",
+        "network_required": False,
+        "runtime_changed_by_rf1_9": False,
+        "dependency_versions_changed_by_rf1_9": False,
+        "bundle_required_for_readiness": False,
+        "commands_are_not_executed": True,
+        "operator_command_group_count": len(groups["groups"]),
+        "rf1_checkpoint_count": len(closure["rf1_checkpoints"]),
+        "next_phase_options": closure["next_phase_options"],
+        "npm_audit_force_policy": closure["npm_audit_force_policy"],
         "errors": errors,
         "status": "ready" if not errors else "failed",
     }
@@ -981,12 +1085,28 @@ def command_offline_build_dry_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_operator_command_groups(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    report = operator_command_groups(repo_root)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
+def command_rf1_closure_report(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    report = rf1_closure_report(repo_root)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
 def command_print_runbook(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
     report = {
         "mode": "offline-bootstrap-runbook-commands",
         "network_required_by_command_printer": False,
+        "commands_are_not_executed": True,
         "commands_are_examples_only": True,
-        "commands": runbook_commands(),
+        "commands": operator_command_groups(repo_root)["groups"],
     }
     print(json.dumps(report, indent=2, sort_keys=True) if args.json else json.dumps(report, indent=2, sort_keys=True))
     return 0
@@ -1025,6 +1145,12 @@ def build_parser() -> argparse.ArgumentParser:
     readiness_policy.add_argument("--require-ready", action="store_true")
     readiness_policy.add_argument("--json", action="store_true")
     readiness_policy.set_defaults(func=command_check_readiness_policy)
+
+    closure_policy = sub.add_parser("check-closure-policy", help="Validate RF1.9 closure policy without requiring a bundle.")
+    closure_policy.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    closure_policy.add_argument("--require-ready", action="store_true")
+    closure_policy.add_argument("--json", action="store_true")
+    closure_policy.set_defaults(func=command_check_closure_policy)
 
     expected = sub.add_parser("expected-profile", help="Print expected offline profile derived from repository sources.")
     expected.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
@@ -1073,6 +1199,16 @@ def build_parser() -> argparse.ArgumentParser:
     dry_run.add_argument("--bundle-dir", default=None)
     dry_run.add_argument("--json", action="store_true")
     dry_run.set_defaults(func=command_offline_build_dry_run)
+
+    groups = sub.add_parser("operator-command-groups", help="Print grouped RF1 operator commands without executing them.")
+    groups.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    groups.add_argument("--json", action="store_true")
+    groups.set_defaults(func=command_operator_command_groups)
+
+    closure = sub.add_parser("rf1-closure-report", help="Print RF1 closure summary and next phase options.")
+    closure.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    closure.add_argument("--json", action="store_true")
+    closure.set_defaults(func=command_rf1_closure_report)
 
     runbook = sub.add_parser("print-runbook", help="Print documented operator preparation commands as JSON.")
     runbook.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))

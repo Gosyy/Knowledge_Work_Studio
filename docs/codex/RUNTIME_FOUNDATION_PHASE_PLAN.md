@@ -264,6 +264,36 @@ Acceptance:
 - `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
 - the full post-RF1.8 runner passes before the verdict commit is considered accepted.
 
+### RF1.9 — Offline operator command groups and RF1 closure checkpoint
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF1.9 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF1.9 verdict: ACCEPT` commit.
+
+Scope:
+- add a no-network RF1 closure policy check;
+- add `operator-command-groups` to group RF1 operator commands by operational intent;
+- add `rf1-closure-report` to summarize RF1.1–RF1.9 closure status and next phase options;
+- document the transition decision: RF2 slides runtime or a separate controlled dependency/security step;
+- wire only the no-network RF1.9 closure policy check into production readiness gates.
+
+Non-goals:
+- do not download Python wheels;
+- do not run npm install/cache commands;
+- do not pull or save Docker images;
+- do not install Playwright browsers;
+- do not run offline build commands automatically;
+- do not run `npm audit fix --force`;
+- do not change dependency versions;
+- do not change Docker build logic;
+- do not change runtime behavior.
+
+Acceptance:
+- `python3 scripts/kw_offline_bootstrap_bundle_tool.py check-closure-policy --repo-root . --require-ready --json` passes;
+- `python3 scripts/kw_offline_bootstrap_bundle_tool.py operator-command-groups --repo-root . --json` passes;
+- `python3 scripts/kw_offline_bootstrap_bundle_tool.py rf1-closure-report --repo-root . --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf1_9_offline_operator_command_groups.py -q` passes;
+- `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
+- the full post-RF1.9 runner and Docker runtime smoke pass before the verdict commit is considered fully accepted.
+
 ### RF1 — Offline dependency and Docker reproducibility hardening
 
 Goal: make KW Studio deployment predictable in offline/intranet environments.

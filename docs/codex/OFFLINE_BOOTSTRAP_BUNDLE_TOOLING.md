@@ -146,3 +146,11 @@ RF1.8 adds `check-readiness-policy`, `bundle-readiness-report`, and `offline-bui
 The readiness gate uses only `check-readiness-policy`; it does not require a real `offline_bootstrap/` bundle. Operators explicitly run `bundle-readiness-report --bundle-dir ...` to aggregate layout, artifact presence, checksum, inventory, and expected profile status.
 
 RF1.8 is read-only. It does not download dependencies, run package managers, pull/save Docker images, install browsers, run builds, or change runtime behavior.
+
+## RF1.9 operator command groups and RF1 closure checkpoint
+
+RF1.9 adds `check-closure-policy`, `operator-command-groups`, and `rf1-closure-report` support to `scripts/kw_offline_bootstrap_bundle_tool.py`.
+
+The readiness gate uses only `check-closure-policy`; it does not require a real `offline_bootstrap/` bundle. Operators use `operator-command-groups --json` and `rf1-closure-report --json` to review the RF1 command surface and decide whether to proceed to RF2 slides runtime or to a separate controlled dependency/security step.
+
+RF1.9 is read-only. It does not download dependencies, run package managers, pull/save Docker images, install browsers, run builds, change dependency versions, change runtime behavior, or run `npm audit fix --force`.
