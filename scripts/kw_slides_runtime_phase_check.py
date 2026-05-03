@@ -108,8 +108,9 @@ def collect_errors(repo_root: Path, require_ready: bool) -> list[str]:
 
     if require_ready:
         branch = run_git(repo_root, "branch", "--show-current")
-        if branch != "7_Runtime_Foundation":
-            errors.append(f"expected branch 7_Runtime_Foundation, got {branch}")
+        allowed_branches = {"7_Runtime_Foundation", "8_K_Phase"}
+        if branch not in allowed_branches:
+            errors.append(f"expected branch 7_Runtime_Foundation or 8_K_Phase, got {branch}")
 
     return errors
 
