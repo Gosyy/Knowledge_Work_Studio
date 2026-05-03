@@ -177,3 +177,24 @@ python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-checksums \
 ```
 
 RF1.6 does not generate artifacts automatically and does not change runtime behavior.
+
+## RF1.7 artifact inventory commands
+
+Review the expected offline profile derived from repository files:
+
+```bash
+python3 scripts/kw_offline_bootstrap_bundle_tool.py expected-profile \
+  --repo-root . \
+  --json
+```
+
+Summarize an operator bundle:
+
+```bash
+python3 scripts/kw_offline_bootstrap_bundle_tool.py inventory-summary \
+  --repo-root . \
+  --bundle-dir /path/to/offline_bootstrap \
+  --json
+```
+
+RF1.7 inventory commands are read-only. They do not download dependencies, run package managers, pull Docker images, install browsers, or change runtime behavior.

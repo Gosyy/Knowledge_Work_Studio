@@ -208,6 +208,34 @@ Acceptance:
 - `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
 - the full post-RF1.6 runner passes before the verdict commit is considered accepted.
 
+### RF1.7 — Offline artifact inventory summaries and expected image/package listing
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF1.7 full runner, and a separate `RF1.7 verdict: ACCEPT` commit.
+
+Scope:
+- add expected offline profile derivation from Python, npm, Docker, Compose, and Playwright source files;
+- add `check-inventory-policy`, `expected-profile`, and `inventory-summary` CLI surfaces;
+- summarize operator bundle artifacts without downloading or installing anything;
+- compare Docker `images-manifest.txt` entries against expected images;
+- cover template, populated, and missing-expected-image inventory scenarios with temporary smoke-test fixtures;
+- wire only the no-network RF1.7 policy check into production readiness gates.
+
+Non-goals:
+- do not download Python wheels;
+- do not run npm install/cache commands;
+- do not pull or save Docker images;
+- do not install Playwright browsers;
+- do not resolve npm audit findings;
+- do not change dependency versions;
+- do not change Docker build logic;
+- do not change runtime behavior.
+
+Acceptance:
+- `python3 scripts/kw_offline_bootstrap_bundle_tool.py check-inventory-policy --repo-root . --require-ready --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf1_7_offline_artifact_inventory.py -q` passes;
+- `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
+- the full post-RF1.7 runner passes before the verdict commit is considered accepted.
+
 ### RF1 — Offline dependency and Docker reproducibility hardening
 
 Goal: make KW Studio deployment predictable in offline/intranet environments.

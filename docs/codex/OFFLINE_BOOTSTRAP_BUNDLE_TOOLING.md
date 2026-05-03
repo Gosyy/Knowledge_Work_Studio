@@ -130,3 +130,11 @@ RF1.6 adds `check-integrity-policy` and `verify-checksums` support to `scripts/k
 The readiness gate uses only `check-integrity-policy`; it does not require a real `offline_bootstrap/` bundle. Operators explicitly run `verify-checksums --bundle-dir ...` after preparing and transferring a bundle.
 
 RF1.6 verifies SHA-256 checksums listed in `checks/sha256sums.txt`. It does not download dependencies, run package managers, pull/save Docker images, install browsers, or change runtime behavior.
+
+## RF1.7 artifact inventory summaries
+
+RF1.7 adds `check-inventory-policy`, `expected-profile`, and `inventory-summary` support to `scripts/kw_offline_bootstrap_bundle_tool.py`.
+
+The readiness gate uses only `check-inventory-policy`; it does not require a real `offline_bootstrap/` bundle. Operators explicitly run `inventory-summary --bundle-dir ...` to review bundle contents.
+
+RF1.7 derives the expected offline profile from `requirements.txt`, `frontend/package.json`, `frontend/package-lock.json`, Dockerfiles, Compose, and Playwright config. It does not download dependencies, run package managers, pull/save Docker images, install browsers, or change runtime behavior.

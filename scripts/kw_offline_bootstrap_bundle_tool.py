@@ -20,6 +20,7 @@ REQUIRED_POLICY_FILES = (
     "docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_TOOLING.md",
     "docs/codex/OFFLINE_BOOTSTRAP_OPERATOR_RUNBOOK.md",
     "docs/codex/OFFLINE_BOOTSTRAP_INTEGRITY.md",
+    "docs/codex/OFFLINE_BOOTSTRAP_ARTIFACT_INVENTORY.md",
     "scripts/kw_offline_bootstrap_manifest_check.py",
     "requirements.txt",
     "frontend/package.json",
@@ -141,6 +142,57 @@ def current_docker_images(repo_root: Path) -> list[str]:
     images.update(collect_docker_from_images(read_text(repo_root / "frontend/Dockerfile")))
     images.update(collect_compose_images(read_text(repo_root / "docker-compose.deploy.yml")))
     return sorted(images)
+
+
+def parse_requirements(repo_root: Path) -> list[str]:
+    requirements: list[str] = []
+    for raw_line in read_text(repo_root / "requirements.txt").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        requirements.append(line)
+    return requirements
+
+
+def normalize_requirement_name(requirement: str) -> str:
+    cleaned = requirement.split(";", 1)[0].strip()
+    cleaned = re.split(r"[<>=!~\[]", cleaned, maxsplit=1)[0].strip()
+    return cleaned.lower().replace("_", "-")
+
+
+def frontend_package(repo_root: Path) -> dict[str, Any]:
+    return json.loads(read_text(repo_root / "frontend/package.json"))
+
+
+def expected_offline_profile(repo_root: Path) -> dict[str, Any]:
+    package = frontend_package(repo_root)
+    direct_requirements = parse_requirements(repo_root)
+    return {
+        "python": {
+            "source": "requirements.txt",
+            "direct_requirements": direct_requirements,
+            "normalized_direct_names": sorted({normalize_requirement_name(item) for item in direct_requirements}),
+        },
+        "npm": {
+            "source": "frontend/package.json",
+            "package": package.get("name"),
+            "dependencies": package.get("dependencies", {}),
+            "dev_dependencies": package.get("devDependencies", {}),
+            "scripts": package.get("scripts", {}),
+            "lock_source": "frontend/package-lock.json",
+        },
+        "docker": {
+            "sources": ["Dockerfile.backend", "frontend/Dockerfile", "docker-compose.deploy.yml"],
+            "expected_images": current_docker_images(repo_root),
+        },
+        "playwright": {
+            "source": "frontend/playwright.config.ts",
+            "declared": (repo_root / "frontend/playwright.config.ts").exists(),
+        },
+        "network_required": False,
+        "runtime_changed_by_rf1_7": False,
+        "dependency_versions_changed_by_rf1_7": False,
+    }
 
 
 def build_manifest_template(repo_root: Path, mode: str) -> dict[str, Any]:
@@ -380,12 +432,94 @@ def validate_checksums(bundle_dir: Path) -> dict[str, Any]:
     }
 
 
+def _read_manifest_lines(path: Path) -> list[str]:
+    if not path.exists():
+        return []
+    return [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip() and not line.strip().startswith("#")]
+
+
+def summarize_path(path: Path, bundle_dir: Path, limit: int = 50) -> dict[str, Any]:
+    if not path.exists():
+        return {"exists": False, "file_count": 0, "total_bytes": 0, "files": []}
+    if path.is_file():
+        rel = path.relative_to(bundle_dir).as_posix()
+        return {
+            "exists": True,
+            "file_count": 1,
+            "total_bytes": path.stat().st_size,
+            "files": [{"path": rel, "bytes": path.stat().st_size}],
+        }
+
+    files = sorted(child for child in path.rglob("*") if child.is_file())
+    entries = [
+        {"path": child.relative_to(bundle_dir).as_posix(), "bytes": child.stat().st_size}
+        for child in files[:limit]
+    ]
+    return {
+        "exists": True,
+        "file_count": len(files),
+        "total_bytes": sum(child.stat().st_size for child in files),
+        "files": entries,
+        "truncated": len(files) > limit,
+    }
+
+
+def inventory_summary(repo_root: Path, bundle_dir: Path) -> dict[str, Any]:
+    errors = validate_bundle_dir(bundle_dir)
+    profile = expected_offline_profile(repo_root)
+    expected_images = set(profile["docker"]["expected_images"])
+    manifest_entries = _read_manifest_lines(bundle_dir / "docker/images-manifest.txt")
+    manifest_set = set(manifest_entries)
+    missing_expected_images = sorted(expected_images.difference(manifest_set))
+
+    checksum_entries, checksum_parse_errors = parse_sha256sums(bundle_dir)
+    # Template bundles may have placeholder checksum files. Inventory summaries should report checksum parse issues
+    # without turning them into hard failures; verify-checksums remains the strict integrity gate.
+    checksum_summary = {
+        "entry_count": len(checksum_entries),
+        "parse_errors": checksum_parse_errors,
+    }
+
+    summary = {
+        "mode": "offline-artifact-inventory-summary",
+        "bundle_dir": str(bundle_dir),
+        "network_required": False,
+        "runtime_changed_by_rf1_7": False,
+        "dependency_versions_changed_by_rf1_7": False,
+        "expected_profile": profile,
+        "python_wheelhouse": summarize_path(bundle_dir / "python/wheelhouse", bundle_dir),
+        "npm_cache": summarize_path(bundle_dir / "npm/cache", bundle_dir),
+        "docker_images": summarize_path(bundle_dir / "docker/images", bundle_dir),
+        "docker_images_manifest": {
+            "path": "docker/images-manifest.txt",
+            "entries": manifest_entries,
+            "missing_expected_images": missing_expected_images,
+        },
+        "playwright_browsers": summarize_path(bundle_dir / "playwright/browsers", bundle_dir),
+        "playwright_browsers_manifest": {
+            "path": "playwright/browsers-manifest.txt",
+            "entries": _read_manifest_lines(bundle_dir / "playwright/browsers-manifest.txt"),
+        },
+        "checksums": checksum_summary,
+        "copied_sources": {
+            "requirements": summarize_path(bundle_dir / "python/requirements.txt", bundle_dir),
+            "package_json": summarize_path(bundle_dir / "npm/package.json", bundle_dir),
+            "package_lock": summarize_path(bundle_dir / "npm/package-lock.json", bundle_dir),
+        },
+    }
+
+    errors.extend(f"docker images manifest is missing expected image: {image}" for image in missing_expected_images)
+    summary["errors"] = errors
+    summary["status"] = "ready" if not errors else "failed"
+    return summary
+
+
 def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
     errors: list[str] = []
 
     for rel in REQUIRED_POLICY_FILES:
         if not (repo_root / rel).exists():
-            errors.append(f"missing required RF1.6 policy surface: {rel}")
+            errors.append(f"missing required RF1.7 policy surface: {rel}")
 
     tooling_doc = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_TOOLING.md"
     if tooling_doc.exists():
@@ -400,6 +534,9 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
             "print-runbook",
             "RF1.6 checksum and integrity verification",
             "verify-checksums",
+            "RF1.7 artifact inventory summaries",
+            "inventory-summary",
+            "expected-profile",
         ):
             if phrase not in doc:
                 errors.append(f"offline bootstrap bundle tooling doc is missing phrase: {phrase}")
@@ -410,7 +547,9 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
         for phrase in (
             "RF1.5 checkpoint",
             "RF1.6 checksum verification commands",
-            "verify-checksums",
+            "RF1.7 artifact inventory commands",
+            "inventory-summary",
+            "expected-profile",
             "does not change runtime behavior",
         ):
             if phrase not in doc:
@@ -429,6 +568,22 @@ def validate_policy(repo_root: Path, require_ready: bool) -> list[str]:
             if phrase not in doc:
                 errors.append(f"offline bootstrap integrity doc is missing phrase: {phrase}")
 
+    inventory = repo_root / "docs/codex/OFFLINE_BOOTSTRAP_ARTIFACT_INVENTORY.md"
+    if inventory.exists():
+        doc = read_text(inventory)
+        for phrase in (
+            "RF1.7 checkpoint",
+            "Expected profile",
+            "inventory-summary",
+            "expected-profile",
+            "python:3.12-slim",
+            "node:20-alpine",
+            "postgres:16",
+            "RF1.8 handoff",
+        ):
+            if phrase not in doc:
+                errors.append(f"offline artifact inventory doc is missing phrase: {phrase}")
+
     gitignore = read_text(repo_root / ".gitignore") if (repo_root / ".gitignore").exists() else ""
     if "offline_bootstrap/" not in gitignore:
         errors.append(".gitignore must ignore offline_bootstrap/ operator bundles")
@@ -444,6 +599,12 @@ def runbook_commands() -> dict[str, list[str]]:
         "template": [
             "python3 scripts/kw_offline_bootstrap_bundle_tool.py create-template --repo-root . --bundle-dir /path/to/offline_bootstrap",
             "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-bundle --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+        ],
+        "profile": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py expected-profile --repo-root . --json",
+        ],
+        "inventory": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py inventory-summary --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
         ],
         "python": [
             "python3 -m pip download --requirement requirements.txt --dest /path/to/offline_bootstrap/python/wheelhouse",
@@ -493,7 +654,7 @@ def create_template(repo_root: Path, bundle_dir: Path, force: bool, mode: str) -
     write_text(
         bundle_dir / "README.md",
         "# KW Studio offline bootstrap bundle template\n\n"
-        "This directory is an operator artifact generated by RF1.4/RF1.5/RF1.6 tooling.\n\n"
+        "This directory is an operator artifact generated by RF1 tooling.\n\n"
         "The template copies lock/source files and creates placeholder manifests. It does not contain real dependency artifacts until an operator explicitly prepares them.\n\n"
         "Do not commit this directory to git.\n",
     )
@@ -502,7 +663,7 @@ def create_template(repo_root: Path, bundle_dir: Path, force: bool, mode: str) -
     copy_text_file(repo_root / "frontend/package-lock.json", bundle_dir / "npm/package-lock.json")
     write_text(bundle_dir / "docker/images-manifest.txt", "\n".join(current_docker_images(repo_root)))
     write_text(bundle_dir / "playwright/browsers-manifest.txt", "operator-managed Playwright browser cache placeholder")
-    write_text(bundle_dir / "checks/sha256sums.txt", "RF1.6 template placeholder; generate real checksums after artifact preparation")
+    write_text(bundle_dir / "checks/sha256sums.txt", "RF1.7 template placeholder; generate real checksums after artifact preparation")
     write_text(bundle_dir / "manifest.json", json.dumps(build_manifest_template(repo_root, mode), indent=2, sort_keys=True))
 
     errors = validate_bundle_dir(bundle_dir)
@@ -532,10 +693,13 @@ def command_check_policy(args: argparse.Namespace) -> int:
             "check-policy",
             "check-artifact-policy",
             "check-integrity-policy",
+            "check-inventory-policy",
+            "expected-profile",
             "create-template",
             "verify-bundle",
             "verify-artifacts",
             "verify-checksums",
+            "inventory-summary",
             "print-runbook",
         ],
         "errors": errors,
@@ -581,6 +745,37 @@ def command_check_integrity_policy(args: argparse.Namespace) -> int:
     }
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0 if not errors else 2
+
+
+def command_check_inventory_policy(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    errors = validate_policy(repo_root, require_ready=args.require_ready)
+    profile = expected_offline_profile(repo_root)
+    report = {
+        "mode": "offline-artifact-inventory-policy",
+        "network_required": False,
+        "runtime_changed_by_rf1_7": False,
+        "dependency_versions_changed_by_rf1_7": False,
+        "bundle_required_for_readiness": False,
+        "inventory_summary_requires_bundle_dir": True,
+        "expected_profile_available": not errors,
+        "expected_docker_images": profile["docker"]["expected_images"],
+        "errors": errors,
+        "status": "ready" if not errors else "failed",
+    }
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if not errors else 2
+
+
+def command_expected_profile(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    report = {
+        "mode": "offline-expected-profile",
+        "network_required": False,
+        "profile": expected_offline_profile(repo_root),
+    }
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
 
 
 def command_create_template(args: argparse.Namespace) -> int:
@@ -645,6 +840,14 @@ def command_verify_checksums(args: argparse.Namespace) -> int:
     return 0 if not report["errors"] else 2
 
 
+def command_inventory_summary(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    bundle_dir = Path(args.bundle_dir).expanduser().resolve()
+    report = inventory_summary(repo_root, bundle_dir)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if not report["errors"] else 2
+
+
 def command_print_runbook(args: argparse.Namespace) -> int:
     report = {
         "mode": "offline-bootstrap-runbook-commands",
@@ -660,7 +863,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="KW Studio offline bootstrap bundle template and verification tool.")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    policy = sub.add_parser("check-policy", help="Validate repository RF1.4/RF1.5/RF1.6 bundle tooling policy.")
+    policy = sub.add_parser("check-policy", help="Validate repository RF1 bundle tooling policy.")
     policy.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
     policy.add_argument("--require-ready", action="store_true")
     policy.add_argument("--json", action="store_true")
@@ -677,6 +880,17 @@ def build_parser() -> argparse.ArgumentParser:
     integrity_policy.add_argument("--require-ready", action="store_true")
     integrity_policy.add_argument("--json", action="store_true")
     integrity_policy.set_defaults(func=command_check_integrity_policy)
+
+    inventory_policy = sub.add_parser("check-inventory-policy", help="Validate RF1.7 artifact inventory policy without requiring a bundle.")
+    inventory_policy.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    inventory_policy.add_argument("--require-ready", action="store_true")
+    inventory_policy.add_argument("--json", action="store_true")
+    inventory_policy.set_defaults(func=command_check_inventory_policy)
+
+    expected = sub.add_parser("expected-profile", help="Print expected offline profile derived from repository sources.")
+    expected.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    expected.add_argument("--json", action="store_true")
+    expected.set_defaults(func=command_expected_profile)
 
     create = sub.add_parser("create-template", help="Create an offline_bootstrap template directory without downloads.")
     create.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
@@ -702,6 +916,12 @@ def build_parser() -> argparse.ArgumentParser:
     verify_checksums.add_argument("--bundle-dir", required=True)
     verify_checksums.add_argument("--json", action="store_true")
     verify_checksums.set_defaults(func=command_verify_checksums)
+
+    inventory = sub.add_parser("inventory-summary", help="Summarize an offline_bootstrap bundle and compare it to the expected profile.")
+    inventory.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
+    inventory.add_argument("--bundle-dir", required=True)
+    inventory.add_argument("--json", action="store_true")
+    inventory.set_defaults(func=command_inventory_summary)
 
     runbook = sub.add_parser("print-runbook", help="Print documented operator preparation commands as JSON.")
     runbook.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
