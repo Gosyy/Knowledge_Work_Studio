@@ -2,6 +2,8 @@
 
 ## Status
 
+RF_closure is accepted. K-phase may now start with K0 on branch `8_K_Phase`; K0 remains evaluation-only and does not claim Kimi-level support.
+
 RF2.2a establishes RF exit criteria for entering K-phase.
 
 This document is a planning/checkpoint guard. It does not change runtime behavior.

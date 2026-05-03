@@ -2,6 +2,8 @@
 
 ## Status
 
+K0 is the first controlled patch on branch `8_K_Phase` after accepted `RF_closure`. It defines the Kimi-level rubric and golden deck benchmark, but it does not claim KW Studio already reaches Kimi-level.
+
 RF2.2a establishes the default RF-to-K roadmap and Kimi-level product-power target.
 
 This document is the accepted planning guard for the next major product phase after RF0-RF4. It does not start K-phase and does not change runtime behavior.
