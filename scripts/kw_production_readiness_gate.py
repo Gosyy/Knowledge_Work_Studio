@@ -46,6 +46,11 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/slides_service/rf2_final_closure.py",
     "scripts/kw_slides_rf2_closure_check.py",
     "backend/tests/smoke/test_rf2_closure_slides_runtime.py",
+    "docs/codex/DOCX_PDF_REAL_INGESTION_RUNTIME.md",
+    "backend/app/services/docx_service/ingestion.py",
+    "backend/app/services/pdf_service/ingestion.py",
+    "scripts/kw_docx_pdf_real_ingestion_check.py",
+    "backend/tests/smoke/test_rf3_docx_pdf_real_ingestion.py",
     "backend/app/services/slides_service/runtime_closure.py",
     "scripts/kw_slides_runtime_closure_check.py",
     "backend/tests/smoke/test_rf2_7_slides_runtime_closure.py",
@@ -735,6 +740,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_slides_rf2_closure_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "DOCX/PDF real ingestion runtime",
+            (
+                python,
+                "scripts/kw_docx_pdf_real_ingestion_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

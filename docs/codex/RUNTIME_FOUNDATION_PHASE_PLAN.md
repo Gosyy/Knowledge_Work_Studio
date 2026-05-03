@@ -755,3 +755,37 @@ RF2_closure accepted next route: RF3 -> RF4 -> RF_closure -> K0.
 
 Default next step after RF2_closure:
 - RF3 — Real document ingestion for DOCX and PDF.
+
+### RF3 — Real document ingestion for DOCX and PDF
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF3 full runner, Docker runtime smoke with `--skip-build`, and a separate `RF3 verdict: ACCEPT` commit.
+
+Scope:
+- add real local DOCX package text extraction from `word/document.xml`;
+- add real local PDF text-layer extraction for text-bearing PDFs;
+- add honest failure mode for scanned/image-only PDFs when OCR is unavailable;
+- expose narrow service and entrypoint ingestion methods for DOCX/PDF;
+- emit text/plain ingestion reports with safe metadata;
+- wire the RF3 checker into production readiness.
+
+Non-goals:
+- do not add cloud OCR;
+- do not fake scanned PDF support;
+- do not add a public API endpoint;
+- do not add a DB schema migration;
+- do not add queue/event-store runtime;
+- do not change dependency versions;
+- do not change Dockerfiles;
+- do not change LLM topology;
+- do not start K-phase;
+- do not run `npm audit fix --force`.
+
+Acceptance:
+- `python3 scripts/kw_docx_pdf_real_ingestion_check.py --repo-root . --require-ready --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf3_docx_pdf_real_ingestion.py -q` passes;
+- existing DOCX/PDF service smoke tests pass;
+- production readiness includes RF3;
+- full post-RF3 runner and Docker runtime smoke pass before final acceptance.
+
+Default next step after RF3:
+- RF4 — Local GigaChat integration hardening.

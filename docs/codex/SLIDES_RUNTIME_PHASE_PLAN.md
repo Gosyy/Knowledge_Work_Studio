@@ -352,3 +352,7 @@ Acceptance:
 
 Default next step after RF2.5:
 - RF2.6 — Slides provenance manifest emitted as downloadable artifact.
+
+## Post-RF2 handoff
+
+RF2 is closed by `RF2_closure`. The next Runtime Foundation stage is RF3, focused on real DOCX/PDF ingestion. Slides K-phase product-power work remains blocked until RF3, RF4, and RF_closure are accepted.
