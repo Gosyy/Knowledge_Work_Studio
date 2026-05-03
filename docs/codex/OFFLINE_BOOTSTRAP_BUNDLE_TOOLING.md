@@ -114,3 +114,11 @@ RF1.4 is accepted when:
 ## RF1.5 handoff
 
 RF1.5 may add deeper artifact presence checks or documented operator commands for preparing wheelhouses, npm cache artifacts, Docker image archives, and Playwright browser caches. Any network-using preparation must remain explicit and separate from default offline runtime.
+
+## RF1.5 artifact presence checks and runbook commands
+
+RF1.5 adds `verify-artifacts`, `check-artifact-policy`, and `print-runbook` support to `scripts/kw_offline_bootstrap_bundle_tool.py`.
+
+The artifact presence check is explicit and requires `--bundle-dir`. Production readiness uses only the no-network policy check and does not require a real operator bundle.
+
+RF1.5 also adds `docs/codex/OFFLINE_BOOTSTRAP_OPERATOR_RUNBOOK.md`, which documents example operator commands for preparing Python wheelhouse, npm cache, Docker image archives, Playwright browser binaries, and checksums. These commands are documented for operator use and are not executed by readiness gates.

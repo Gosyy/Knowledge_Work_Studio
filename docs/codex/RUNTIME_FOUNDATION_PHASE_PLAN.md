@@ -152,6 +152,35 @@ Acceptance:
 - `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
 - the full post-RF1.4 runner passes before the verdict commit is considered accepted.
 
+### RF1.5 — Offline bundle artifact presence checks and operator runbook commands
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF1.5 full runner, and a separate `RF1.5 verdict: ACCEPT` commit.
+
+Scope:
+- add explicit artifact presence validation for an operator-provided `offline_bootstrap/` bundle;
+- add operator runbook commands for Python wheelhouse, npm cache, Docker images, Playwright browsers, and checksums;
+- add `check-artifact-policy`, `verify-artifacts`, and `print-runbook` CLI surfaces;
+- cover artifact presence validation with temporary smoke-test fixtures;
+- wire only the no-network RF1.5 policy check into production readiness gates.
+
+Non-goals:
+- do not run `pip download`;
+- do not run `pip install`;
+- do not run `npm ci`;
+- do not run `npm cache`;
+- do not run `docker pull`;
+- do not run `docker save`;
+- do not install Playwright browsers;
+- do not change dependency versions;
+- do not change Docker build logic;
+- do not change runtime behavior.
+
+Acceptance:
+- `python3 scripts/kw_offline_bootstrap_bundle_tool.py check-artifact-policy --repo-root . --require-ready --json` passes;
+- `python3 -m pytest backend/tests/smoke/test_rf1_5_offline_bundle_artifact_presence.py -q` passes;
+- `python3 scripts/kw_production_readiness_gate.py --repo-root . --skip-backend --skip-frontend --skip-e2e` passes;
+- the full post-RF1.5 runner passes before the verdict commit is considered accepted.
+
 ### RF1 — Offline dependency and Docker reproducibility hardening
 
 Goal: make KW Studio deployment predictable in offline/intranet environments.

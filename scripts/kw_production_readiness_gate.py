@@ -26,6 +26,8 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_STRATEGY.md",
     "docs/codex/OFFLINE_BOOTSTRAP_MANIFEST.md",
     "docs/codex/OFFLINE_BOOTSTRAP_BUNDLE_TOOLING.md",
+    "docs/codex/OFFLINE_BOOTSTRAP_OPERATOR_RUNBOOK.md",
+    "backend/tests/smoke/test_rf1_5_offline_bundle_artifact_presence.py",
     "scripts/kw_offline_bootstrap_bundle_tool.py",
     "backend/tests/smoke/test_rf1_4_offline_bootstrap_bundle_tooling.py",
     "scripts/kw_offline_bootstrap_manifest_check.py",
@@ -441,6 +443,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
                 python,
                 "scripts/kw_offline_bootstrap_bundle_tool.py",
                 "check-policy",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+    steps.append(
+        GateStep(
+            "Offline bundle artifact presence policy contract",
+            (
+                python,
+                "scripts/kw_offline_bootstrap_bundle_tool.py",
+                "check-artifact-policy",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
