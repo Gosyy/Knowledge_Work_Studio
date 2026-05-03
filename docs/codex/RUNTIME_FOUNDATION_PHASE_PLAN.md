@@ -805,3 +805,28 @@ Acceptance:
 
 Default next step after RF3:
 - RF4 — Local GigaChat integration hardening.
+
+### RF_closure — Runtime Foundation final closure checkpoint
+
+Status: in progress in this patch; accepted only after a functional commit, targeted checks, post-RF_closure full runner, Docker runtime smoke with `--skip-build`, and a separate `RF_closure verdict: ACCEPT` commit.
+
+Scope:
+- close RF0-RF4 as the Runtime Foundation phase;
+- verify RF1, RF2, RF3, and RF4 closure/readiness checkpoints remain ready;
+- record that K0 is the next phase but is not started by RF_closure;
+- preserve offline/intranet, direct local GigaChat-first, artifact-first, and operator-gated architecture identity.
+
+Non-goals:
+- no new runtime feature;
+- no K-phase work;
+- no Kimi-level claim;
+- no public endpoint;
+- no schema migration;
+- no queue/event-store migration;
+- no dependency or Docker changes;
+- no cloud OCR or cloud LLM;
+- no visual QA runtime;
+- no `npm audit fix --force`.
+
+Default next step after RF_closure:
+- K0 — Kimi-level rubric and golden deck benchmark.

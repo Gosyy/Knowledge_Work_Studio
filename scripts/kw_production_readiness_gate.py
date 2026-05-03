@@ -120,6 +120,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/integrations/llm/gigachat_runtime.py",
     "scripts/kw_gigachat_runtime_hardening_check.py",
     "backend/tests/smoke/test_rf4_gigachat_runtime_hardening.py",
+    "docs/codex/RUNTIME_FOUNDATION_FINAL_CLOSURE.md",
+    "backend/app/services/runtime_foundation_closure.py",
+    "scripts/kw_runtime_foundation_closure_check.py",
+    "backend/tests/smoke/test_rf_closure_runtime_foundation.py",
     "backend/tests/smoke/test_s9_litellm_gateway_contract.py",
 )
 
@@ -774,6 +778,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_gigachat_runtime_hardening_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Runtime Foundation final closure checkpoint",
+            (
+                python,
+                "scripts/kw_runtime_foundation_closure_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
