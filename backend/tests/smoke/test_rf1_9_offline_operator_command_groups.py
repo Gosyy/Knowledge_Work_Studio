@@ -120,3 +120,24 @@ def test_rf1_9_docs_are_present() -> None:
     assert "RF1.9 operator command groups and closure commands" in runbook
     assert "RF1.9 operator command groups and RF1 closure checkpoint" in tooling
     assert "RF1.9 — Offline operator command groups and RF1 closure checkpoint" in plan
+
+def test_rf1_9_print_runbook_preserves_legacy_commands_and_adds_groups() -> None:
+    result = run_tool("print-runbook", "--repo-root", str(repo_root()), "--json")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+
+    assert payload["mode"] == "offline-bootstrap-runbook-commands"
+    assert payload["network_required_by_command_printer"] is False
+    assert payload["commands_are_examples_only"] is True
+    assert payload["commands_are_not_executed"] is True
+    assert payload["rf1_9_backward_compatible"] is True
+
+    assert "python3 -m pip download" in payload["commands"]["python"][0]
+    assert "npm ci" in payload["commands"]["npm"][0]
+    assert any("docker pull python:3.12-slim" in command for command in payload["commands"]["docker"])
+    assert "verify_artifacts" in payload["commands"]
+    assert "verify_checksums" in payload["commands"]
+
+    assert "policy_checks" in payload["groups"]
+    assert "next_phase_options" in payload["groups"]

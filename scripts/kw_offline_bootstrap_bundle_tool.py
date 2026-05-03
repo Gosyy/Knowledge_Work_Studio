@@ -1101,15 +1101,66 @@ def command_rf1_closure_report(args: argparse.Namespace) -> int:
 
 def command_print_runbook(args: argparse.Namespace) -> int:
     repo_root = Path(args.repo_root).expanduser().resolve()
+    groups = operator_command_groups(repo_root)["groups"]
+    commands = {
+        "template": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py create-template --repo-root . --bundle-dir /path/to/offline_bootstrap",
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-bundle --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+        ],
+        "profile": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py expected-profile --repo-root . --json",
+        ],
+        "inventory": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py inventory-summary --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+        ],
+        "readiness": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py bundle-readiness-report --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py offline-build-dry-run --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+        ],
+        "closure": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py operator-command-groups --repo-root . --json",
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py rf1-closure-report --repo-root . --json",
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py check-closure-policy --repo-root . --require-ready --json",
+        ],
+        "python": [
+            "python3 -m pip download --requirement requirements.txt --dest /path/to/offline_bootstrap/python/wheelhouse",
+        ],
+        "npm": [
+            "cd frontend && npm ci --cache /path/to/offline_bootstrap/npm/cache --prefer-offline --no-audit --no-fund",
+        ],
+        "docker": [
+            "docker pull python:3.12-slim",
+            "docker pull node:20-alpine",
+            "docker pull postgres:16",
+            "docker save python:3.12-slim -o /path/to/offline_bootstrap/docker/images/python-3.12-slim.tar",
+            "docker save node:20-alpine -o /path/to/offline_bootstrap/docker/images/node-20-alpine.tar",
+            "docker save postgres:16 -o /path/to/offline_bootstrap/docker/images/postgres-16.tar",
+        ],
+        "playwright": [
+            "cd frontend && PLAYWRIGHT_BROWSERS_PATH=/path/to/offline_bootstrap/playwright/browsers npx playwright install chromium",
+        ],
+        "checksums": [
+            "cd /path/to/offline_bootstrap && find . -type f ! -path './checks/sha256sums.txt' -print0 | sort -z | xargs -0 sha256sum > checks/sha256sums.txt",
+        ],
+        "verify_artifacts": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-artifacts --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+        ],
+        "verify_checksums": [
+            "python3 scripts/kw_offline_bootstrap_bundle_tool.py verify-checksums --repo-root . --bundle-dir /path/to/offline_bootstrap --json",
+        ],
+    }
     report = {
         "mode": "offline-bootstrap-runbook-commands",
         "network_required_by_command_printer": False,
         "commands_are_not_executed": True,
         "commands_are_examples_only": True,
-        "commands": operator_command_groups(repo_root)["groups"],
+        "commands": commands,
+        "groups": groups,
+        "rf1_9_backward_compatible": True,
     }
     print(json.dumps(report, indent=2, sort_keys=True) if args.json else json.dumps(report, indent=2, sort_keys=True))
     return 0
+
 
 
 def build_parser() -> argparse.ArgumentParser:
