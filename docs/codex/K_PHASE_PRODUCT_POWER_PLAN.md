@@ -56,6 +56,8 @@ Score:
 
 ### K1 — Local GigaChat planning engine
 
+K1 status: local GigaChat planning runtime is implemented as a controlled K-phase foundation path. It remains below Kimi-level until later K2-K6 workflow, renderer, QA, and provenance benchmark gates pass.
+
 Add a stronger offline planning engine:
 
 - source understanding;
