@@ -101,14 +101,18 @@ Improve slide output quality:
 
 ### K4 — Visual QA runtime
 
+K4 status: visual QA runtime is implemented as a local deterministic PPTX OOXML inspection layer over K3-bounded rendered artifacts. It adds safe slide previews, layout bounds checks, major-overlap checks, estimated overflow checks, bundled-theme contrast checks, reading-order checks, and explicit operator review metadata. It remains below Kimi-level until K5 provenance and K6 end-to-end workflow gates pass.
+
 Move from visual QA planning to runtime checks:
 
-- PPTX/PDF render preview;
+- PPTX render preview from local OOXML;
 - layout checks;
 - overflow checks;
 - contrast checks;
 - reading-order checks;
 - operator review workflow.
+
+K4 intentionally does not add cloud vision, a public API endpoint, a DB schema migration, frontend runtime changes, dependency changes, Dockerfile changes, or source-to-slide provenance.
 
 ### K5 — Source-to-slide provenance
 

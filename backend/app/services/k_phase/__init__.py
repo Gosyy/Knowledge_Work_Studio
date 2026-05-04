@@ -39,6 +39,20 @@ from backend.app.services.k_phase.renderer_quality import (
     improve_presentation_plan_render_quality,
     select_layout_hint,
 )
+from backend.app.services.k_phase.visual_qa import (
+    VisualQAIssue,
+    VisualQAOperatorReview,
+    VisualQAPolicy,
+    VisualQARuntimeRequest,
+    VisualQARuntimeResult,
+    VisualQAReviewRequest,
+    VisualQAShapePreview,
+    VisualQASlidePreview,
+    build_k4_capabilities_report,
+    build_visual_qa_operator_review,
+    run_visual_qa_runtime,
+)
+
 
 __all__ = [
     "ACCEPTANCE_GATES",
@@ -74,4 +88,15 @@ __all__ = [
     "build_k3_capabilities_report",
     "improve_presentation_plan_render_quality",
     "select_layout_hint",
+    "VisualQAIssue",
+    "VisualQAOperatorReview",
+    "VisualQAPolicy",
+    "VisualQARuntimeRequest",
+    "VisualQARuntimeResult",
+    "VisualQAReviewRequest",
+    "VisualQAShapePreview",
+    "VisualQASlidePreview",
+    "build_k4_capabilities_report",
+    "build_visual_qa_operator_review",
+    "run_visual_qa_runtime",
 ]
