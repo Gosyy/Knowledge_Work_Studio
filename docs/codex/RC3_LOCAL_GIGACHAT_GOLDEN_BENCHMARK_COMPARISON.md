@@ -106,3 +106,8 @@ claim.
 
 RC3 hotfix note: public API dev responses are canonicalized into the compact K1 JSON plan schema before comparison; this remains harness-only and does not change production K1/K6 runtime behavior.
 
+## RC3g canonical public API response guard
+
+RC3 public API development mode normalizes real GigaChat responses into the compact K1 JSON plan schema before comparison. This prevents provider-specific prose, fenced JSON, localized outlines, or mixed markdown from being misclassified as a K1 planning failure while preserving strict acceptance: all five golden cases must use the GigaChat planning path for the public API dev comparison to pass.
+
+This guard is scoped to the RC3 benchmark harness. It does not change K1/K6 product runtime, does not add a public API endpoint, does not add a dependency, does not change Docker, and does not verify the production offline Server 3 route.

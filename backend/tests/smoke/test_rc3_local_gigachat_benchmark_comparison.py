@@ -138,3 +138,29 @@ def test_rc3_public_response_normalization_always_returns_compact_json() -> None
     assert len(payload["slides"]) == 5
     assert all(slide["title"] for slide in payload["slides"])
     assert all(slide["bullets"] for slide in payload["slides"])
+
+
+def test_rc3_public_gigachat_canonical_normalization_handles_architecture_prose() -> None:
+    from scripts.kw_rc3_local_gigachat_benchmark_comparison import _normalize_plan_text_for_k1
+
+    prompt = json.dumps(
+        {
+            "deck_goal": "Create an architecture deck for an offline document-to-slide workflow.",
+            "target_slide_count": 7,
+            "audience": "senior engineers",
+        },
+        ensure_ascii=False,
+    )
+    prose = """
+    Архитектура решения: локальное планирование, утверждение плана, рендеринг презентации,
+    проверка визуального качества и provenance manifest. Слайд 1: контекст. Слайд 2:
+    runtime topology. Слайд 3: renderer quality. Слайд 4: visual QA. Слайд 5: risks.
+    """
+    payload = json.loads(_normalize_plan_text_for_k1(prose, prompt))
+    assert isinstance(payload["deck_title"], str)
+    assert len(payload["slides"]) == 7
+    for slide in payload["slides"]:
+        assert isinstance(slide["title"], str) and slide["title"]
+        assert isinstance(slide["bullets"], list) and slide["bullets"]
+        assert slide["slide_type"] in {"title", "section", "content", "comparison", "data", "timeline", "conclusion", "appendix"}
+
