@@ -131,9 +131,15 @@ K5 intentionally does not add a public API endpoint, a DB schema migration, fron
 
 ### K6 — End-to-end Kimi-like workflow
 
+K6 status: end-to-end Kimi-like workflow checkpoint is implemented as a local, deterministic, operator-gated route over K1-K5. It connects source-aware planning, editable approval, renderer quality, source-to-slide provenance, approved PPTX generation, visual QA, and final operator delivery. It does not claim unqualified whole-product Kimi-level.
+
 Deliver the full loop:
 
 upload sources -> plan -> edit -> approve -> generate -> QA -> revise -> export -> provenance bundle.
+
+### K-phase closure — release readiness checkpoint
+
+K-phase closure status: release readiness checkpoint verifies K0-K6 readiness without adding feature scope. It confirms all K-phase checkers are ready, K6 ancestry remains valid under `--require-ready`, and no API, DB, frontend, dependency, Docker, cloud LLM, cloud vision, or new feature-runtime scope is added.
 
 ## Non-negotiable constraints
 
