@@ -49,3 +49,10 @@ python3 scripts/kw_rc1_golden_benchmark_harness.py \
 ## Acceptance
 
 RC1 is ready when all five K0 cases execute successfully, generate non-empty PPTX artifacts, produce manifests, preserve complete source-to-slide provenance, run Visual QA, pass K6 gates, and leave the no-Kimi-claim and no-feature-scope guards intact.
+
+## Post-RC1 readiness guard
+
+`kw_rc1_golden_benchmark_harness.py --require-ready` verifies that the K-phase closure commit is an ancestor of the current branch HEAD. It intentionally does not require the current HEAD to equal the closure commit, because RC1 functional/verdict commits are expected to come after K-phase closure on `8_K_Phase`.
+
+This keeps the checkpoint strict about lineage while allowing release-candidate verification commits to be tested by the production readiness gate.
+

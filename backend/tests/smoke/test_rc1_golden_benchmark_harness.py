@@ -44,6 +44,7 @@ def test_rc1_golden_benchmark_harness_executes_all_k0_cases(tmp_path: Path) -> N
     assert report["source_to_slide_provenance_verified"] is True
     assert report["visual_qa_executed"] is True
     assert report["human_benchmark_review_required"] is True
+    assert report["k_phase_closure_commit_is_ancestor"] is True
     assert report["kimi_level_claimed_by_rc1"] is False
     assert report["whole_project_kimi_level_supported"] is False
     assert report["network_required"] is False
@@ -69,3 +70,30 @@ def test_rc1_golden_benchmark_harness_executes_all_k0_cases(tmp_path: Path) -> N
         assert f"{case['case_id']}/safe_metadata.json" in generated
         assert f"{case['case_id']}/{case['artifact_filename']}" in generated
         assert (artifacts_dir / case["case_id"] / case["artifact_filename"]).exists()
+
+
+def test_rc1_require_ready_accepts_commits_after_k_phase_closure(tmp_path: Path) -> None:
+    root = repo_root()
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/kw_rc1_golden_benchmark_harness.py",
+            "--repo-root",
+            str(root),
+            "--artifacts-dir",
+            str(tmp_path / "rc1-require-ready-artifacts"),
+            "--require-ready",
+            "--json",
+        ],
+        cwd=root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["status"] == "ready"
+    assert report["k_phase_closure_commit_is_ancestor"] is True
+    assert report["all_golden_cases_passed"] is True
+    assert report["whole_project_kimi_level_supported"] is False

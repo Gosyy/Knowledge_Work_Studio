@@ -88,6 +88,25 @@ def run_git(repo_root: Path, *args: str) -> str | None:
     return result.stdout.strip()
 
 
+def git_commit_is_ancestor(repo_root: Path, ancestor: str, descendant: str) -> bool | None:
+    try:
+        result = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+            cwd=repo_root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    except OSError:
+        return None
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    return None
+
+
 def load_fixture_cases(path: Path) -> list[dict[str, Any]]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, list):
@@ -110,7 +129,17 @@ def static_errors(repo_root: Path, fixture_path: Path, require_ready: bool) -> l
             errors.append(f"expected branch {K_PHASE_BRANCH}, got {branch}")
         head = run_git(repo_root, "rev-parse", "HEAD")
         if head is not None and head != EXPECTED_K_PHASE_CLOSURE_COMMIT:
-            errors.append(f"expected K-phase closure HEAD {EXPECTED_K_PHASE_CLOSURE_COMMIT}, got {head}")
+            closure_is_ancestor = git_commit_is_ancestor(repo_root, EXPECTED_K_PHASE_CLOSURE_COMMIT, head)
+            if closure_is_ancestor is False:
+                errors.append(
+                    f"expected K-phase closure commit {EXPECTED_K_PHASE_CLOSURE_COMMIT} "
+                    f"to be an ancestor of HEAD {head}"
+                )
+            elif closure_is_ancestor is None:
+                errors.append(
+                    f"could not verify K-phase closure ancestry for "
+                    f"{EXPECTED_K_PHASE_CLOSURE_COMMIT}..{head}"
+                )
     return errors
 
 
@@ -283,12 +312,22 @@ def build_report(repo_root: Path, *, fixture_path: Path | None, artifacts_dir: P
                 case_results.append(case_result)
                 errors.extend(case_result.errors)
     passed_cases = sum(1 for item in case_results if item.status == "passed")
+    current_head = run_git(repo_root, "rev-parse", "HEAD")
+    closure_commit_is_ancestor = (
+        current_head == EXPECTED_K_PHASE_CLOSURE_COMMIT
+        or (
+            current_head is not None
+            and git_commit_is_ancestor(repo_root, EXPECTED_K_PHASE_CLOSURE_COMMIT, current_head) is True
+        )
+    )
     report: dict[str, Any] = {
         "checkpoint": RC1_CHECKPOINT,
         "schema_version": RC1_SCHEMA_VERSION,
         "status": "ready" if not errors and case_results else "failed",
         "k_phase_branch": K_PHASE_BRANCH,
         "expected_k_phase_closure_commit": EXPECTED_K_PHASE_CLOSURE_COMMIT,
+        "head": current_head,
+        "k_phase_closure_commit_is_ancestor": closure_commit_is_ancestor,
         "fixture_file": str(fixture_path.relative_to(repo_root)) if fixture_path.is_relative_to(repo_root) else str(fixture_path),
         "fixture_digest": fixture_digest,
         "golden_benchmark_execution_harness_supported": True,
