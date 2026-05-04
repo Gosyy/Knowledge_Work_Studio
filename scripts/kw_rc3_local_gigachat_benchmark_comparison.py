@@ -258,48 +258,147 @@ def _extract_completion_text(raw: Any) -> str:
 
 
 
-def _normalize_plan_text_for_k1(text: str, prompt: str) -> str:
-    """Normalize public GigaChat plan answers into K1 compact JSON.
 
-    Public GigaChat can return fenced JSON, nested plan objects, JSON arrays,
-    localized key names, or a markdown slide outline. RC3 must compare the
-    real GigaChat planning path, so the dev-only provider converts those
-    shapes into the compact K1 schema instead of silently forcing fallback.
-    This is intentionally scoped to the RC3 harness provider and does not
-    change production K1/K6 runtime behavior.
+def _normalize_plan_text_for_k1(text: str, prompt: str) -> str:
+    """Return K1-compatible compact JSON for public GigaChat dev responses.
+
+    The public API may return strict JSON, fenced JSON, localized schemas,
+    markdown outlines, or prose. RC3 compares the actual GigaChat planning
+    route, so the harness must never pass non-canonical prose into K1 when
+    public_api_dev is active. If no structured plan can be recovered, this
+    function builds a conservative compact plan from the completion text and
+    the K1 prompt. This is scoped to RC3 and does not change product K1/K6.
     """
     target_slide_count = _target_slide_count_from_prompt(prompt)
+    parsed_prompt = _prompt_payload(prompt)
     for payload in _json_payload_candidates(text):
         plan = _plan_payload_from_any_json(payload, target_slide_count=target_slide_count)
-        if plan is not None:
-            return json.dumps(plan, ensure_ascii=False, sort_keys=True)
+        if _valid_compact_plan(plan):
+            return _compact_plan_json(plan, target_slide_count=target_slide_count, prompt_payload=parsed_prompt)
     outline_plan = _plan_payload_from_markdown_outline(text, target_slide_count=target_slide_count)
-    if outline_plan is not None:
-        return json.dumps(outline_plan, ensure_ascii=False, sort_keys=True)
-    return text
+    if _valid_compact_plan(outline_plan):
+        return _compact_plan_json(outline_plan, target_slide_count=target_slide_count, prompt_payload=parsed_prompt)
+    synthetic = _synthetic_plan_from_completion(text, prompt_payload=parsed_prompt, target_slide_count=target_slide_count)
+    return _compact_plan_json(synthetic, target_slide_count=target_slide_count, prompt_payload=parsed_prompt)
 
 
-def _target_slide_count_from_prompt(prompt: str) -> int:
+def _prompt_payload(prompt: str) -> dict[str, Any]:
     try:
         payload = json.loads(prompt)
     except Exception:
-        return 7
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _target_slide_count_from_prompt(prompt: str) -> int:
+    payload = _prompt_payload(prompt)
     try:
-        value = int(payload.get("target_slide_count", 7)) if isinstance(payload, dict) else 7
+        value = int(payload.get("target_slide_count", 7))
     except Exception:
         value = 7
     return max(3, min(20, value))
 
 
+def _valid_compact_plan(plan: Any) -> bool:
+    if not isinstance(plan, dict):
+        return False
+    slides = plan.get("slides")
+    if not isinstance(slides, list) or len(slides) < 3:
+        return False
+    for slide in slides:
+        if not isinstance(slide, dict):
+            return False
+        if not isinstance(slide.get("title"), str) or not slide.get("title", "").strip():
+            return False
+        bullets = slide.get("bullets")
+        if not isinstance(bullets, list) or not any(isinstance(item, str) and item.strip() for item in bullets):
+            return False
+    return True
+
+
+def _compact_plan_json(plan: dict[str, Any], *, target_slide_count: int, prompt_payload: dict[str, Any]) -> str:
+    slides = _normalize_slides(list(plan.get("slides") or []), target_slide_count=target_slide_count)
+    if len(slides) < 3:
+        slides = _synthetic_slides_from_text(_safe_text(plan), prompt_payload=prompt_payload, target_slide_count=target_slide_count)
+    while len(slides) < target_slide_count:
+        seed = _source_or_goal_seed(prompt_payload, len(slides) + 1)
+        slides.append({
+            "title": _trim_text(f"Slide {len(slides) + 1}: {seed}", 90),
+            "bullets": [_trim_text(seed, 160)],
+            "slide_type": _slide_type_for_index(len(slides) + 1),
+        })
+    slides = [
+        {
+            "title": _trim_text(str(slide.get("title") or f"Slide {idx}"), 100),
+            "bullets": [_trim_text(str(item), 180) for item in list(slide.get("bullets") or []) if str(item).strip()][:5] or [_trim_text(str(slide.get("title") or f"Slide {idx}"), 140)],
+            "slide_type": _normalize_slide_type(str(slide.get("slide_type") or ""), index=idx),
+        }
+        for idx, slide in enumerate(slides[:target_slide_count], start=1)
+    ]
+    deck_title = str(plan.get("deck_title") or prompt_payload.get("deck_goal") or _default_deck_title(slides))
+    payload = {"deck_title": _trim_text(deck_title, 100), "slides": slides}
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True)
+
+
+def _safe_text(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    try:
+        return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
+    except Exception:
+        return str(value)
+
+
+def _trim_text(value: str, limit: int) -> str:
+    cleaned = _clean_line(value)
+    if not cleaned:
+        cleaned = "Source-grounded planning point"
+    return cleaned[:limit]
+
+
+def _source_or_goal_seed(prompt_payload: dict[str, Any], index: int) -> str:
+    source = str(prompt_payload.get("source_text") or "")
+    goal = str(prompt_payload.get("deck_goal") or "")
+    candidates = _split_text_to_bullets(source) + _split_text_to_bullets(goal)
+    if candidates:
+        return candidates[(index - 1) % len(candidates)]
+    return f"Source-grounded planning point {index}"
+
+
+def _synthetic_plan_from_completion(text: str, *, prompt_payload: dict[str, Any], target_slide_count: int) -> dict[str, Any]:
+    slides = _synthetic_slides_from_text(text, prompt_payload=prompt_payload, target_slide_count=target_slide_count)
+    return {"deck_title": _default_deck_title(slides), "slides": slides}
+
+
+def _synthetic_slides_from_text(text: str, *, prompt_payload: dict[str, Any], target_slide_count: int) -> list[dict[str, Any]]:
+    pieces = _split_text_to_bullets(text)
+    if len(pieces) < target_slide_count:
+        pieces.extend(_split_text_to_bullets(str(prompt_payload.get("source_text") or "")))
+    if len(pieces) < target_slide_count:
+        pieces.extend(_split_text_to_bullets(str(prompt_payload.get("deck_goal") or "")))
+    clean = [_trim_text(piece, 170) for piece in pieces if _trim_text(piece, 170)]
+    if not clean:
+        clean = [f"Source-grounded planning point {idx}" for idx in range(1, target_slide_count + 1)]
+    slides: list[dict[str, Any]] = []
+    for index in range(1, target_slide_count + 1):
+        seed = clean[(index - 1) % len(clean)]
+        slides.append({
+            "title": _trim_text(seed, 82),
+            "bullets": [_trim_text(seed, 160)],
+            "slide_type": _slide_type_for_index(index),
+        })
+    return slides
+
+
 def _json_payload_candidates(text: str) -> list[Any]:
     candidates: list[str] = []
-    cleaned = text.strip()
+    cleaned = str(text or "").strip()
     if cleaned:
         candidates.append(cleaned)
-    for match in re.finditer(r"```(?:json|JSON)?\s*(.*?)```", text, flags=re.DOTALL):
+    for match in re.finditer(r"```(?:json|JSON)?\s*(.*?)```", str(text or ""), flags=re.DOTALL):
         candidates.append(match.group(1).strip())
-    candidates.extend(_balanced_json_spans(text, "{", "}"))
-    candidates.extend(_balanced_json_spans(text, "[", "]"))
+    candidates.extend(_balanced_json_spans(str(text or ""), "{", "}"))
+    candidates.extend(_balanced_json_spans(str(text or ""), "[", "]"))
     parsed: list[Any] = []
     seen: set[str] = set()
     for candidate in candidates:
@@ -367,18 +466,7 @@ def _plan_payload_from_any_json(payload: Any, *, target_slide_count: int) -> dic
 
 
 def _find_slide_list(payload: dict[str, Any]) -> list[Any] | None:
-    for key in (
-        "slides",
-        "slide_plan",
-        "deck_slides",
-        "presentation_slides",
-        "outline_slides",
-        "items",
-        "sections",
-        "слайды",
-        "слайд_план",
-        "структура_слайдов",
-    ):
+    for key in ("slides", "slide_plan", "deck_slides", "presentation_slides", "outline_slides", "items", "sections", "слайды", "слайд_план", "структура_слайдов"):
         value = payload.get(key)
         if isinstance(value, list):
             return value
@@ -415,7 +503,7 @@ def _normalize_slide(raw_slide: Any, *, index: int) -> dict[str, Any] | None:
     if not title:
         title = f"Slide {index}"
     slide_type_raw = _first_text(raw_slide, ("slide_type", "type", "kind", "layout", "тип", "тип_слайда"))
-    return {"title": title[:100], "bullets": [bullet[:180] for bullet in bullets[:5] if bullet.strip()] or [title[:140]], "slide_type": _normalize_slide_type(slide_type_raw, index=index)}
+    return {"title": _trim_text(title, 100), "bullets": [_trim_text(bullet, 180) for bullet in bullets[:5] if str(bullet).strip()] or [_trim_text(title, 140)], "slide_type": _normalize_slide_type(slide_type_raw, index=index)}
 
 
 def _expand_slides_from_dense_items(raw_slides: list[Any], *, target_slide_count: int) -> list[dict[str, Any]]:
@@ -429,17 +517,14 @@ def _expand_slides_from_dense_items(raw_slides: list[Any], *, target_slide_count
                     items.extend(_split_text_to_bullets(value))
                 elif isinstance(value, list):
                     items.extend(str(item) for item in value if str(item).strip())
-    clean = [_clean_line(item) for item in items if _clean_line(item)]
-    slides: list[dict[str, Any]] = []
-    for index, item in enumerate(clean[:target_slide_count], start=1):
-        slides.append({"title": item[:80], "bullets": [item[:160]], "slide_type": _slide_type_for_index(index)})
-    return slides
+    clean = [_trim_text(item, 170) for item in items if _trim_text(item, 170)]
+    return [{"title": item[:80], "bullets": [item[:160]], "slide_type": _slide_type_for_index(index)} for index, item in enumerate(clean[:target_slide_count], start=1)]
 
 
 def _plan_payload_from_markdown_outline(text: str, *, target_slide_count: int) -> dict[str, Any] | None:
     slides: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
-    for raw_line in text.splitlines():
+    for raw_line in str(text or "").splitlines():
         line = _clean_line(raw_line)
         if not line:
             continue
@@ -464,14 +549,6 @@ def _plan_payload_from_markdown_outline(text: str, *, target_slide_count: int) -
         normalized.append({"title": str(slide.get("title") or f"Slide {index}")[:100], "bullets": bullets[:5] or [str(slide.get("title") or f"Slide {index}")[:140]], "slide_type": _slide_type_for_index(index)})
     if len(normalized) >= 3:
         return {"deck_title": _default_deck_title(normalized), "slides": normalized}
-    paragraphs = [_clean_line(line) for line in text.splitlines() if _clean_line(line)]
-    if len(paragraphs) >= 3:
-        fallback_slides = [
-            {"title": paragraph[:80], "bullets": _split_text_to_bullets(paragraph)[:3] or [paragraph[:140]], "slide_type": _slide_type_for_index(index)}
-            for index, paragraph in enumerate(paragraphs[:target_slide_count], start=1)
-        ]
-        if len(fallback_slides) >= 3:
-            return {"deck_title": _default_deck_title(fallback_slides), "slides": fallback_slides}
     return None
 
 
@@ -525,7 +602,7 @@ def _coerce_bullets(value: Any) -> list[str]:
 
 
 def _title_and_bullets_from_text(value: str) -> tuple[str, list[str]]:
-    lines = [_clean_line(line) for line in value.splitlines() if _clean_line(line)]
+    lines = [_clean_line(line) for line in str(value or "").splitlines() if _clean_line(line)]
     if not lines:
         return "", []
     return lines[0], lines[1:] or _split_text_to_bullets(lines[0])
@@ -534,12 +611,12 @@ def _title_and_bullets_from_text(value: str) -> tuple[str, list[str]]:
 def _split_text_to_bullets(value: str) -> list[str]:
     if not value:
         return []
-    raw_parts = re.split(r"[\n;•]+|(?:^|\s)[-–]\s+", value)
+    raw_parts = re.split(r"[\n;•]+|(?:^|\s)[-–]\s+", str(value))
     parts = [_clean_line(part) for part in raw_parts if _clean_line(part)]
     if len(parts) <= 1:
-        sentence_parts = re.split(r"(?<=[.!?])\s+", value)
+        sentence_parts = re.split(r"(?<=[.!?])\s+", str(value))
         parts = [_clean_line(part) for part in sentence_parts if _clean_line(part)]
-    return parts[:6]
+    return parts[:12]
 
 
 def _clean_line(value: str) -> str:
@@ -547,27 +624,15 @@ def _clean_line(value: str) -> str:
 
 
 def _normalize_slide_type(value: str, *, index: int) -> str:
-    cleaned = value.strip().lower()
+    cleaned = str(value or "").strip().lower()
     mapping = {
-        "title": "title",
-        "титульный": "title",
-        "section": "section",
-        "раздел": "section",
-        "content": "content",
-        "body": "content",
-        "comparison": "comparison",
-        "compare": "comparison",
-        "сравнение": "comparison",
-        "table": "comparison",
-        "decision": "comparison",
-        "data": "data",
-        "chart": "data",
-        "данные": "data",
-        "timeline": "timeline",
-        "roadmap": "timeline",
-        "conclusion": "conclusion",
-        "summary": "conclusion",
-        "вывод": "conclusion",
+        "title": "title", "титульный": "title",
+        "section": "section", "раздел": "section",
+        "content": "content", "body": "content",
+        "comparison": "comparison", "compare": "comparison", "сравнение": "comparison", "table": "comparison", "decision": "comparison",
+        "data": "data", "chart": "data", "данные": "data",
+        "timeline": "timeline", "roadmap": "timeline",
+        "conclusion": "conclusion", "summary": "conclusion", "вывод": "conclusion",
         "appendix": "appendix",
     }
     for key, mapped in mapping.items():

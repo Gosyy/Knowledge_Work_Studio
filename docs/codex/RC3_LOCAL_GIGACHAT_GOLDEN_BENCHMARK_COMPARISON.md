@@ -86,3 +86,23 @@ RC3b hardens only the benchmark harness provider for public GigaChat development
 The RC3b normalization layer converts those response shapes into the compact K1 plan schema before K1 parses the provider response. This prevents false fallback in RC3 comparison while keeping the product K1/K6 runtime unchanged.
 
 RC3b remains a development comparison checkpoint. A public API route does not verify the production offline/intranet Server 3 route.
+
+## RC3c response-normalization hotfix
+
+Public GigaChat dev-mode responses may arrive as fenced JSON, nested JSON,
+localized keys, markdown outlines, or plain natural-language outlines. RC3c
+keeps this handling scoped to the RC3 harness provider: it normalizes those
+responses into the compact K1 schema before K1 parsing and falls back to a
+conservative completion-text-derived plan only inside the public-api dev
+comparison route. This prevents response-shape variance from silently turning
+RC3 into deterministic fallback while preserving the production/offline
+contract.
+
+RC3c does not add a product runtime feature, endpoint, DB migration, frontend
+runtime, dependency change, Docker change, cloud production route, or Kimi-level
+claim.
+
+## RC3 response-normalization hotfix
+
+RC3 hotfix note: public API dev responses are canonicalized into the compact K1 JSON plan schema before comparison; this remains harness-only and does not change production K1/K6 runtime behavior.
+

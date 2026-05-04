@@ -105,3 +105,36 @@ def test_rc3_public_gigachat_parser_normalizes_fenced_nested_json() -> None:
     assert normalized["slides"][0]["title"] == "Context"
     assert normalized["slides"][0]["bullets"] == ["Current state", "Constraint"]
     assert normalized["slides"][0]["slide_type"] in {"title", "content", "section"}
+def test_rc3_public_gigachat_normalizer_synthesizes_parseable_plan_from_text() -> None:
+    import json
+
+    from scripts.kw_rc3_local_gigachat_benchmark_comparison import _normalize_plan_text_for_k1
+
+    prompt = json.dumps({'target_slide_count': 5}, ensure_ascii=False)
+    raw_answer = """Архитектурная цель: разделить ingestion, planning и renderer.
+    Риск: таблицы и длинные документы требуют контроля плотности.
+    Решение: добавить операторский обзор, provenance и visual QA.
+    Метрика: все слайды должны иметь evidence links.
+    Следующий шаг: провести hardening renderer/provenance/visual QA."""
+    normalized = _normalize_plan_text_for_k1(raw_answer, prompt)
+    payload = json.loads(normalized)
+
+    assert payload['deck_title']
+    assert len(payload['slides']) == 5
+    assert all(slide['title'] for slide in payload['slides'])
+    assert all(slide['bullets'] for slide in payload['slides'])
+    assert all(slide['slide_type'] for slide in payload['slides'])
+
+
+
+def test_rc3_public_response_normalization_always_returns_compact_json() -> None:
+    from scripts.kw_rc3_local_gigachat_benchmark_comparison import _normalize_plan_text_for_k1
+
+    prompt = '{"target_slide_count": 5, "deck_goal": "Architecture deck", "source_text": "Gateway accepts documents. Renderer creates slides. Visual QA reviews layout."}'
+    messy = "GigaChat plan:\n1. Architecture overview\n2. Runtime modules\n3. Data flow\n4. Risks\n5. Next steps"
+    normalized = _normalize_plan_text_for_k1(messy, prompt)
+    payload = json.loads(normalized)
+    assert isinstance(payload["slides"], list)
+    assert len(payload["slides"]) == 5
+    assert all(slide["title"] for slide in payload["slides"])
+    assert all(slide["bullets"] for slide in payload["slides"])
