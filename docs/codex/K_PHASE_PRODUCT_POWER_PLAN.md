@@ -194,3 +194,11 @@ RC1 starts the post-K release-candidate hardening track by executing the five K0
 RC1 produces per-case PPTX, manifest, and safe-metadata artifacts when an artifacts directory is provided. It verifies K6 gates, source-to-slide provenance coverage, Visual QA execution, offline/no-network markers, and conservative automated proxy scores. Human benchmark review remains required before any stronger Kimi-level claim.
 
 RC1 must not add API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, or whole-product Kimi-level claims.
+
+## RC2 — Golden benchmark quality review report
+
+Status: prepared as a release-candidate diagnostic checkpoint after RC1.
+
+RC2 does not add new product runtime scope. It runs the RC1 golden benchmark execution harness and converts the generated PPTX/manifest/safe-metadata evidence into a machine-readable quality review map. The report records findings for renderer quality, provenance quality, visual QA limitations, source-faithfulness risk, and workflow readiness.
+
+RC2 keeps human benchmark review mandatory and does not claim whole-product Kimi-level support. Its purpose is to prioritize follow-up controlled hardening tracks such as RCH1 renderer density/layout fixes, RCH2 provenance fragment quality/diversity fixes, RCH3 visual QA calibration, and RC3 local GigaChat golden benchmark comparison.
