@@ -202,3 +202,11 @@ Status: prepared as a release-candidate diagnostic checkpoint after RC1.
 RC2 does not add new product runtime scope. It runs the RC1 golden benchmark execution harness and converts the generated PPTX/manifest/safe-metadata evidence into a machine-readable quality review map. The report records findings for renderer quality, provenance quality, visual QA limitations, source-faithfulness risk, and workflow readiness.
 
 RC2 keeps human benchmark review mandatory and does not claim whole-product Kimi-level support. Its purpose is to prioritize follow-up controlled hardening tracks such as RCH1 renderer density/layout fixes, RCH2 provenance fragment quality/diversity fixes, RCH3 visual QA calibration, and RC3 local GigaChat golden benchmark comparison.
+
+## RC3 — Local GigaChat golden benchmark comparison
+
+RC3 adds a benchmark comparison harness after RC2. It runs the five K0 golden cases through the accepted K6 workflow using the deterministic fallback baseline and, when `KW_RC3_GIGACHAT_ENDPOINT` is configured, attempts the same cases through the local GigaChat-first planning path. In temporary public API development mode, RC3 records `gigachat_provider_route=public_api_dev`, `production_route_verified=false`, and `offline_intranet_route_verified=false` so the dev route cannot be mistaken for the target Server 3 topology.
+
+RC3 records plan digest deltas, artifact deltas, visual QA deltas, provenance coverage parity, and whether K1 actually used GigaChat output or fell back.
+
+RC3 is not a feature runtime patch and does not add an API endpoint, DB migration, frontend runtime, dependency change, Docker/base image change, cloud LLM, cloud vision, or Kimi-level claim.

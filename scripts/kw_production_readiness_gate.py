@@ -102,6 +102,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/RC2_GOLDEN_BENCHMARK_QUALITY_REVIEW_REPORT.md",
     "scripts/kw_rc2_golden_benchmark_quality_review.py",
     "backend/tests/smoke/test_rc2_golden_benchmark_quality_review.py",
+    "docs/codex/RC3_LOCAL_GIGACHAT_GOLDEN_BENCHMARK_COMPARISON.md",
+    "scripts/kw_rc3_local_gigachat_benchmark_comparison.py",
+    "backend/tests/smoke/test_rc3_local_gigachat_benchmark_comparison.py",
     "docs/codex/RF_EXIT_TO_K_PHASE_CRITERIA.md",
     "scripts/kw_rf_to_k_transition_check.py",
     "backend/tests/smoke/test_rf2_2a_rf_to_k_transition.py",
@@ -765,6 +768,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "RC2 Golden benchmark quality review report",
             (python, "scripts/kw_rc2_golden_benchmark_quality_review.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "RC3 Local GigaChat golden benchmark comparison",
+            (python, "scripts/kw_rc3_local_gigachat_benchmark_comparison.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
