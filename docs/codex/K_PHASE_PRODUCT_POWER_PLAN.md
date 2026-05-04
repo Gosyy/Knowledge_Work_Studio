@@ -86,6 +86,8 @@ Turn the plan editor into a real planning cockpit:
 
 ### K3 — Renderer quality upgrade
 
+K3 status: renderer quality runtime is implemented as a local deterministic quality pass over an approved `PresentationPlan`. It improves layout selection, density control, visual hierarchy metadata, table/chart bounds, local theme-pack resolution, and overflow prevention. It remains below Kimi-level until K4 visual QA, K5 provenance, and K6 end-to-end workflow gates pass.
+
 Improve slide output quality:
 
 - layout selection engine;

@@ -14,6 +14,31 @@ from backend.app.services.k_phase.local_gigachat_planner import (
     build_k1_system_prompt,
     build_k1_user_prompt,
 )
+from backend.app.services.k_phase.plan_editor import (
+    K2EvidenceLink,
+    K2PlanEditRequest,
+    K2PlanEditorEvent,
+    K2PlanEditorResult,
+    K2PlanEditorSession,
+    K2PlanEditorWorkflow,
+    K2SlidePatch,
+    build_k2_capabilities_report,
+)
+from backend.app.services.k_phase.renderer_quality import (
+    ContentDensityPolicy,
+    LayoutSelectionPolicy,
+    LocalThemePack,
+    OverflowRiskAssessment,
+    RendererQualityResult,
+    RendererQualitySlideResult,
+    RenderQualityProfile,
+    VisualHierarchyPolicy,
+    assess_overflow_risk,
+    build_default_k3_quality_profile,
+    build_k3_capabilities_report,
+    improve_presentation_plan_render_quality,
+    select_layout_hint,
+)
 
 __all__ = [
     "ACCEPTANCE_GATES",
@@ -28,6 +53,25 @@ __all__ = [
     "LocalGigaChatPlanningEngine",
     "build_k1_system_prompt",
     "build_k1_user_prompt",
+    "K2EvidenceLink",
+    "K2PlanEditRequest",
+    "K2PlanEditorEvent",
+    "K2PlanEditorResult",
+    "K2PlanEditorSession",
+    "K2PlanEditorWorkflow",
+    "K2SlidePatch",
+    "build_k2_capabilities_report",
+    "ContentDensityPolicy",
+    "LayoutSelectionPolicy",
+    "LocalThemePack",
+    "OverflowRiskAssessment",
+    "RendererQualityResult",
+    "RendererQualitySlideResult",
+    "RenderQualityProfile",
+    "VisualHierarchyPolicy",
+    "assess_overflow_risk",
+    "build_default_k3_quality_profile",
+    "build_k3_capabilities_report",
+    "improve_presentation_plan_render_quality",
+    "select_layout_hint",
 ]
-
-from backend.app.services.k_phase.plan_editor import (K2EvidenceLink, K2PlanEditRequest, K2PlanEditorEvent, K2PlanEditorResult, K2PlanEditorSession, K2PlanEditorWorkflow, K2SlidePatch, build_k2_capabilities_report)
