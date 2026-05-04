@@ -52,6 +52,17 @@ from backend.app.services.k_phase.visual_qa import (
     build_visual_qa_operator_review,
     run_visual_qa_runtime,
 )
+from backend.app.services.k_phase.source_to_slide_provenance import (
+    K5CoverageReport,
+    K5SlideEvidenceLink,
+    K5SourceFragment,
+    K5SourceInput,
+    K5SourceToSlideProvenanceResult,
+    attach_k5_provenance_to_manifest,
+    build_k5_capabilities_report,
+    build_source_to_slide_provenance,
+    validate_k5_source_to_slide_result,
+)
 
 
 __all__ = [
@@ -99,4 +110,13 @@ __all__ = [
     "build_k4_capabilities_report",
     "build_visual_qa_operator_review",
     "run_visual_qa_runtime",
+    "K5CoverageReport",
+    "K5SlideEvidenceLink",
+    "K5SourceFragment",
+    "K5SourceInput",
+    "K5SourceToSlideProvenanceResult",
+    "attach_k5_provenance_to_manifest",
+    "build_k5_capabilities_report",
+    "build_source_to_slide_provenance",
+    "validate_k5_source_to_slide_result",
 ]

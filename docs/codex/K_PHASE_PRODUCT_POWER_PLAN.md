@@ -116,6 +116,8 @@ K4 intentionally does not add cloud vision, a public API endpoint, a DB schema m
 
 ### K5 — Source-to-slide provenance
 
+K5 status: source-to-slide provenance runtime is implemented as a local deterministic K-phase layer over a render-ready `PresentationPlan`. It enriches every slide with bounded evidence citations, fragment digests, source descriptors, coverage metadata, and a K5 manifest section that can be attached to the existing RF2.6 provenance manifest copy. It remains below Kimi-level until K6 end-to-end workflow gates pass.
+
 Make every slide traceable:
 
 - source references;
@@ -124,6 +126,8 @@ Make every slide traceable:
 - artifact version;
 - evidence bundle links;
 - safe redaction.
+
+K5 intentionally does not add a public API endpoint, a DB schema migration, frontend runtime changes, dependency changes, Dockerfile changes, cloud LLM, cloud vision, or K6 end-to-end workflow.
 
 ### K6 — End-to-end Kimi-like workflow
 

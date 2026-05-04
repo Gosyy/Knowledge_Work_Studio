@@ -84,6 +84,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/k_phase/visual_qa.py",
     "scripts/kw_k4_visual_qa_check.py",
     "backend/tests/smoke/test_k4_visual_qa_runtime.py",
+    "docs/codex/K5_SOURCE_TO_SLIDE_PROVENANCE.md",
+    "backend/app/services/k_phase/source_to_slide_provenance.py",
+    "scripts/kw_k5_source_to_slide_provenance_check.py",
+    "backend/tests/smoke/test_k5_source_to_slide_provenance.py",
     "docs/codex/RF_EXIT_TO_K_PHASE_CRITERIA.md",
     "scripts/kw_rf_to_k_transition_check.py",
     "backend/tests/smoke/test_rf2_2a_rf_to_k_transition.py",
@@ -707,6 +711,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "K4 Visual QA runtime",
             (python, "scripts/kw_k4_visual_qa_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "K5 Source-to-slide provenance runtime",
+            (python, "scripts/kw_k5_source_to_slide_provenance_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
