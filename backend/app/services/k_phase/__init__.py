@@ -64,6 +64,16 @@ from backend.app.services.k_phase.source_to_slide_provenance import (
     validate_k5_source_to_slide_result,
 )
 
+from backend.app.services.k_phase.end_to_end_workflow import (
+    K6EndToEndWorkflowRequest,
+    K6EndToEndWorkflowResult,
+    K6WorkflowArtifact,
+    K6WorkflowGate,
+    build_k6_capabilities_report,
+    run_k6_end_to_end_workflow,
+    validate_k6_end_to_end_result,
+)
+
 
 __all__ = [
     "ACCEPTANCE_GATES",
@@ -119,4 +129,11 @@ __all__ = [
     "build_k5_capabilities_report",
     "build_source_to_slide_provenance",
     "validate_k5_source_to_slide_result",
+    "K6EndToEndWorkflowRequest",
+    "K6EndToEndWorkflowResult",
+    "K6WorkflowArtifact",
+    "K6WorkflowGate",
+    "build_k6_capabilities_report",
+    "run_k6_end_to_end_workflow",
+    "validate_k6_end_to_end_result",
 ]

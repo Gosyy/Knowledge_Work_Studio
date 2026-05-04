@@ -88,6 +88,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/k_phase/source_to_slide_provenance.py",
     "scripts/kw_k5_source_to_slide_provenance_check.py",
     "backend/tests/smoke/test_k5_source_to_slide_provenance.py",
+    "docs/codex/K6_END_TO_END_KIMI_LIKE_WORKFLOW.md",
+    "backend/app/services/k_phase/end_to_end_workflow.py",
+    "scripts/kw_k6_end_to_end_workflow_check.py",
+    "backend/tests/smoke/test_k6_end_to_end_workflow.py",
     "docs/codex/RF_EXIT_TO_K_PHASE_CRITERIA.md",
     "scripts/kw_rf_to_k_transition_check.py",
     "backend/tests/smoke/test_rf2_2a_rf_to_k_transition.py",
@@ -719,6 +723,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "K5 Source-to-slide provenance runtime",
             (python, "scripts/kw_k5_source_to_slide_provenance_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "K6 End-to-end Kimi-like workflow",
+            (python, "scripts/kw_k6_end_to_end_workflow_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
