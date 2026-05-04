@@ -72,6 +72,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/k_phase/local_gigachat_planner.py",
     "scripts/kw_k1_local_gigachat_planner_check.py",
     "backend/tests/smoke/test_k1_local_gigachat_planner.py",
+    "docs/codex/K2_PLAN_EDITOR_PRODUCT_WORKFLOW.md",
+    "backend/app/services/k_phase/plan_editor.py",
+    "scripts/kw_k2_plan_editor_check.py",
+    "backend/tests/smoke/test_k2_plan_editor_workflow.py",
     "docs/codex/RF_EXIT_TO_K_PHASE_CRITERIA.md",
     "scripts/kw_rf_to_k_transition_check.py",
     "backend/tests/smoke/test_rf2_2a_rf_to_k_transition.py",
@@ -673,6 +677,15 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+
+
+    steps.append(
+        GateStep(
+            "K2 Plan editor product workflow",
+            (python, "scripts/kw_k2_plan_editor_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
 
     steps.append(
         GateStep(

@@ -71,6 +71,8 @@ Add a stronger offline planning engine:
 
 ### K2 — Plan editor as product workflow
 
+K2 status: plan editor product workflow runtime is implemented as an operator-gated editable plan session. It remains below Kimi-level until K3-K6 renderer, visual QA, provenance, and benchmark gates pass.
+
 Turn the plan editor into a real planning cockpit:
 
 - outline tree;

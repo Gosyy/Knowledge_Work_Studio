@@ -29,3 +29,5 @@ __all__ = [
     "build_k1_system_prompt",
     "build_k1_user_prompt",
 ]
+
+from backend.app.services.k_phase.plan_editor import (K2EvidenceLink, K2PlanEditRequest, K2PlanEditorEvent, K2PlanEditorResult, K2PlanEditorSession, K2PlanEditorWorkflow, K2SlidePatch, build_k2_capabilities_report)
