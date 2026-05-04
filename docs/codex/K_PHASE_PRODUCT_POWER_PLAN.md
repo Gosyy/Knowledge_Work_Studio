@@ -186,3 +186,11 @@ K-phase starts only after RF closure accepts:
 ## Handoff rule
 
 When moving development to a new chat, the migration prompt must include this K-phase plan, RF exit criteria, three-server topology, direct local GigaChat default, optional LiteLLM gateway, and the rule that RF must finish before K-phase starts.
+
+## RC1 — Golden benchmark execution harness
+
+RC1 starts the post-K release-candidate hardening track by executing the five K0 golden benchmark cases through the closed K6 workflow. It is a benchmark harness, not a new product runtime feature.
+
+RC1 produces per-case PPTX, manifest, and safe-metadata artifacts when an artifacts directory is provided. It verifies K6 gates, source-to-slide provenance coverage, Visual QA execution, offline/no-network markers, and conservative automated proxy scores. Human benchmark review remains required before any stronger Kimi-level claim.
+
+RC1 must not add API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, or whole-product Kimi-level claims.

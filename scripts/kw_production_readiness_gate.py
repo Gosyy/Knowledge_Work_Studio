@@ -95,6 +95,10 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/K_PHASE_RELEASE_READINESS_CHECKPOINT.md",
     "scripts/kw_k_phase_release_readiness_check.py",
     "backend/tests/smoke/test_k_phase_release_readiness_checkpoint.py",
+    "docs/codex/RC1_GOLDEN_BENCHMARK_EXECUTION_HARNESS.md",
+    "scripts/kw_rc1_golden_benchmark_harness.py",
+    "backend/tests/smoke/test_rc1_golden_benchmark_harness.py",
+    "backend/tests/fixtures/k_phase/rc1_golden_benchmark_cases.json",
     "docs/codex/RF_EXIT_TO_K_PHASE_CRITERIA.md",
     "scripts/kw_rf_to_k_transition_check.py",
     "backend/tests/smoke/test_rf2_2a_rf_to_k_transition.py",
@@ -742,6 +746,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "K-phase release readiness checkpoint",
             (python, "scripts/kw_k_phase_release_readiness_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "RC1 Golden benchmark execution harness",
+            (python, "scripts/kw_rc1_golden_benchmark_harness.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
