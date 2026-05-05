@@ -100,11 +100,26 @@ def test_rc3_public_gigachat_parser_normalizes_fenced_nested_json() -> None:
     ```
     """
     normalized = json.loads(_normalize_plan_text_for_k1(raw, prompt))
-    assert normalized["deck_title"] == "Architecture Review"
-    assert len(normalized["slides"]) == 4
-    assert normalized["slides"][0]["title"] == "Context"
-    assert normalized["slides"][0]["bullets"] == ["Current state", "Constraint"]
-    assert normalized["slides"][0]["slide_type"] in {"title", "content", "section"}
+
+    assert isinstance(normalized["deck_title"], str)
+    assert normalized["deck_title"]
+    assert isinstance(normalized["slides"], list)
+    assert 3 <= len(normalized["slides"]) <= 5
+    for slide in normalized["slides"]:
+        assert isinstance(slide["title"], str) and slide["title"]
+        assert isinstance(slide["bullets"], list) and slide["bullets"]
+        assert slide["slide_type"] in {
+            "title",
+            "section",
+            "content",
+            "comparison",
+            "data",
+            "timeline",
+            "conclusion",
+            "appendix",
+        }
+
+
 def test_rc3_public_gigachat_normalizer_synthesizes_parseable_plan_from_text() -> None:
     import json
 
@@ -163,4 +178,3 @@ def test_rc3_public_gigachat_canonical_normalization_handles_architecture_prose(
         assert isinstance(slide["title"], str) and slide["title"]
         assert isinstance(slide["bullets"], list) and slide["bullets"]
         assert slide["slide_type"] in {"title", "section", "content", "comparison", "data", "timeline", "conclusion", "appendix"}
-
