@@ -35,8 +35,8 @@ def static_errors(repo_root: Path, require_ready: bool) -> list[str]:
     errors = [f"missing RCH1 required file: {rel}" for rel in REQUIRED_FILES if not (repo_root / rel).exists()]
     if require_ready:
         branch = run_git(repo_root, "branch", "--show-current")
-        if branch != "8_K_Phase":
-            errors.append(f"expected branch 8_K_Phase, got {branch}")
+        if branch not in ("8_K_Phase", "9_Product_Release_Hardening"):
+            errors.append(f"expected branch 8_K_Phase or 9_Product_Release_Hardening, got {branch}")
         head = run_git(repo_root, "rev-parse", "HEAD")
         if head and head != EXPECTED_RC3_HOTFIX4_COMMIT:
             ancestor = commit_is_ancestor(repo_root, EXPECTED_RC3_HOTFIX4_COMMIT, head)

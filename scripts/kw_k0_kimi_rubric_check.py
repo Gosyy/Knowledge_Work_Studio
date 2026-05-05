@@ -47,8 +47,8 @@ def collect_static_errors(repo_root: Path, require_ready: bool) -> list[str]:
             errors.append(f"missing K0 marker: {name}")
     if require_ready:
         branch = run_git(repo_root, "branch", "--show-current")
-        if branch != "8_K_Phase":
-            errors.append(f"expected branch 8_K_Phase, got {branch}")
+        if branch not in ("8_K_Phase", "9_Product_Release_Hardening"):
+            errors.append(f"expected branch 8_K_Phase or 9_Product_Release_Hardening, got {branch}")
     return errors
 
 

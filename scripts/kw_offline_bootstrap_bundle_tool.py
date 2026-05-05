@@ -267,7 +267,7 @@ def validate_manifest_payload(payload: Any) -> list[str]:
         if not str(kw_studio.get("commit", "")).strip():
             errors.append("manifest kw_studio.commit is required")
         branch = str(kw_studio.get("branch", "")).strip()
-        allowed_branches = {"7_Runtime_Foundation", "8_K_Phase"}
+        allowed_branches = {"7_Runtime_Foundation", "8_K_Phase", "9_Product_Release_Hardening"}
         if branch not in allowed_branches:
             errors.append(
                 "manifest kw_studio.branch must be one of: "

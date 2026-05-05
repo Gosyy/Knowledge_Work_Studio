@@ -102,7 +102,7 @@ def static_errors(repo_root: Path, require_ready: bool) -> list[str]:
     errors = [f"missing RC2 required file: {rel}" for rel in REQUIRED_FILES if not (repo_root / rel).exists()]
     if require_ready:
         branch = run_git(repo_root, "branch", "--show-current")
-        if branch is not None and branch != K_PHASE_BRANCH:
+        if branch is not None and branch not in (K_PHASE_BRANCH, "9_Product_Release_Hardening"):
             errors.append(f"expected branch {K_PHASE_BRANCH}, got {branch}")
         head = run_git(repo_root, "rev-parse", "HEAD")
         if head is not None and head != EXPECTED_RC1_HOTFIX_COMMIT:

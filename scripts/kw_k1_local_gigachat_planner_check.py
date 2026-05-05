@@ -28,7 +28,7 @@ def run_git(root: Path,*args:str)->str|None:
     r=subprocess.run(("git",*args),cwd=root,text=True,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=False); return r.stdout.strip() if r.returncode==0 else None
 def static_errors(root: Path, require_ready: bool)->list[str]:
     e=[f"missing K1 required file: {rel}" for rel in REQUIRED_FILES if not (root/rel).exists()]
-    if require_ready and run_git(root,"branch","--show-current")!="8_K_Phase": e.append(f"expected branch 8_K_Phase, got {run_git(root,'branch','--show-current')}")
+    if require_ready and run_git(root,"branch","--show-current")not in ("8_K_Phase", "9_Product_Release_Hardening"): e.append(f"expected branch 8_K_Phase or 9_Product_Release_Hardening, got {run_git(root,'branch','--show-current')}")
     return e
 def runtime_smoke(root: Path)->dict[str,Any]:
     if str(root) not in sys.path: sys.path.insert(0,str(root))

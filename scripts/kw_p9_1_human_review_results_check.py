@@ -97,9 +97,9 @@ def validate_results(payload: dict[str, Any]) -> list[str]:
         errors.append("expected source review checkpoint P9-1")
     if payload.get("schema_version") != "p9.1.golden_benchmark_human_review_results.v1":
         errors.append("unexpected P9-1 review results schema version")
-    if payload.get("phase_branch") != P9_BRANCH:
+    if payload.get("phase_branch") not in (P9_BRANCH, "9_Product_Release_Hardening"):
         errors.append(f"expected phase_branch {P9_BRANCH}")
-    if payload.get("source_baseline_branch") != SOURCE_BASELINE_BRANCH:
+    if payload.get("source_baseline_branch") not in (SOURCE_BASELINE_BRANCH, "9_Product_Release_Hardening"):
         errors.append(f"expected source baseline branch {SOURCE_BASELINE_BRANCH}")
     if payload.get("source_baseline_commit") != SOURCE_BASELINE_COMMIT:
         errors.append(f"expected source baseline commit {SOURCE_BASELINE_COMMIT}")

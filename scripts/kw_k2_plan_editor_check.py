@@ -24,8 +24,8 @@ def run_git(repo_root: Path, *args: str) -> str | None:
 
 def collect_static_errors(repo_root: Path, require_ready: bool) -> list[str]:
     errors = [f"missing K2 required file: {rel}" for rel in REQUIRED_FILES if not (repo_root / rel).exists()]
-    if require_ready and run_git(repo_root, "branch", "--show-current") != "8_K_Phase":
-        errors.append(f"expected branch 8_K_Phase, got {run_git(repo_root, 'branch', '--show-current')}")
+    if require_ready and run_git(repo_root, "branch", "--show-current") not in ("8_K_Phase", "9_Product_Release_Hardening"):
+        errors.append(f"expected branch 8_K_Phase or 9_Product_Release_Hardening, got {run_git(repo_root, 'branch', '--show-current')}")
     return errors
 
 
