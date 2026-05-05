@@ -222,3 +222,9 @@ Status: implemented as a controlled release-candidate hardening checkpoint after
 RCH2 improves K5 source-to-slide provenance by selecting bounded fragments using deterministic slide-aware relevance scoring and diversity guards. It keeps the offline/intranet contract intact and does not add API, DB, frontend, dependency, Docker, cloud LLM, cloud vision, or Kimi-level claims.
 
 Acceptance evidence is provided by `scripts/kw_rch2_provenance_fragment_quality_check.py`, `backend/tests/smoke/test_rch2_provenance_fragment_quality.py`, production readiness gate integration, full runner, and Docker smoke.
+
+## RCH3 — Visual QA heuristic calibration
+
+Status: controlled hardening checkpoint after RCH2.
+
+RCH3 calibrates K4 visual QA heuristics so local deterministic QA separates informational findings, operator-review warnings, and blocker defects. It is a quality hardening layer only: no API endpoint, DB migration, frontend runtime rewrite, dependency change, Docker change, cloud vision, cloud LLM, or Kimi-level claim.

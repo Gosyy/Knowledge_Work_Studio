@@ -17,6 +17,9 @@ K4_CHECKPOINT = "K4"
 K4_SCHEMA_VERSION = "k4.visual_qa_runtime.v1"
 K_PHASE_BRANCH = "8_K_Phase"
 K4_BASE_AFTER_K3 = "2c57ff1bb3d8c8d911fea11555bce76d55ec800e"
+RCH3_CHECKPOINT = "RCH3"
+RCH3_SCHEMA_VERSION = "rch3.visual_qa_heuristic_calibration.v1"
+RCH3_BASE_AFTER_RCH2 = "08430e16f347938c61acf714180f5c37896ba5d7"
 PPTX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 _ALLOWED_RENDER_MODES = {"adaptive", "template"}
 _NS = {
@@ -34,7 +37,10 @@ class VisualQAPolicy:
     min_score_to_pass: int = 85
     min_contrast_ratio: float = 3.0
     max_warning_count_to_pass: int = 2
+    max_info_count_to_pass: int = 8
     max_estimated_text_fill_ratio: float = 1.05
+    blocker_text_fill_ratio: float = 1.35
+    minor_overlap_ratio: float = 0.08
     major_overlap_ratio: float = 0.20
     enforce_reading_order: bool = True
 
@@ -305,6 +311,31 @@ def build_k4_capabilities_report() -> dict[str, object]:
     }
 
 
+def build_rch3_capabilities_report() -> dict[str, object]:
+    return {
+        "rch3_checkpoint": RCH3_CHECKPOINT,
+        "rch3_schema_version": RCH3_SCHEMA_VERSION,
+        "rch3_base_after_rch2": RCH3_BASE_AFTER_RCH2,
+        "rch3_visual_qa_heuristic_calibration_supported": True,
+        "visual_qa_issue_severity_calibration_supported": True,
+        "visual_qa_false_positive_reduction_supported": True,
+        "visual_qa_false_negative_guard_supported": True,
+        "visual_qa_info_warning_blocker_split_supported": True,
+        "visual_qa_text_overflow_blocker_guard_supported": True,
+        "visual_qa_minor_overlap_info_supported": True,
+        "network_required_by_rch3": False,
+        "api_endpoint_added_by_rch3": False,
+        "db_schema_migration_added_by_rch3": False,
+        "frontend_runtime_changed_by_rch3": False,
+        "dependency_versions_changed_by_rch3": False,
+        "dockerfiles_changed_by_rch3": False,
+        "cloud_llm_added_by_rch3": False,
+        "cloud_vision_added_by_rch3": False,
+        "kimi_level_claimed_by_rch3": False,
+        "whole_project_kimi_level_supported_by_rch3": False,
+    }
+
+
 def _validate_request(request: VisualQARuntimeRequest) -> None:
     if request.content_type != PPTX_CONTENT_TYPE:
         raise ValueError("K4 visual QA runtime currently accepts PPTX artifacts only.")
@@ -418,19 +449,38 @@ def _check_major_overlaps(*, slide_id: str, shapes: tuple[VisualQAShapePreview, 
                         check_id="k4.major_overlap",
                         severity="warning",
                         slide_id=slide_id,
-                        message=f"Shapes {left.shape_id} and {right.shape_id} have major visual overlap.",
+                        message=f"Shapes {left.shape_id} and {right.shape_id} overlap above calibrated warning threshold.",
                         operator_hint="Inspect the slide preview and choose a less dense layout if needed.",
                     )
                 )
+            elif ratio > policy.minor_overlap_ratio:
+                issues.append(
+                    VisualQAIssue(
+                        check_id="rch3.minor_overlap_info",
+                        severity="info",
+                        slide_id=slide_id,
+                        message=f"Shapes {left.shape_id} and {right.shape_id} have minor calibrated overlap.",
+                        operator_hint="No automatic rework is required unless the operator sees a visual problem.",
+                    )
+                )
     return issues
-
 
 def _check_text_overflow(*, slide_id: str, shapes: tuple[VisualQAShapePreview, ...], policy: VisualQAPolicy) -> list[VisualQAIssue]:
     issues: list[VisualQAIssue] = []
     for shape in shapes:
         if shape.shape_kind != "text":
             continue
-        if shape.estimated_text_fill_ratio > policy.max_estimated_text_fill_ratio:
+        if shape.estimated_text_fill_ratio > policy.blocker_text_fill_ratio:
+            issues.append(
+                VisualQAIssue(
+                    check_id="rch3.text_overflow_blocker_guard",
+                    severity="blocker",
+                    slide_id=slide_id,
+                    message=f"Shape {shape.shape_id} is very likely to overflow its text box.",
+                    operator_hint="Shorten the slide text or re-run K3 density controls before approval.",
+                )
+            )
+        elif shape.estimated_text_fill_ratio > policy.max_estimated_text_fill_ratio:
             issues.append(
                 VisualQAIssue(
                     check_id="k4.estimated_text_overflow",
@@ -441,7 +491,6 @@ def _check_text_overflow(*, slide_id: str, shapes: tuple[VisualQAShapePreview, .
                 )
             )
     return issues
-
 
 def _check_reading_order(*, slide_id: str, shapes: tuple[VisualQAShapePreview, ...], policy: VisualQAPolicy) -> tuple[bool, VisualQAIssue | None]:
     if not policy.enforce_reading_order:
@@ -493,12 +542,21 @@ def _score_issues(issues: tuple[VisualQAIssue, ...] | list[VisualQAIssue]) -> in
 
 
 def _status_for(*, score: int, issues: tuple[VisualQAIssue, ...], policy: VisualQAPolicy) -> VisualQAStatus:
-    if any(issue.severity == "blocker" for issue in issues):
+    counts = _issue_counts_by_severity(issues)
+    if counts["blocker"] > 0:
         return "blocked"
-    warning_count = sum(1 for issue in issues if issue.severity == "warning")
-    if score < policy.min_score_to_pass or warning_count > policy.max_warning_count_to_pass:
+    if score < policy.min_score_to_pass or counts["warning"] > policy.max_warning_count_to_pass:
+        return "needs_operator_review"
+    if counts["info"] > policy.max_info_count_to_pass and score < 95:
         return "needs_operator_review"
     return "passed"
+
+
+def _issue_counts_by_severity(issues: tuple[VisualQAIssue, ...] | list[VisualQAIssue]) -> dict[str, int]:
+    counts = {"info": 0, "warning": 0, "blocker": 0}
+    for issue in issues:
+        counts[issue.severity] = counts.get(issue.severity, 0) + 1
+    return counts
 
 
 def _safe_metadata(
@@ -525,6 +583,8 @@ def _safe_metadata(
         "issue_count": len(issues),
         "blocker_count": sum(1 for issue in issues if issue.severity == "blocker"),
         "warning_count": sum(1 for issue in issues if issue.severity == "warning"),
+        "info_count": sum(1 for issue in issues if issue.severity == "info"),
+        "calibrated_issue_counts": _issue_counts_by_severity(issues),
         "operator_review_required": operator_review.review_status == "required",
         "slide_preview_count": len(slide_previews),
         "max_estimated_text_fill_ratio": round(max((item.max_estimated_text_fill_ratio for item in slide_previews), default=0.0), 3),
@@ -534,6 +594,7 @@ def _safe_metadata(
         "raw_prompt_stored": False,
         "raw_slide_text_stored": False,
         "raw_sensitive_values_stored": False,
+        **build_rch3_capabilities_report(),
     }
     json.dumps(metadata, ensure_ascii=False, sort_keys=True)
     return metadata

@@ -111,6 +111,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/RCH2_PROVENANCE_FRAGMENT_QUALITY.md",
     "scripts/kw_rch2_provenance_fragment_quality_check.py",
     "backend/tests/smoke/test_rch2_provenance_fragment_quality.py",
+    "docs/codex/RCH3_VISUAL_QA_HEURISTIC_CALIBRATION.md",
+    "scripts/kw_rch3_visual_qa_calibration_check.py",
+    "backend/tests/smoke/test_rch3_visual_qa_calibration.py",
     "docs/codex/RF_EXIT_TO_K_PHASE_CRITERIA.md",
     "scripts/kw_rf_to_k_transition_check.py",
     "backend/tests/smoke/test_rf2_2a_rf_to_k_transition.py",
@@ -800,6 +803,15 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "RCH2 Provenance fragment quality/diversity fixes",
             (python, "scripts/kw_rch2_provenance_fragment_quality_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "RCH3 Visual QA heuristic calibration",
+            (python, "scripts/kw_rch3_visual_qa_calibration_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
