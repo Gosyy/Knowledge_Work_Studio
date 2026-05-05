@@ -236,3 +236,11 @@ Status: release-candidate packaging checkpoint after RCH3.
 RC4 packages the accepted K0-K6, K-phase closure, RC1-RC3, and RCH1-RCH3 evidence into a machine-readable artifact inventory and operator-facing report. It is not a new product runtime feature and does not add API, DB, frontend, dependency, Docker, cloud LLM, cloud vision, or Kimi-level claim scope.
 
 Acceptance evidence is provided by `scripts/kw_rc4_release_candidate_artifact_pack.py`, `backend/tests/smoke/test_rc4_release_candidate_artifact_pack.py`, production readiness gate integration, full runner, and Docker smoke.
+
+## RC5 — Final release readiness dossier
+
+Status: final release-readiness dossier checkpoint after RC4.
+
+RC5 is not a product feature patch. It consolidates accepted K0-K6, K-phase closure, RC1-RC4, and RCH1-RCH3 evidence into an operator-readable and machine-readable release dossier. It records known limitations, no-scope guarantees, human benchmark review requirements, and the fact that public GigaChat development route evidence is not production Server 3 offline topology verification.
+
+RC5 intentionally does not add runtime logic, API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker/base image changes, cloud LLM, cloud vision, or Kimi-level claims.
