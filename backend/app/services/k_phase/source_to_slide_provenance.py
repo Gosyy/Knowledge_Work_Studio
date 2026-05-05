@@ -16,6 +16,12 @@ K5_BASE_AFTER_K4 = "f85300b2497577d2034467cf356bebb77db98cc5"
 K5_REDACTION_POLICY = "bounded_excerpt_preview_and_digest_only"
 _FORBIDDEN_SAFE_TEXT = ("password", "secret", "token", "api_key", "client_secret", "authorization")
 
+RCH2_CHECKPOINT = "RCH2"
+RCH2_SCHEMA_VERSION = "rch2.provenance_fragment_quality.v1"
+RCH2_WORKFLOW_ID = "release_candidate_hardening.provenance_fragment_quality"
+RCH2_MIN_UNIQUE_FRAGMENT_RATIO = 0.75
+RCH2_LOW_MATCH_SCORE_THRESHOLD = 1
+
 
 @dataclass(frozen=True)
 class K5SourceInput:
@@ -85,6 +91,9 @@ class K5SlideEvidenceLink:
     excerpt_preview: str
     excerpt_digest: str
     claim_digest: str
+    match_score: int = 0
+    fragment_selection_reason: str = "deterministic_round_robin"
+    diversity_rank: int = 0
     locator: str | None = None
     confidence: str = "deterministic_text_grounding"
 
@@ -150,6 +159,10 @@ def build_k5_capabilities_report() -> dict[str, object]:
         "manifest_section_supported": True,
         "coverage_report_supported": True,
         "safe_redaction_supported": True,
+        "fragment_quality_scoring_supported": True,
+        "fragment_diversity_guard_supported": True,
+        "slide_fragment_relevance_supported": True,
+        "evidence_usefulness_metadata_supported": True,
         "offline_runtime_supported": True,
         "api_endpoint_added_by_k5": False,
         "db_schema_migration_added_by_k5": False,
@@ -190,8 +203,18 @@ def build_source_to_slide_provenance(
     updated_slides: list[PlannedSlide] = []
     slide_links: list[K5SlideEvidenceLink] = []
     source_by_id = {source.source_id: source for source in sources}
+    fragment_use_counts: dict[str, int] = {}
+    source_use_counts: dict[str, int] = {}
+
     for slide_index, slide in enumerate(plan.slides, start=1):
-        fragment = fragments[(slide_index - 1) % len(fragments)]
+        fragment, match_score, selection_reason, diversity_rank = _select_fragment_for_slide(
+            slide,
+            fragments=fragments,
+            fragment_use_counts=fragment_use_counts,
+            source_use_counts=source_use_counts,
+        )
+        fragment_use_counts[fragment.fragment_id] = fragment_use_counts.get(fragment.fragment_id, 0) + 1
+        source_use_counts[fragment.source_id] = source_use_counts.get(fragment.source_id, 0) + 1
         source = source_by_id[fragment.source_id]
         citation_id = f"k5_cite_{slide.slide_id}_{fragment.fragment_id}"
         citation = SlideCitation(
@@ -209,6 +232,8 @@ def build_source_to_slide_provenance(
                 "title": slide.title,
                 "bullets": list(slide.bullets),
                 "fragment_digest": fragment.excerpt_digest,
+                "match_score": match_score,
+                "selection_reason": selection_reason,
             }
         )
         link = K5SlideEvidenceLink(
@@ -223,12 +248,15 @@ def build_source_to_slide_provenance(
             excerpt_preview=fragment.excerpt_preview,
             excerpt_digest=fragment.excerpt_digest,
             claim_digest=claim_digest,
+            match_score=match_score,
+            fragment_selection_reason=selection_reason,
+            diversity_rank=diversity_rank,
             locator=fragment.locator or source.locator,
         )
         slide_links.append(link)
         source_note = (
             f"K5 provenance link {citation_id}: {source.source_label}#{fragment.fragment_id} "
-            f"{fragment.excerpt_digest}"
+            f"{fragment.excerpt_digest} match_score={match_score} reason={selection_reason}"
         )
         updated_slides.append(
             replace(
@@ -313,6 +341,89 @@ def validate_k5_source_to_slide_result(result: K5SourceToSlideProvenanceResult) 
             errors.append(f"slide {slide.slide_id} has no K5 citation")
     return errors
 
+
+
+def _select_fragment_for_slide(
+    slide: PlannedSlide,
+    *,
+    fragments: tuple[K5SourceFragment, ...],
+    fragment_use_counts: dict[str, int],
+    source_use_counts: dict[str, int],
+) -> tuple[K5SourceFragment, int, str, int]:
+    # RCH2: deterministic relevance and diversity scoring for bounded fragments.
+    slide_terms = _evidence_terms(" ".join((slide.title, *slide.bullets)))
+    best: tuple[int, int, int, int, K5SourceFragment, str] | None = None
+    for fragment in fragments:
+        fragment_terms = _evidence_terms(fragment.excerpt_preview)
+        overlap = len(slide_terms.intersection(fragment_terms))
+        title_overlap = len(_evidence_terms(slide.title).intersection(fragment_terms))
+        bullet_overlap = len(_evidence_terms(" ".join(slide.bullets)).intersection(fragment_terms))
+        reuse_penalty = fragment_use_counts.get(fragment.fragment_id, 0) * 3
+        source_penalty = source_use_counts.get(fragment.source_id, 0)
+        raw_score = (overlap * 3) + (title_overlap * 2) + bullet_overlap
+        diversity_rank = fragment_use_counts.get(fragment.fragment_id, 0) + source_use_counts.get(fragment.source_id, 0)
+        adjusted_score = raw_score - reuse_penalty - source_penalty
+        reason = "term_overlap" if raw_score > 0 else "diversity_fallback"
+        candidate = (adjusted_score, raw_score, -diversity_rank, -fragment.ordinal, fragment, reason)
+        if best is None or candidate > best:
+            best = candidate
+    if best is None:
+        raise ValueError("RCH2 fragment selection requires at least one source fragment")
+    _adjusted, raw_score, neg_diversity_rank, _neg_ordinal, fragment, reason = best
+    return fragment, int(raw_score), reason, int(-neg_diversity_rank)
+
+
+def _fragment_quality_metrics(
+    *,
+    plan: PresentationPlan,
+    sources: tuple[K5SourceInput, ...],
+    fragments: tuple[K5SourceFragment, ...],
+    slide_links: tuple[K5SlideEvidenceLink, ...],
+) -> dict[str, object]:
+    unique_fragment_ids = {link.fragment_id for link in slide_links}
+    unique_source_ids = {link.source_id for link in slide_links}
+    slide_count = max(1, len(plan.slides))
+    unique_fragment_ratio = round(len(unique_fragment_ids) / slide_count, 4)
+    source_diversity_ratio = round(len(unique_source_ids) / max(1, len(sources)), 4)
+    average_match_score = round(sum(link.match_score for link in slide_links) / max(1, len(slide_links)), 4)
+    low_quality_link_count = sum(1 for link in slide_links if link.match_score <= RCH2_LOW_MATCH_SCORE_THRESHOLD)
+    repeated_fragment_count = max(0, len(slide_links) - len(unique_fragment_ids))
+    selection_reasons = tuple(sorted({link.fragment_selection_reason for link in slide_links}))
+    status = "good"
+    if unique_fragment_ratio < RCH2_MIN_UNIQUE_FRAGMENT_RATIO or low_quality_link_count:
+        status = "needs_human_review"
+    if len(slide_links) != len(plan.slides) or not slide_links:
+        status = "incomplete"
+    return {
+        "rch2_checkpoint": RCH2_CHECKPOINT,
+        "rch2_schema_version": RCH2_SCHEMA_VERSION,
+        "rch2_workflow_id": RCH2_WORKFLOW_ID,
+        "rch2_provenance_fragment_quality_supported": True,
+        "fragment_quality_scoring_supported": True,
+        "fragment_diversity_guard_supported": True,
+        "slide_fragment_relevance_supported": True,
+        "evidence_usefulness_metadata_supported": True,
+        "unique_fragment_ratio": unique_fragment_ratio,
+        "source_diversity_ratio": source_diversity_ratio,
+        "average_fragment_match_score": average_match_score,
+        "low_quality_link_count": low_quality_link_count,
+        "repeated_fragment_count": repeated_fragment_count,
+        "fragment_selection_reasons": selection_reasons,
+        "evidence_quality_status": status,
+        "human_evidence_review_required": status != "good",
+    }
+
+
+def _evidence_terms(value: str) -> set[str]:
+    terms: set[str] = set()
+    for raw in value.lower().replace("_", " ").replace("-", " ").split():
+        cleaned = "".join(char for char in raw if char.isalnum())
+        if len(cleaned) < 4:
+            continue
+        if cleaned in {"slide", "source", "with", "from", "this", "that", "have", "will", "must", "into", "without"}:
+            continue
+        terms.add(cleaned)
+    return terms
 
 def _normalize_sources(source_refs: tuple[dict[str, Any], ...]) -> tuple[K5SourceInput, ...]:
     normalized: list[K5SourceInput] = []
@@ -425,6 +536,12 @@ def _safe_metadata(
     coverage: K5CoverageReport,
     manifest_section: dict[str, object],
 ) -> dict[str, object]:
+    quality_metrics = _fragment_quality_metrics(
+        plan=plan,
+        sources=sources,
+        fragments=fragments,
+        slide_links=slide_links,
+    )
     metadata = {
         **build_k5_capabilities_report(),
         "slide_count": len(plan.slides),
@@ -438,6 +555,7 @@ def _safe_metadata(
         "slide_ids": tuple(link.slide_id for link in slide_links),
         "fragment_digests": tuple(fragment.excerpt_digest for fragment in fragments),
         "section_digest": manifest_section["integrity"]["section_digest"],
+        **quality_metrics,
         "raw_source_text_stored": False,
         "raw_prompt_stored": False,
         "raw_sensitive_values_stored": False,

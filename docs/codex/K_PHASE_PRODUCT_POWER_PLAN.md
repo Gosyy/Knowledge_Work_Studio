@@ -214,3 +214,11 @@ RC3 is not a feature runtime patch and does not add an API endpoint, DB migratio
 ## RCH1 — Renderer density/layout fixes
 
 RCH1 hardens the accepted K3 renderer-quality runtime after RC3. It focuses on deterministic layout-family selection, bullet-density balancing, comparison/data slide handling, and render-safe metadata for golden benchmark decks. It is not a new feature phase and does not add API, DB, frontend, dependency, Docker, cloud LLM, cloud vision, or Kimi-level claims.
+
+## RCH2 — Provenance fragment quality/diversity fixes
+
+Status: implemented as a controlled release-candidate hardening checkpoint after RCH1.
+
+RCH2 improves K5 source-to-slide provenance by selecting bounded fragments using deterministic slide-aware relevance scoring and diversity guards. It keeps the offline/intranet contract intact and does not add API, DB, frontend, dependency, Docker, cloud LLM, cloud vision, or Kimi-level claims.
+
+Acceptance evidence is provided by `scripts/kw_rch2_provenance_fragment_quality_check.py`, `backend/tests/smoke/test_rch2_provenance_fragment_quality.py`, production readiness gate integration, full runner, and Docker smoke.
