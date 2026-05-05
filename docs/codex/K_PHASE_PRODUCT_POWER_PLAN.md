@@ -228,3 +228,11 @@ Acceptance evidence is provided by `scripts/kw_rch2_provenance_fragment_quality_
 Status: controlled hardening checkpoint after RCH2.
 
 RCH3 calibrates K4 visual QA heuristics so local deterministic QA separates informational findings, operator-review warnings, and blocker defects. It is a quality hardening layer only: no API endpoint, DB migration, frontend runtime rewrite, dependency change, Docker change, cloud vision, cloud LLM, or Kimi-level claim.
+
+## RC4 — Release candidate artifact pack
+
+Status: release-candidate packaging checkpoint after RCH3.
+
+RC4 packages the accepted K0-K6, K-phase closure, RC1-RC3, and RCH1-RCH3 evidence into a machine-readable artifact inventory and operator-facing report. It is not a new product runtime feature and does not add API, DB, frontend, dependency, Docker, cloud LLM, cloud vision, or Kimi-level claim scope.
+
+Acceptance evidence is provided by `scripts/kw_rc4_release_candidate_artifact_pack.py`, `backend/tests/smoke/test_rc4_release_candidate_artifact_pack.py`, production readiness gate integration, full runner, and Docker smoke.
