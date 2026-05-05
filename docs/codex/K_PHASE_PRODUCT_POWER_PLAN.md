@@ -252,3 +252,11 @@ Status: controlled hardening checkpoint after RC5.
 RCH4 formalizes human review for the five golden benchmark cases. It generates a machine-readable review worksheet and operator-readable review report so reviewer decisions, slide-level findings, source-faithfulness notes, visual quality notes, provenance notes, and recommended follow-up patches can be captured without inventing completed human judgments.
 
 RCH4 is a review workflow checkpoint only. It does not add product runtime logic, API endpoints, database migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, or Kimi-level claims.
+
+## K/RC final branch closure
+
+Status: final branch-closure checkpoint after RCH4.
+
+KRC final branch closure records the accepted K0-K6, K-phase closure, RC1-RC5, and RCH1-RCH4 baseline on branch `8_K_Phase`. It is a closure/checkpoint patch only and prepares the project for next-phase planning, RCH4 human review execution, or a separate controlled dependency/security patch.
+
+KRC intentionally does not add product runtime logic, API endpoints, database migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, or Kimi-level claims. It also does not invent completed human benchmark judgments or production Server 3 GigaChat topology verification.
