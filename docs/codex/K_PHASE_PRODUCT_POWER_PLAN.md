@@ -244,3 +244,11 @@ Status: final release-readiness dossier checkpoint after RC4.
 RC5 is not a product feature patch. It consolidates accepted K0-K6, K-phase closure, RC1-RC4, and RCH1-RCH3 evidence into an operator-readable and machine-readable release dossier. It records known limitations, no-scope guarantees, human benchmark review requirements, and the fact that public GigaChat development route evidence is not production Server 3 offline topology verification.
 
 RC5 intentionally does not add runtime logic, API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker/base image changes, cloud LLM, cloud vision, or Kimi-level claims.
+
+## RCH4 — Golden benchmark human review workflow
+
+Status: controlled hardening checkpoint after RC5.
+
+RCH4 formalizes human review for the five golden benchmark cases. It generates a machine-readable review worksheet and operator-readable review report so reviewer decisions, slide-level findings, source-faithfulness notes, visual quality notes, provenance notes, and recommended follow-up patches can be captured without inventing completed human judgments.
+
+RCH4 is a review workflow checkpoint only. It does not add product runtime logic, API endpoints, database migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, or Kimi-level claims.

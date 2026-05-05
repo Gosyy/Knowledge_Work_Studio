@@ -120,6 +120,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/RC5_FINAL_RELEASE_READINESS_DOSSIER.md",
     "scripts/kw_rc5_final_release_readiness_dossier.py",
     "backend/tests/smoke/test_rc5_final_release_readiness_dossier.py",
+    "docs/codex/RCH4_GOLDEN_BENCHMARK_HUMAN_REVIEW_WORKFLOW.md",
+    "scripts/kw_rch4_golden_benchmark_human_review.py",
+    "backend/tests/smoke/test_rch4_golden_benchmark_human_review.py",
     "docs/codex/RF_EXIT_TO_K_PHASE_CRITERIA.md",
     "scripts/kw_rf_to_k_transition_check.py",
     "backend/tests/smoke/test_rf2_2a_rf_to_k_transition.py",
@@ -837,6 +840,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+
+    steps.append(
+        GateStep(
+            "RCH4 Golden benchmark human review workflow",
+            (python, "scripts/kw_rch4_golden_benchmark_human_review.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
     steps.append(
         GateStep(
             "K1 Local GigaChat planning engine",
