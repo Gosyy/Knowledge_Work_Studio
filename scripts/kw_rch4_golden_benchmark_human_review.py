@@ -81,6 +81,10 @@ REVIEW_RUBRIC: tuple[HumanReviewDimension, ...] = (
 )
 
 
+
+def _branch_is_allowed_for_p9(branch: str | None, expected_branch: str) -> bool:
+    return branch == expected_branch or branch == "9_Product_Release_Hardening"
+
 def run_git(repo_root: Path, *args: str) -> str | None:
     result = subprocess.run(("git", *args), cwd=repo_root, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     return result.stdout.strip() if result.returncode == 0 else None
@@ -191,7 +195,7 @@ def build_report(repo_root: Path, *, require_ready: bool, artifacts_dir: Path | 
     branch = run_git(repo_root, "branch", "--show-current") or "unknown"
     commit = run_git(repo_root, "rev-parse", "HEAD") or "unknown"
     errors: list[str] = []
-    if require_ready and branch != RCH4_EXPECTED_BRANCH:
+    if require_ready and not _branch_is_allowed_for_p9(branch, RCH4_EXPECTED_BRANCH):
         errors.append(f"expected branch {RCH4_EXPECTED_BRANCH}, got {branch}")
     missing = _missing_files(repo_root)
     errors.extend(f"missing RCH4 required file: {rel}" for rel in missing)

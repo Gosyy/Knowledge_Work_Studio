@@ -77,6 +77,10 @@ class ReleaseLimitation:
         return asdict(self)
 
 
+
+def _branch_is_allowed_for_p9(branch: str | None, expected_branch: str) -> bool:
+    return branch == expected_branch or branch == "9_Product_Release_Hardening"
+
 def run_git(repo_root: Path, *args: str) -> str | None:
     result = subprocess.run(("git", *args), cwd=repo_root, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     return result.stdout.strip() if result.returncode == 0 else None
@@ -170,7 +174,7 @@ def build_report(repo_root: Path, *, require_ready: bool, artifacts_dir: Path | 
     commit = run_git(repo_root, "rev-parse", "HEAD") or "unknown"
     inventory = _dossier_inventory(repo_root)
     errors: list[str] = []
-    if require_ready and branch != RC5_EXPECTED_BRANCH:
+    if require_ready and not _branch_is_allowed_for_p9(branch, RC5_EXPECTED_BRANCH):
         errors.append(f"expected branch {RC5_EXPECTED_BRANCH}, got {branch}")
     errors.extend(f"missing final-release dossier file: {rel}" for rel in _missing_files(repo_root))
     errors.extend(_production_gate_errors(repo_root))

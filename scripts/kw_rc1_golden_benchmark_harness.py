@@ -71,6 +71,10 @@ class RC1BenchmarkCaseResult:
         return asdict(self)
 
 
+
+def _branch_is_allowed_for_p9(branch: str | None, expected_branch: str) -> bool:
+    return branch == expected_branch or branch == "9_Product_Release_Hardening"
+
 def run_git(repo_root: Path, *args: str) -> str | None:
     try:
         result = subprocess.run(
@@ -125,7 +129,7 @@ def static_errors(repo_root: Path, fixture_path: Path, require_ready: bool) -> l
         errors.append(f"missing RC1 fixture file: {fixture_path}")
     if require_ready:
         branch = run_git(repo_root, "branch", "--show-current")
-        if branch is not None and branch != K_PHASE_BRANCH:
+        if branch is not None and not _branch_is_allowed_for_p9(branch, K_PHASE_BRANCH):
             errors.append(f"expected branch {K_PHASE_BRANCH}, got {branch}")
         head = run_git(repo_root, "rev-parse", "HEAD")
         if head is not None and head != EXPECTED_K_PHASE_CLOSURE_COMMIT:

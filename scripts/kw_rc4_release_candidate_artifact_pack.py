@@ -60,6 +60,10 @@ PACK_ITEMS: tuple[RC4PackItem, ...] = (
 )
 
 
+
+def _branch_is_allowed_for_p9(branch: str | None, expected_branch: str) -> bool:
+    return branch == expected_branch or branch == "9_Product_Release_Hardening"
+
 def run_git(repo_root: Path, *args: str) -> str | None:
     result = subprocess.run(("git", *args), cwd=repo_root, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     return result.stdout.strip() if result.returncode == 0 else None
@@ -125,7 +129,7 @@ def build_report(repo_root: Path, *, require_ready: bool, artifacts_dir: Path | 
     commit = run_git(repo_root, "rev-parse", "HEAD") or "unknown"
     missing = _collect_missing(repo_root)
     errors: list[str] = []
-    if require_ready and branch != RC4_EXPECTED_BRANCH:
+    if require_ready and not _branch_is_allowed_for_p9(branch, RC4_EXPECTED_BRANCH):
         errors.append(f"expected branch {RC4_EXPECTED_BRANCH}, got {branch}")
     if missing:
         errors.extend(f"missing release-candidate artifact evidence file: {item}" for item in missing)
