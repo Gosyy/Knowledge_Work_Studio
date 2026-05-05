@@ -105,6 +105,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/RC3_LOCAL_GIGACHAT_GOLDEN_BENCHMARK_COMPARISON.md",
     "scripts/kw_rc3_local_gigachat_benchmark_comparison.py",
     "backend/tests/smoke/test_rc3_local_gigachat_benchmark_comparison.py",
+    "docs/codex/RCH1_RENDERER_DENSITY_LAYOUT_FIXES.md",
+    "scripts/kw_rch1_renderer_density_layout_check.py",
+    "backend/tests/smoke/test_rch1_renderer_density_layout_fixes.py",
     "docs/codex/RF_EXIT_TO_K_PHASE_CRITERIA.md",
     "scripts/kw_rf_to_k_transition_check.py",
     "backend/tests/smoke/test_rf2_2a_rf_to_k_transition.py",
@@ -780,6 +783,15 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+
+
+    steps.append(
+        GateStep(
+            "RCH1 Renderer density/layout fixes",
+            (python, "scripts/kw_rch1_renderer_density_layout_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
     steps.append(
         GateStep(
             "K1 Local GigaChat planning engine",

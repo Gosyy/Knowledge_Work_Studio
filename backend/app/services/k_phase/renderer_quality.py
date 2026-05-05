@@ -24,6 +24,8 @@ K_PHASE_BRANCH = "8_K_Phase"
 K3_BASE_AFTER_K2 = "48f8579adc9be176ce60cc1fa39fe5ad0b19f3a4"
 LOCAL_THEME_SOURCE = "local_builtin_registry"
 DEFAULT_LOCAL_TEMPLATE_ID = "business_clean"
+RCH1_CHECKPOINT = "RCH1"
+RCH1_SCHEMA_VERSION = "rch1.renderer_density_layout_fixes.v1"
 _ALLOWED_RENDER_MODES = {"adaptive", "template"}
 
 
@@ -308,22 +310,16 @@ def assess_overflow_risk(slide: PlannedSlide, density_policy: ContentDensityPoli
 
 def select_layout_hint(slide: PlannedSlide, layout_policy: LayoutSelectionPolicy | None = None) -> str:
     policy = layout_policy or LayoutSelectionPolicy()
-    if any(isinstance(block, ComparisonBlock) for block in slide.blocks):
+    if _comparison_signal_score(slide) >= 2:
         return policy.comparison_layout
-    if any(isinstance(block, TimelineBlock) for block in slide.blocks):
+    if any(isinstance(block, TimelineBlock) for block in slide.blocks) or slide.slide_type is SlideType.TIMELINE:
         return policy.timeline_layout
-    if any(isinstance(block, (TableBlock, ChartBlock, BusinessMetricBlock)) for block in slide.blocks):
+    if _data_signal_score(slide) >= 2:
         return policy.data_layout
     if slide.slide_type is SlideType.TITLE:
         return policy.title_layout if slide.visual_intent is not VisualIntent.NONE else "title_slide"
     if slide.slide_type is SlideType.SECTION:
         return policy.section_layout
-    if slide.slide_type is SlideType.COMPARISON:
-        return policy.comparison_layout
-    if slide.slide_type is SlideType.TIMELINE:
-        return policy.timeline_layout
-    if slide.slide_type is SlideType.DATA:
-        return policy.data_layout
     if slide.slide_type is SlideType.CONCLUSION:
         return policy.conclusion_layout
     if slide.slide_type is SlideType.APPENDIX:
@@ -349,6 +345,11 @@ def build_k3_capabilities_report() -> dict[str, object]:
         "overflow_prevention_supported": True,
         "deterministic_rendering_quality_metadata_supported": True,
         "safe_acceptance_checker_supported": True,
+        "rch1_renderer_density_layout_fixes_supported": True,
+        "rch1_layout_family_selection_supported": True,
+        "rch1_bullet_rebalancing_supported": True,
+        "rch1_comparison_layout_hardening_supported": True,
+        "rch1_data_layout_hardening_supported": True,
         "network_required": False,
         "cloud_llm_added_by_k3": False,
         "api_endpoint_added_by_k3": False,
@@ -365,18 +366,16 @@ def build_k3_capabilities_report() -> dict[str, object]:
 
 def _normalize_slide_for_render_quality(slide: PlannedSlide, *, layout_hint: str, density_policy: ContentDensityPolicy) -> PlannedSlide:
     title = _trim_words(slide.title, max_chars=density_policy.max_title_chars)
-    bullets = tuple(
-        _trim_words(bullet, max_words=density_policy.max_words_per_bullet, max_chars=120)
-        for bullet in slide.bullets[: density_policy.max_bullets_per_slide]
-        if bullet.strip()
-    ) or ("No supporting detail provided",)
+    bullets, overflow_count = _normalize_bullets_for_rch1(slide, density_policy=density_policy)
     blocks = _normalize_blocks(slide.blocks, density_policy=density_policy)
+    blocks = _add_rch1_layout_blocks(slide, bullets=bullets, blocks=blocks, layout_hint=layout_hint)
     speaker_notes = slide.speaker_notes or ""
-    if assess_overflow_risk(slide, density_policy).risk_level != "low":
-        marker = "K3 renderer quality: density bounded for deterministic local rendering."
+    if assess_overflow_risk(slide, density_policy).risk_level != "low" or overflow_count:
+        marker = "K3/RCH1 renderer quality: density and layout bounded for deterministic local rendering."
+        if overflow_count:
+            marker = f"{marker} {overflow_count} overflow item(s) moved to operator notes."
         speaker_notes = f"{speaker_notes}\n{marker}".strip()
     return replace(slide, title=title, bullets=bullets, blocks=blocks, layout_hint=layout_hint, speaker_notes=speaker_notes)
-
 
 def _normalize_blocks(blocks: tuple[SlideBlock, ...], *, density_policy: ContentDensityPolicy) -> tuple[SlideBlock, ...]:
     normalized: list[SlideBlock] = []
@@ -409,6 +408,93 @@ def _normalize_blocks(blocks: tuple[SlideBlock, ...], *, density_policy: Content
         else:
             normalized.append(block)
     return tuple(normalized)
+
+
+def _comparison_signal_score(slide: PlannedSlide) -> int:
+    score = 0
+    if slide.slide_type is SlideType.COMPARISON:
+        score += 2
+    if any(isinstance(block, ComparisonBlock) for block in slide.blocks):
+        score += 3
+    text = " ".join((slide.title, *slide.bullets)).lower()
+    markers = ("compare", "comparison", "versus", " vs ", "trade-off", "tradeoff", "option", "decision", "current", "target", "сравн", "вариант", "решени")
+    if any(marker in text for marker in markers):
+        score += 1
+    if len(slide.bullets) >= 4 and any(";" in bullet or ":" in bullet for bullet in slide.bullets):
+        score += 1
+    return score
+
+
+def _data_signal_score(slide: PlannedSlide) -> int:
+    score = 0
+    if slide.slide_type is SlideType.DATA:
+        score += 2
+    if any(isinstance(block, (TableBlock, ChartBlock, BusinessMetricBlock)) for block in slide.blocks):
+        score += 3
+    text = " ".join((slide.title, *slide.bullets)).lower()
+    markers = ("metric", "data", "table", "chart", "score", "kpi", "trend", "coverage", "ratio", "данн", "метрик", "таблиц")
+    if any(marker in text for marker in markers):
+        score += 1
+    if any(any(char.isdigit() for char in bullet) for bullet in slide.bullets):
+        score += 1
+    return score
+
+
+def _normalize_bullets_for_rch1(slide: PlannedSlide, *, density_policy: ContentDensityPolicy) -> tuple[tuple[str, ...], int]:
+    unique: list[str] = []
+    seen: set[str] = set()
+    for bullet in slide.bullets:
+        trimmed = _trim_words(bullet, max_words=density_policy.max_words_per_bullet, max_chars=120)
+        key = trimmed.lower()
+        if not trimmed or key in seen:
+            continue
+        seen.add(key)
+        unique.append(trimmed)
+    max_items = density_policy.max_bullets_per_slide
+    if slide.slide_type in {SlideType.TITLE, SlideType.SECTION}:
+        max_items = min(max_items, 2)
+    if _comparison_signal_score(slide) >= 2:
+        max_items = min(max_items, max(2, density_policy.max_comparison_items_per_side * 2))
+    bounded = tuple(unique[:max_items]) or ("No supporting detail provided",)
+    overflow_count = max(0, len(unique) - len(bounded))
+    return bounded, overflow_count
+
+
+def _add_rch1_layout_blocks(
+    slide: PlannedSlide,
+    *,
+    bullets: tuple[str, ...],
+    blocks: tuple[SlideBlock, ...],
+    layout_hint: str,
+) -> tuple[SlideBlock, ...]:
+    if layout_hint == "two_column_comparison" and not any(isinstance(block, ComparisonBlock) for block in blocks) and len(bullets) >= 2:
+        midpoint = max(1, (len(bullets) + 1) // 2)
+        comparison = ComparisonBlock(
+            block_id=f"{slide.slide_id}_rch1_comparison",
+            left_title="Current / Option A",
+            left_items=bullets[:midpoint],
+            right_title="Target / Option B",
+            right_items=bullets[midpoint:] or ("Recommended next step",),
+        )
+        return (comparison, *blocks)
+    if layout_hint == "data_summary" and not any(isinstance(block, (TableBlock, ChartBlock, BusinessMetricBlock)) for block in blocks) and len(bullets) >= 2:
+        rows = tuple((f"S{index}", bullet, "review") for index, bullet in enumerate(bullets[:4], start=1))
+        table = TableBlock(
+            block_id=f"{slide.slide_id}_rch1_table",
+            columns=("Signal", "Evidence", "Review"),
+            rows=rows,
+            caption="RCH1 structured data summary",
+        )
+        return (table, *blocks)
+    return blocks
+
+
+def _layout_family_distribution(slide_results: tuple[RendererQualitySlideResult, ...]) -> dict[str, int]:
+    distribution: dict[str, int] = {}
+    for result in slide_results:
+        family = result.selected_layout_hint or "unknown"
+        distribution[family] = distribution.get(family, 0) + 1
+    return dict(sorted(distribution.items()))
 
 
 def _resolve_local_theme_pack(template_id: str) -> LocalThemePack:
@@ -453,6 +539,11 @@ def _safe_metadata(
         "table_chart_slide_count": table_chart_slide_count,
         "slide_layout_hints": tuple(result.selected_layout_hint for result in slide_results),
         "slide_overflow_risk_after": tuple(result.overflow_risk_after for result in slide_results),
+        "rch1_renderer_density_layout_fixes_supported": True,
+        "rch1_schema_version": RCH1_SCHEMA_VERSION,
+        "rch1_layout_family_distribution": _layout_family_distribution(slide_results),
+        "rch1_dense_after_slide_count": sum(1 for result in slide_results if result.density_level_after == "dense"),
+        "rch1_overloaded_after_slide_count": sum(1 for result in slide_results if result.density_level_after == "overloaded"),
         "raw_source_text_stored": False,
         "raw_prompt_stored": False,
         "raw_sensitive_values_stored": False,

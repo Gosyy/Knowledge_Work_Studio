@@ -210,3 +210,7 @@ RC3 adds a benchmark comparison harness after RC2. It runs the five K0 golden ca
 RC3 records plan digest deltas, artifact deltas, visual QA deltas, provenance coverage parity, and whether K1 actually used GigaChat output or fell back.
 
 RC3 is not a feature runtime patch and does not add an API endpoint, DB migration, frontend runtime, dependency change, Docker/base image change, cloud LLM, cloud vision, or Kimi-level claim.
+
+## RCH1 — Renderer density/layout fixes
+
+RCH1 hardens the accepted K3 renderer-quality runtime after RC3. It focuses on deterministic layout-family selection, bullet-density balancing, comparison/data slide handling, and render-safe metadata for golden benchmark decks. It is not a new feature phase and does not add API, DB, frontend, dependency, Docker, cloud LLM, cloud vision, or Kimi-level claims.
