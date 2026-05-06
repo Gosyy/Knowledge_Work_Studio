@@ -63,3 +63,9 @@ P9-7 starts from accepted P9-6 on branch `9_Product_Release_Hardening` at `0879d
 The patch adds a deterministic evidence-only review-readiness checker. It maps the five original `request_rework` golden benchmark cases to P9-2/P9-3/P9-4/P9-5/P9-6 hardening evidence and keeps every case marked for future human re-review. Acceptance is tracked by `scripts/kw_p9_7_golden_review_readiness_check.py` and `backend/tests/smoke/test_p9_7_golden_review_readiness.py`.
 
 P9-7 also classifies full-runner warnings explicitly: deprecated transitive npm packages, npm audit vulnerability summaries, and RC2 quality-review `warning_findings` are known non-blocking warnings for this evidence patch. Dependency/security remediation remains a separate controlled track, and P9-7 does not run `npm audit fix --force` or change dependency versions.
+
+## P9-8 — Product release hardening closure dossier
+
+P9-8 starts from accepted P9-7 warning classification on branch `9_Product_Release_Hardening` at `c1f6735a21fa82d13e2638d7b20ee304911275ab`. It closes the P9 release-hardening evidence track without changing runtime behavior or approval state.
+
+The patch adds a deterministic closure dossier and checker that require P9-1 through P9-7 evidence to remain present, keep all five original golden benchmark cases queued for human re-review, preserve known non-blocking warning classification, and keep dependency/security remediation as a separate controlled track. Acceptance is tracked by `scripts/kw_p9_8_product_release_hardening_closure_check.py` and `backend/tests/smoke/test_p9_8_product_release_hardening_closure.py`.

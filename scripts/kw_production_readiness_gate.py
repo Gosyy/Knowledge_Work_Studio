@@ -146,6 +146,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P9_7_GOLDEN_REVIEW_READINESS.md",
     "scripts/kw_p9_7_golden_review_readiness_check.py",
     "backend/tests/smoke/test_p9_7_golden_review_readiness.py",
+    "docs/codex/P9_8_PRODUCT_RELEASE_HARDENING_CLOSURE.md",
+    "scripts/kw_p9_8_product_release_hardening_closure_check.py",
+    "backend/tests/smoke/test_p9_8_product_release_hardening_closure.py",
     "docs/codex/KRC_FINAL_BRANCH_CLOSURE.md",
     "scripts/kw_krc_final_branch_closure_check.py",
     "backend/tests/smoke/test_krc_final_branch_closure.py",
@@ -1125,6 +1128,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         steps.append(GateStep("Frontend production build", ("npm", "run", "build"), frontend_dir))
         if not args.skip_e2e:
             steps.append(GateStep("Frontend E2E smoke", ("npm", "run", "test:e2e:smoke"), frontend_dir))
+
+    steps.append(
+        GateStep(
+            "P9-8 Product release hardening closure dossier",
+            (python, "scripts/kw_p9_8_product_release_hardening_closure_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
 
     return steps
 
