@@ -25,3 +25,9 @@ P9-1 does not add product runtime logic, API endpoints, DB migrations, frontend 
 ## Next hardening direction
 
 The first follow-up patch should be selected from tracked human-review findings, preferably renderer/planning hardening for generic fallback labels, comparison-table decision matrix handling, and filler-slide prevention.
+
+## P9-2 — Renderer/content hardening from human review
+
+P9-2 implements the first focused quality hardening patch from P9-1B findings. It improves deterministic fallback planning for renderer-facing content without adding APIs, DB migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, or Kimi-level claims.
+
+The patch targets four conservative findings: removal of generic fallback labels, comparison-table decision-matrix handling, project-log late-phase coverage, and filler-slide prevention for long structured sources. Acceptance is tracked by `scripts/kw_p9_2_renderer_content_hardening_check.py` and `backend/tests/smoke/test_p9_2_renderer_content_hardening.py`.
