@@ -55,3 +55,9 @@ The patch adds deterministic operator evidence cards to the local source-to-slid
 P9-6 starts from accepted P9-5 on branch `9_Product_Release_Hardening` at `a126bcb33cfc94441d6d0edf41ee90edfccc041f`. It targets the human-review gap where technical provenance coverage can be complete while later semantic source sections are still missing from the generated deck.
 
 The patch adds a deterministic semantic coverage section to the local K5 provenance manifest. It tracks bounded signal identifiers for late source coverage such as K4 visual QA, K5 provenance, K6 workflow, closure/readiness, risks, next actions, decision matrix needs, and offline topology. Acceptance is tracked by `scripts/kw_p9_6_semantic_source_coverage_check.py` and `backend/tests/smoke/test_p9_6_semantic_source_coverage.py`.
+
+## P9-7 — Golden benchmark post-hardening review readiness
+
+P9-7 starts from accepted P9-6 on branch `9_Product_Release_Hardening` at `0879dfd81b00db67ea20a15cb326c44c17849984`. It targets the post-hardening review-readiness gap after P9-2 through P9-6: the original golden benchmark human-review findings now have hardening evidence, but no approval state should be changed without a new operator review.
+
+The patch adds a deterministic evidence-only review-readiness checker. It maps the five original `request_rework` golden benchmark cases to P9-2/P9-3/P9-4/P9-5/P9-6 hardening evidence and keeps every case marked for future human re-review. Acceptance is tracked by `scripts/kw_p9_7_golden_review_readiness_check.py` and `backend/tests/smoke/test_p9_7_golden_review_readiness.py`.

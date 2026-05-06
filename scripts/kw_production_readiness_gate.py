@@ -143,6 +143,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P9_6_SEMANTIC_SOURCE_COVERAGE.md",
     "scripts/kw_p9_6_semantic_source_coverage_check.py",
     "backend/tests/smoke/test_p9_6_semantic_source_coverage.py",
+    "docs/codex/P9_7_GOLDEN_REVIEW_READINESS.md",
+    "scripts/kw_p9_7_golden_review_readiness_check.py",
+    "backend/tests/smoke/test_p9_7_golden_review_readiness.py",
     "docs/codex/KRC_FINAL_BRANCH_CLOSURE.md",
     "scripts/kw_krc_final_branch_closure_check.py",
     "backend/tests/smoke/test_krc_final_branch_closure.py",
@@ -916,6 +919,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "P9-6 Semantic source coverage",
             (python, "scripts/kw_p9_6_semantic_source_coverage_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "P9-7 Golden benchmark post-hardening review readiness",
+            (python, "scripts/kw_p9_7_golden_review_readiness_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
