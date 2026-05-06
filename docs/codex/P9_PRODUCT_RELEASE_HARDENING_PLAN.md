@@ -43,3 +43,9 @@ The patch removes arbitrary synthesized `Current / Option A` and `Target / Optio
 P9-4 starts from accepted P9-3 on branch `9_Product_Release_Hardening` at `1f546bb46de3f11f1a0a12f185bdcb1800632b18`. It targets the human-review gap where visual QA could report a clean visual result while generated decks still contained product-quality blockers such as generic fallback labels, raw CSV/table rendering, arbitrary Current/Target synthesis, or generic table review placeholders.
 
 The patch adds a deterministic semantic/product-quality guard inside the local visual QA runtime. It can downgrade visually clean artifacts to operator review or blocked status when plan/render content contains known P9 human-review red flags. Acceptance is tracked by `scripts/kw_p9_4_visual_qa_semantic_guard_check.py` and `backend/tests/smoke/test_p9_4_visual_qa_semantic_guard.py`.
+
+## P9-5 — Provenance usefulness hardening from human review
+
+P9-5 starts from accepted P9-4 hotfix on branch `9_Product_Release_Hardening` at `647342bc420192bdf0267ef7ac31344eec786daa`. It targets the remaining P9-1B evidence/provenance usefulness finding: technically complete source coverage was not yet sufficient for fast human validation.
+
+The patch adds deterministic operator evidence cards to the local source-to-slide provenance manifest. Each card links a slide claim preview, bounded evidence excerpt, match score, usefulness score, review priority, and operator hint without storing raw source text in safe metadata. Acceptance is tracked by `scripts/kw_p9_5_provenance_usefulness_check.py` and `backend/tests/smoke/test_p9_5_provenance_usefulness.py`.

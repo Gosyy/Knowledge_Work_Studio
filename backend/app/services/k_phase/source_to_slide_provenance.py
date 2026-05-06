@@ -21,6 +21,10 @@ RCH2_SCHEMA_VERSION = "rch2.provenance_fragment_quality.v1"
 RCH2_WORKFLOW_ID = "release_candidate_hardening.provenance_fragment_quality"
 RCH2_MIN_UNIQUE_FRAGMENT_RATIO = 0.75
 RCH2_LOW_MATCH_SCORE_THRESHOLD = 1
+P9_5_CHECKPOINT = "P9-5"
+P9_5_SCHEMA_VERSION = "p9.5.operator_evidence_review.v1"
+P9_5_BASE_AFTER_P9_4 = "647342bc420192bdf0267ef7ac31344eec786daa"
+P9_5_MIN_USEFULNESS_SCORE = 3
 
 
 @dataclass(frozen=True)
@@ -105,6 +109,28 @@ class K5SlideEvidenceLink:
 
 
 @dataclass(frozen=True)
+class K5OperatorEvidenceCard:
+    slide_id: str
+    slide_index: int
+    citation_id: str
+    source_label: str
+    fragment_id: str
+    claim_preview: str
+    excerpt_preview: str
+    match_score: int
+    usefulness_score: int
+    review_priority: str
+    review_hint: str
+    locator: str | None = None
+
+    def as_manifest_dict(self) -> dict[str, object]:
+        payload = asdict(self)
+        if self.locator is None:
+            payload.pop("locator")
+        return payload
+
+
+@dataclass(frozen=True)
 class K5CoverageReport:
     slide_count: int
     linked_slide_count: int
@@ -174,6 +200,28 @@ def build_k5_capabilities_report() -> dict[str, object]:
         "k6_end_to_end_workflow_added_by_k5": False,
         "kimi_level_claimed_by_k5": False,
         "whole_project_kimi_level_supported": False,
+    }
+
+
+def build_p9_5_capabilities_report() -> dict[str, object]:
+    return {
+        "p9_5_checkpoint": P9_5_CHECKPOINT,
+        "p9_5_schema_version": P9_5_SCHEMA_VERSION,
+        "p9_5_base_after_p9_4": P9_5_BASE_AFTER_P9_4,
+        "p9_5_operator_evidence_review_supported": True,
+        "operator_evidence_cards_supported": True,
+        "evidence_review_manifest_section_supported": True,
+        "human_provenance_usefulness_hardening_supported": True,
+        "api_endpoint_added_by_p9_5": False,
+        "db_schema_migration_added_by_p9_5": False,
+        "frontend_runtime_changed_by_p9_5": False,
+        "dependency_versions_changed_by_p9_5": False,
+        "dockerfiles_changed_by_p9_5": False,
+        "cloud_llm_added_by_p9_5": False,
+        "cloud_vision_added_by_p9_5": False,
+        "kimi_level_claimed_by_p9_5": False,
+        "whole_project_kimi_level_supported_by_p9_5": False,
+        "network_required_by_p9_5": False,
     }
 
 
@@ -268,11 +316,13 @@ def build_source_to_slide_provenance(
 
     enriched_plan = replace(plan, slides=tuple(updated_slides))
     coverage = _coverage_report(enriched_plan, tuple(slide_links), sources, fragments)
+    evidence_cards = _operator_evidence_cards(enriched_plan, tuple(slide_links))
     manifest_section = _manifest_section(
         sources=sources,
         fragments=fragments,
         slide_links=tuple(slide_links),
         coverage=coverage,
+        evidence_cards=evidence_cards,
     )
     metadata = _safe_metadata(
         plan=enriched_plan,
@@ -281,6 +331,7 @@ def build_source_to_slide_provenance(
         slide_links=tuple(slide_links),
         coverage=coverage,
         manifest_section=manifest_section,
+        evidence_cards=evidence_cards,
     )
     return K5SourceToSlideProvenanceResult(
         plan=enriched_plan,
@@ -504,6 +555,7 @@ def _manifest_section(
     fragments: tuple[K5SourceFragment, ...],
     slide_links: tuple[K5SlideEvidenceLink, ...],
     coverage: K5CoverageReport,
+    evidence_cards: tuple[K5OperatorEvidenceCard, ...],
 ) -> dict[str, object]:
     section: dict[str, object] = {
         "schema_version": K5_SCHEMA_VERSION,
@@ -513,6 +565,7 @@ def _manifest_section(
         "source_fragments": [fragment.as_manifest_dict() for fragment in fragments],
         "slide_evidence_links": [link.as_manifest_dict() for link in slide_links],
         "coverage": coverage.as_dict(),
+        "operator_evidence_review": _operator_evidence_review_section(evidence_cards),
         "redaction": {
             "policy": K5_REDACTION_POLICY,
             "raw_source_text_stored": False,
@@ -527,6 +580,91 @@ def _manifest_section(
     return finalized
 
 
+
+def _operator_evidence_cards(
+    plan: PresentationPlan,
+    slide_links: tuple[K5SlideEvidenceLink, ...],
+) -> tuple[K5OperatorEvidenceCard, ...]:
+    slide_by_id = {slide.slide_id: slide for slide in plan.slides}
+    cards: list[K5OperatorEvidenceCard] = []
+    for link in slide_links:
+        slide = slide_by_id.get(link.slide_id)
+        if slide is None:
+            continue
+        claim_preview = _claim_preview(slide)
+        usefulness_score = _evidence_usefulness_score(slide=slide, link=link)
+        review_priority = "operator_review" if usefulness_score < P9_5_MIN_USEFULNESS_SCORE else "spot_check"
+        review_hint = (
+            "Verify this slide claim against the cited fragment before release."
+            if review_priority == "operator_review"
+            else "Evidence card is suitable for operator spot check."
+        )
+        cards.append(
+            K5OperatorEvidenceCard(
+                slide_id=link.slide_id,
+                slide_index=link.slide_index,
+                citation_id=link.citation_id,
+                source_label=link.source_label,
+                fragment_id=link.fragment_id,
+                claim_preview=claim_preview,
+                excerpt_preview=link.excerpt_preview,
+                match_score=link.match_score,
+                usefulness_score=usefulness_score,
+                review_priority=review_priority,
+                review_hint=review_hint,
+                locator=link.locator,
+            )
+        )
+    return tuple(cards)
+
+
+def _operator_evidence_review_section(evidence_cards: tuple[K5OperatorEvidenceCard, ...]) -> dict[str, object]:
+    return {
+        "schema_version": P9_5_SCHEMA_VERSION,
+        "checkpoint": P9_5_CHECKPOINT,
+        "evidence_cards": [card.as_manifest_dict() for card in evidence_cards],
+        "summary": _operator_evidence_review_summary(evidence_cards),
+        "redaction": {
+            "raw_source_text_stored": False,
+            "raw_prompt_stored": False,
+            "bounded_claim_preview_supported": True,
+            "bounded_excerpt_preview_supported": True,
+        },
+    }
+
+
+def _operator_evidence_review_summary(evidence_cards: tuple[K5OperatorEvidenceCard, ...]) -> dict[str, object]:
+    scores = tuple(card.usefulness_score for card in evidence_cards)
+    low_count = sum(1 for score in scores if score < P9_5_MIN_USEFULNESS_SCORE)
+    priorities = tuple(sorted({card.review_priority for card in evidence_cards}))
+    return {
+        "card_count": len(evidence_cards),
+        "low_usefulness_card_count": low_count,
+        "operator_evidence_review_required": low_count > 0,
+        "min_usefulness_score": min(scores) if scores else 0,
+        "average_usefulness_score": round(sum(scores) / len(scores), 4) if scores else 0.0,
+        "review_priorities": priorities,
+    }
+
+
+def _evidence_usefulness_score(*, slide: PlannedSlide, link: K5SlideEvidenceLink) -> int:
+    score = 1
+    if link.match_score >= 2:
+        score += 1
+    if link.fragment_selection_reason == "term_overlap":
+        score += 1
+    if len(_evidence_terms(link.excerpt_preview)) >= 4:
+        score += 1
+    if _evidence_terms(_claim_preview(slide)).intersection(_evidence_terms(link.excerpt_preview)):
+        score += 1
+    return min(score, 5)
+
+
+def _claim_preview(slide: PlannedSlide) -> str:
+    parts = [slide.title]
+    parts.extend(slide.bullets[:2])
+    return _safe_short_text(" — ".join(part for part in parts if part), 180)
+
 def _safe_metadata(
     *,
     plan: PresentationPlan,
@@ -535,6 +673,7 @@ def _safe_metadata(
     slide_links: tuple[K5SlideEvidenceLink, ...],
     coverage: K5CoverageReport,
     manifest_section: dict[str, object],
+    evidence_cards: tuple[K5OperatorEvidenceCard, ...],
 ) -> dict[str, object]:
     quality_metrics = _fragment_quality_metrics(
         plan=plan,
@@ -542,8 +681,10 @@ def _safe_metadata(
         fragments=fragments,
         slide_links=slide_links,
     )
+    evidence_summary = _operator_evidence_review_summary(evidence_cards)
     metadata = {
         **build_k5_capabilities_report(),
+        **build_p9_5_capabilities_report(),
         "slide_count": len(plan.slides),
         "source_count": len(sources),
         "fragment_count": len(fragments),
@@ -555,6 +696,12 @@ def _safe_metadata(
         "slide_ids": tuple(link.slide_id for link in slide_links),
         "fragment_digests": tuple(fragment.excerpt_digest for fragment in fragments),
         "section_digest": manifest_section["integrity"]["section_digest"],
+        "operator_evidence_card_count": evidence_summary["card_count"],
+        "low_usefulness_evidence_card_count": evidence_summary["low_usefulness_card_count"],
+        "operator_evidence_review_required": evidence_summary["operator_evidence_review_required"],
+        "evidence_usefulness_score_min": evidence_summary["min_usefulness_score"],
+        "evidence_usefulness_score_average": evidence_summary["average_usefulness_score"],
+        "evidence_card_review_priorities": evidence_summary["review_priorities"],
         **quality_metrics,
         "raw_source_text_stored": False,
         "raw_prompt_stored": False,
