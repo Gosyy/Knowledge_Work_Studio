@@ -10,6 +10,7 @@ from typing import Literal
 from xml.etree import ElementTree as ET
 
 from backend.app.services.k_phase.renderer_quality import assess_overflow_risk
+from backend.app.services.slides_service.blocks import ComparisonBlock, TableBlock
 from backend.app.services.slides_service.layouts import get_template_registry
 from backend.app.services.slides_service.outline import PresentationPlan
 
@@ -20,6 +21,9 @@ K4_BASE_AFTER_K3 = "2c57ff1bb3d8c8d911fea11555bce76d55ec800e"
 RCH3_CHECKPOINT = "RCH3"
 RCH3_SCHEMA_VERSION = "rch3.visual_qa_heuristic_calibration.v1"
 RCH3_BASE_AFTER_RCH2 = "08430e16f347938c61acf714180f5c37896ba5d7"
+P9_4_CHECKPOINT = "P9-4"
+P9_4_SCHEMA_VERSION = "p9.4.visual_qa_semantic_guard.v1"
+P9_4_BASE_AFTER_P9_3 = "1f546bb46de3f11f1a0a12f185bdcb1800632b18"
 PPTX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 _ALLOWED_RENDER_MODES = {"adaptive", "template"}
 _NS = {
@@ -187,6 +191,8 @@ def run_visual_qa_runtime(request: VisualQARuntimeRequest) -> VisualQARuntimeRes
 
     contrast_issues = _check_template_contrast(template_id=request.template_id, policy=request.policy)
     issues.extend(contrast_issues)
+    semantic_issues = _check_p9_4_semantic_review_guard(request.plan)
+    issues.extend(semantic_issues)
 
     for index, slide in enumerate(request.plan.slides, start=1):
         shapes = shape_lists[index - 1] if index - 1 < len(shape_lists) else ()
@@ -334,6 +340,196 @@ def build_rch3_capabilities_report() -> dict[str, object]:
         "kimi_level_claimed_by_rch3": False,
         "whole_project_kimi_level_supported_by_rch3": False,
     }
+
+
+def build_p9_4_capabilities_report() -> dict[str, object]:
+    return {
+        "p9_4_checkpoint": P9_4_CHECKPOINT,
+        "p9_4_schema_version": P9_4_SCHEMA_VERSION,
+        "p9_4_base_after_p9_3": P9_4_BASE_AFTER_P9_3,
+        "p9_4_visual_qa_semantic_guard_supported": True,
+        "visual_qa_product_quality_guard_supported": True,
+        "visual_qa_semantic_issue_detection_supported": True,
+        "visual_qa_generic_fallback_label_guard_supported": True,
+        "visual_qa_raw_csv_rendering_guard_supported": True,
+        "visual_qa_generic_table_placeholder_guard_supported": True,
+        "visual_qa_arbitrary_current_target_guard_supported": True,
+        "visual_qa_human_review_alignment_supported": True,
+        "visual_qa_can_request_operator_review_for_semantic_issues": True,
+        "network_required_by_p9_4": False,
+        "api_endpoint_added_by_p9_4": False,
+        "db_schema_migration_added_by_p9_4": False,
+        "frontend_runtime_changed_by_p9_4": False,
+        "dependency_versions_changed_by_p9_4": False,
+        "dockerfiles_changed_by_p9_4": False,
+        "cloud_llm_added_by_p9_4": False,
+        "cloud_vision_added_by_p9_4": False,
+        "kimi_level_claimed_by_p9_4": False,
+        "whole_project_kimi_level_supported_by_p9_4": False,
+    }
+
+
+def _check_p9_4_semantic_review_guard(plan: PresentationPlan) -> tuple[VisualQAIssue, ...]:
+    issues: list[VisualQAIssue] = []
+    seen: set[tuple[str, str | None]] = set()
+    for slide in plan.slides:
+        text = _semantic_slide_text(slide)
+        lowered = text.lower()
+        if _has_generic_fallback_label(lowered):
+            _append_semantic_issue(
+                issues,
+                seen,
+                check_id="p9_4.generic_fallback_label",
+                severity="blocker",
+                slide_id=slide.slide_id,
+                message="Slide uses a generic fallback/planning label that human review marked as product-quality rework.",
+                operator_hint="Replace the title/body with an audience-specific, source-derived slide message before approval.",
+            )
+        if _has_raw_csv_rendering_signature(lowered):
+            _append_semantic_issue(
+                issues,
+                seen,
+                check_id="p9_4.raw_csv_rendering",
+                severity="blocker",
+                slide_id=slide.slide_id,
+                message="Slide appears to render comparison-table CSV/header text instead of a decision-matrix view.",
+                operator_hint="Use a structured option matrix with option, strength, weakness, recommendation, and constraint fields.",
+            )
+        for block in slide.blocks:
+            if isinstance(block, ComparisonBlock) and _comparison_titles_are_arbitrary_current_target(block):
+                _append_semantic_issue(
+                    issues,
+                    seen,
+                    check_id="p9_4.arbitrary_current_target_layout",
+                    severity="warning",
+                    slide_id=slide.slide_id,
+                    message="Comparison block uses arbitrary Current/Target labels that human review flagged as weak synthesis.",
+                    operator_hint="Rename comparison sides to source-specific decision criteria or runtime options.",
+                )
+            elif isinstance(block, TableBlock) and _table_has_generic_review_placeholders(block):
+                _append_semantic_issue(
+                    issues,
+                    seen,
+                    check_id="p9_4.generic_table_review_placeholder",
+                    severity="warning",
+                    slide_id=slide.slide_id,
+                    message="Table block contains generic review placeholders rather than operator-use evidence columns.",
+                    operator_hint="Replace placeholder review cells with decision, evidence, risk, action, or owner fields.",
+                )
+        if _looks_like_status_deck(plan, lowered) and _missing_late_status_terms(text):
+            _append_semantic_issue(
+                issues,
+                seen,
+                check_id="p9_4.status_deck_semantic_coverage_review",
+                severity="warning",
+                slide_id=slide.slide_id,
+                message="Status-deck content may need operator review for late-phase coverage and next-action completeness.",
+                operator_hint="Confirm K4/K5/K6, closure, risks, and next actions are represented before approval.",
+            )
+    return tuple(issues)
+
+
+def _append_semantic_issue(
+    issues: list[VisualQAIssue],
+    seen: set[tuple[str, str | None]],
+    *,
+    check_id: str,
+    severity: Severity,
+    slide_id: str | None,
+    message: str,
+    operator_hint: str,
+) -> None:
+    key = (check_id, slide_id)
+    if key in seen:
+        return
+    seen.add(key)
+    issues.append(
+        VisualQAIssue(
+            check_id=check_id,
+            severity=severity,
+            slide_id=slide_id,
+            message=message,
+            operator_hint=operator_hint,
+        )
+    )
+
+
+def _semantic_slide_text(slide: object) -> str:
+    title = getattr(slide, "title", "")
+    bullets = getattr(slide, "bullets", ())
+    parts = [str(title), *(str(item) for item in bullets)]
+    for block in getattr(slide, "blocks", ()):  # safe structural preview only; not persisted in metadata
+        if isinstance(block, ComparisonBlock):
+            parts.extend((block.left_title, block.right_title, *block.left_items, *block.right_items))
+        elif isinstance(block, TableBlock):
+            parts.extend(block.columns)
+            parts.extend(str(cell) for row in block.rows for cell in row)
+            if block.caption:
+                parts.append(block.caption)
+    return " ".join(parts)
+
+
+def _has_generic_fallback_label(lowered: str) -> bool:
+    markers = (
+        "k1 plan",
+        "key point",
+        "additional source-grounded planning point",
+        "additional insight",
+        "no secondary comparison point",
+        "no supporting detail provided",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _has_raw_csv_rendering_signature(lowered: str) -> bool:
+    compact = lowered.replace(" ", "")
+    csv_headers = (
+        "option,strength,weakness,recommendation",
+        "option,strength,weakness,constraint",
+        "вариант,сильнаясторона,слабаясторона,рекомендация",
+    )
+    if any(header in compact for header in csv_headers):
+        return True
+    return lowered.count(",") >= 3 and all(marker in lowered for marker in ("option", "strength", "weakness"))
+
+
+def _comparison_titles_are_arbitrary_current_target(block: ComparisonBlock) -> bool:
+    left = block.left_title.lower().strip()
+    right = block.right_title.lower().strip()
+    arbitrary_left = {"current", "current / option a", "option a", "source", "before"}
+    arbitrary_right = {"target", "target / option b", "option b", "recommended next step", "after"}
+    return left in arbitrary_left and right in arbitrary_right
+
+
+def _table_has_generic_review_placeholders(block: TableBlock) -> bool:
+    lowered_columns = tuple(column.lower().strip() for column in block.columns)
+    if "review" not in lowered_columns:
+        return False
+    review_index = lowered_columns.index("review")
+    generic_rows = 0
+    for row in block.rows:
+        if review_index < len(row) and str(row[review_index]).lower().strip() in {"review", "placeholder", "tbd"}:
+            generic_rows += 1
+    return generic_rows > 0
+
+
+def _looks_like_status_deck(plan: PresentationPlan, lowered_slide_text: str) -> bool:
+    plan_text = " ".join((plan.deck_title, plan.deck_goal, plan.audience)).lower()
+    combined = f"{plan_text} {lowered_slide_text}"
+    return any(marker in combined for marker in ("status", "project log", "milestone", "readiness", "closure"))
+
+
+def _missing_late_status_terms(text: str) -> bool:
+    lowered = text.lower()
+    required_groups = (
+        ("k4", "visual qa"),
+        ("k5", "provenance"),
+        ("k6", "end-to-end", "workflow"),
+        ("risk", "risks", "риск"),
+        ("next action", "next step", "следующ"),
+    )
+    matched = sum(1 for group in required_groups if any(marker in lowered for marker in group))
+    return matched <= 1
 
 
 def _validate_request(request: VisualQARuntimeRequest) -> None:
@@ -590,6 +786,10 @@ def _safe_metadata(
         "max_estimated_text_fill_ratio": round(max((item.max_estimated_text_fill_ratio for item in slide_previews), default=0.0), 3),
         "reading_order_ok": all(item.reading_order_ok for item in slide_previews),
         "bounds_ok": all(item.bounds_ok for item in slide_previews),
+        "semantic_review_guard_issue_count": sum(1 for issue in issues if issue.check_id.startswith("p9_4.")),
+        "semantic_review_guard_warning_count": sum(1 for issue in issues if issue.check_id.startswith("p9_4.") and issue.severity == "warning"),
+        "semantic_review_guard_blocker_count": sum(1 for issue in issues if issue.check_id.startswith("p9_4.") and issue.severity == "blocker"),
+        **build_p9_4_capabilities_report(),
         "raw_source_text_stored": False,
         "raw_prompt_stored": False,
         "raw_slide_text_stored": False,

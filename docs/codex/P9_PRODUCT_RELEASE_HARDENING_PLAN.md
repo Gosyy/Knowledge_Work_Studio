@@ -37,3 +37,9 @@ The patch targets four conservative findings: removal of generic fallback labels
 P9-3 starts from accepted P9-2 on branch `9_Product_Release_Hardening` at `36bd460f605ad9dec532825f1820983657ebe5d4`. It targets the renderer/template portion of P9-1B findings that remained after P9-2 planning hardening.
 
 The patch removes arbitrary synthesized `Current / Option A` and `Target / Option B` renderer labels, replaces generic `Review` placeholder data cells with source-derived operator-use columns, preserves title/section/conclusion layout roles before semantic promotion, and renders comparison-table decision matrices as runtime options versus decision criteria. Acceptance is tracked by `scripts/kw_p9_3_renderer_layout_hardening_check.py` and `backend/tests/smoke/test_p9_3_renderer_layout_hardening.py`.
+
+## P9-4 — Visual QA semantic review guard from human review
+
+P9-4 starts from accepted P9-3 on branch `9_Product_Release_Hardening` at `1f546bb46de3f11f1a0a12f185bdcb1800632b18`. It targets the human-review gap where visual QA could report a clean visual result while generated decks still contained product-quality blockers such as generic fallback labels, raw CSV/table rendering, arbitrary Current/Target synthesis, or generic table review placeholders.
+
+The patch adds a deterministic semantic/product-quality guard inside the local visual QA runtime. It can downgrade visually clean artifacts to operator review or blocked status when plan/render content contains known P9 human-review red flags. Acceptance is tracked by `scripts/kw_p9_4_visual_qa_semantic_guard_check.py` and `backend/tests/smoke/test_p9_4_visual_qa_semantic_guard.py`.
