@@ -69,3 +69,11 @@ P9-7 also classifies full-runner warnings explicitly: deprecated transitive npm 
 P9-8 starts from accepted P9-7 warning classification on branch `9_Product_Release_Hardening` at `c1f6735a21fa82d13e2638d7b20ee304911275ab`. It closes the P9 release-hardening evidence track without changing runtime behavior or approval state.
 
 The patch adds a deterministic closure dossier and checker that require P9-1 through P9-7 evidence to remain present, keep all five original golden benchmark cases queued for human re-review, preserve known non-blocking warning classification, and keep dependency/security remediation as a separate controlled track. Acceptance is tracked by `scripts/kw_p9_8_product_release_hardening_closure_check.py` and `backend/tests/smoke/test_p9_8_product_release_hardening_closure.py`.
+
+## P10 - Post-P9 golden benchmark regeneration and human re-review
+
+P10 starts from accepted P9-8 on branch `9_Product_Release_Hardening` at `42d999a93a6328c1f35e8e3118b6bca6ab3f45ca`. It is the validation phase after the P9 hardening evidence track.
+
+P10-1 adds a post-P9 regeneration-readiness checkpoint. It does not regenerate artifacts by itself and does not change approval state. It verifies that the five original P9-1B `request_rework` golden cases, the RC1 golden benchmark harness, and the P9 closure evidence are present so a post-P9 artifact pack can be generated and sent through human re-review.
+
+P10-1 keeps known full-runner warnings classified as non-blocking for this evidence checkpoint, defers dependency/security remediation to a separate controlled track, does not run `npm audit fix --force`, and makes no Kimi-level claim. Acceptance is tracked by `scripts/kw_p10_1_post_p9_regeneration_readiness_check.py` and `backend/tests/smoke/test_p10_1_post_p9_regeneration_readiness.py`.
