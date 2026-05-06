@@ -25,6 +25,10 @@ P9_5_CHECKPOINT = "P9-5"
 P9_5_SCHEMA_VERSION = "p9.5.operator_evidence_review.v1"
 P9_5_BASE_AFTER_P9_4 = "647342bc420192bdf0267ef7ac31344eec786daa"
 P9_5_MIN_USEFULNESS_SCORE = 3
+P9_6_CHECKPOINT = "P9-6"
+P9_6_SCHEMA_VERSION = "p9.6.semantic_source_coverage.v1"
+P9_6_BASE_AFTER_P9_5 = "a126bcb33cfc94441d6d0edf41ee90edfccc041f"
+
 
 
 @dataclass(frozen=True)
@@ -225,6 +229,28 @@ def build_p9_5_capabilities_report() -> dict[str, object]:
     }
 
 
+def build_p9_6_capabilities_report() -> dict[str, object]:
+    return {
+        "p9_6_checkpoint": P9_6_CHECKPOINT,
+        "p9_6_schema_version": P9_6_SCHEMA_VERSION,
+        "p9_6_base_after_p9_5": P9_6_BASE_AFTER_P9_5,
+        "p9_6_semantic_source_coverage_supported": True,
+        "semantic_source_signal_coverage_supported": True,
+        "late_source_section_guard_supported": True,
+        "human_semantic_coverage_review_supported": True,
+        "api_endpoint_added_by_p9_6": False,
+        "db_schema_migration_added_by_p9_6": False,
+        "frontend_runtime_changed_by_p9_6": False,
+        "dependency_versions_changed_by_p9_6": False,
+        "dockerfiles_changed_by_p9_6": False,
+        "cloud_llm_added_by_p9_6": False,
+        "cloud_vision_added_by_p9_6": False,
+        "kimi_level_claimed_by_p9_6": False,
+        "whole_project_kimi_level_supported_by_p9_6": False,
+        "network_required_by_p9_6": False,
+    }
+
+
 def build_source_to_slide_provenance(
     plan: PresentationPlan,
     *,
@@ -317,12 +343,14 @@ def build_source_to_slide_provenance(
     enriched_plan = replace(plan, slides=tuple(updated_slides))
     coverage = _coverage_report(enriched_plan, tuple(slide_links), sources, fragments)
     evidence_cards = _operator_evidence_cards(enriched_plan, tuple(slide_links))
+    semantic_coverage = _semantic_source_coverage_section(source_text=source_text, plan=enriched_plan)
     manifest_section = _manifest_section(
         sources=sources,
         fragments=fragments,
         slide_links=tuple(slide_links),
         coverage=coverage,
         evidence_cards=evidence_cards,
+        semantic_coverage=semantic_coverage,
     )
     metadata = _safe_metadata(
         plan=enriched_plan,
@@ -332,6 +360,7 @@ def build_source_to_slide_provenance(
         coverage=coverage,
         manifest_section=manifest_section,
         evidence_cards=evidence_cards,
+        semantic_coverage=semantic_coverage,
     )
     return K5SourceToSlideProvenanceResult(
         plan=enriched_plan,
@@ -556,6 +585,7 @@ def _manifest_section(
     slide_links: tuple[K5SlideEvidenceLink, ...],
     coverage: K5CoverageReport,
     evidence_cards: tuple[K5OperatorEvidenceCard, ...],
+    semantic_coverage: dict[str, object],
 ) -> dict[str, object]:
     section: dict[str, object] = {
         "schema_version": K5_SCHEMA_VERSION,
@@ -566,6 +596,7 @@ def _manifest_section(
         "slide_evidence_links": [link.as_manifest_dict() for link in slide_links],
         "coverage": coverage.as_dict(),
         "operator_evidence_review": _operator_evidence_review_section(evidence_cards),
+        "semantic_source_coverage": semantic_coverage,
         "redaction": {
             "policy": K5_REDACTION_POLICY,
             "raw_source_text_stored": False,
@@ -665,6 +696,82 @@ def _claim_preview(slide: PlannedSlide) -> str:
     parts.extend(slide.bullets[:2])
     return _safe_short_text(" — ".join(part for part in parts if part), 180)
 
+
+
+def _semantic_source_coverage_section(*, source_text: str, plan: PresentationPlan) -> dict[str, object]:
+    source_lower = source_text.lower()
+    slide_text = _plan_semantic_text(plan)
+    groups = []
+    for signal_id, markers, operator_hint in _semantic_signal_groups():
+        expected = any(marker in source_lower for marker in markers)
+        covered = bool(expected and any(marker in slide_text for marker in markers))
+        if not expected:
+            priority = "not_applicable"
+        elif covered:
+            priority = "covered"
+        else:
+            priority = "operator_review"
+        groups.append(
+            {
+                "signal_id": signal_id,
+                "expected": expected,
+                "covered": covered,
+                "review_priority": priority,
+                "operator_hint": operator_hint if expected and not covered else "No semantic coverage action required.",
+            }
+        )
+    expected_count = sum(1 for group in groups if group["expected"])
+    covered_count = sum(1 for group in groups if group["expected"] and group["covered"])
+    uncovered_ids = tuple(group["signal_id"] for group in groups if group["expected"] and not group["covered"])
+    coverage_ratio = 1.0 if expected_count == 0 else round(covered_count / expected_count, 4)
+    status = "not_applicable" if expected_count == 0 else "good" if not uncovered_ids else "needs_human_review"
+    return {
+        "schema_version": P9_6_SCHEMA_VERSION,
+        "checkpoint": P9_6_CHECKPOINT,
+        "signal_groups": groups,
+        "summary": {
+            "expected_signal_count": expected_count,
+            "covered_signal_count": covered_count,
+            "uncovered_signal_count": len(uncovered_ids),
+            "coverage_ratio": coverage_ratio,
+            "coverage_status": status,
+            "human_semantic_coverage_review_required": bool(uncovered_ids),
+            "uncovered_signal_ids": uncovered_ids,
+        },
+        "redaction": {
+            "raw_source_text_stored": False,
+            "raw_prompt_stored": False,
+            "signal_ids_only_in_safe_metadata": True,
+        },
+    }
+
+
+def _semantic_signal_groups() -> tuple[tuple[str, tuple[str, ...], str], ...]:
+    return (
+        ("visual_qa_k4", ("k4", "visual qa", "visual quality", "qa runtime"), "Add an explicit K4/visual QA coverage slide or evidence card."),
+        ("provenance_k5", ("k5", "provenance", "source-to-slide", "source to slide", "citations", "evidence"), "Add an explicit K5/provenance coverage slide or evidence card."),
+        ("workflow_k6", ("k6", "end-to-end", "end to end", "workflow", "operator gate"), "Add an explicit K6/workflow/operator-gate coverage slide."),
+        ("closure_readiness", ("closure", "closed", "accepted", "release readiness", "verdict"), "Add closure/readiness status to the generated deck."),
+        ("risk_review", ("risk", "risks", "blocker", "failure", "guardrail"), "Add risk/blocker/guardrail coverage for operator review."),
+        ("next_actions", ("next action", "next actions", "follow-up", "follow up", "action plan", "rc1"), "Add next-action/follow-up coverage for operator handoff."),
+        ("decision_matrix", ("comparison", "decision matrix", "recommendation", "trade-off", "tradeoff"), "Add decision matrix or recommendation coverage."),
+        ("offline_topology", ("offline", "intranet", "giga", "server 3", "litellm"), "Add offline/intranet topology or LLM boundary coverage."),
+    )
+
+
+def _plan_semantic_text(plan: PresentationPlan) -> str:
+    values: list[str] = []
+    for slide in plan.slides:
+        values.append(slide.title)
+        values.extend(slide.bullets)
+        values.append(slide.layout_hint)
+    return " ".join(values).lower()
+
+
+def _semantic_coverage_summary(semantic_coverage: dict[str, object]) -> dict[str, object]:
+    summary = semantic_coverage.get("summary")
+    return summary if isinstance(summary, dict) else {}
+
 def _safe_metadata(
     *,
     plan: PresentationPlan,
@@ -674,6 +781,7 @@ def _safe_metadata(
     coverage: K5CoverageReport,
     manifest_section: dict[str, object],
     evidence_cards: tuple[K5OperatorEvidenceCard, ...],
+    semantic_coverage: dict[str, object],
 ) -> dict[str, object]:
     quality_metrics = _fragment_quality_metrics(
         plan=plan,
@@ -682,9 +790,11 @@ def _safe_metadata(
         slide_links=slide_links,
     )
     evidence_summary = _operator_evidence_review_summary(evidence_cards)
+    semantic_summary = _semantic_coverage_summary(semantic_coverage)
     metadata = {
         **build_k5_capabilities_report(),
         **build_p9_5_capabilities_report(),
+        **build_p9_6_capabilities_report(),
         "slide_count": len(plan.slides),
         "source_count": len(sources),
         "fragment_count": len(fragments),
@@ -702,6 +812,13 @@ def _safe_metadata(
         "evidence_usefulness_score_min": evidence_summary["min_usefulness_score"],
         "evidence_usefulness_score_average": evidence_summary["average_usefulness_score"],
         "evidence_card_review_priorities": evidence_summary["review_priorities"],
+        "semantic_source_expected_signal_count": semantic_summary.get("expected_signal_count", 0),
+        "semantic_source_covered_signal_count": semantic_summary.get("covered_signal_count", 0),
+        "semantic_source_uncovered_signal_count": semantic_summary.get("uncovered_signal_count", 0),
+        "semantic_source_coverage_ratio": semantic_summary.get("coverage_ratio", 1.0),
+        "semantic_source_coverage_status": semantic_summary.get("coverage_status", "not_applicable"),
+        "human_semantic_coverage_review_required": semantic_summary.get("human_semantic_coverage_review_required", False),
+        "semantic_source_uncovered_signal_ids": semantic_summary.get("uncovered_signal_ids", ()),
         **quality_metrics,
         "raw_source_text_stored": False,
         "raw_prompt_stored": False,

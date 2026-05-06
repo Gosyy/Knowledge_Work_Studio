@@ -49,3 +49,9 @@ The patch adds a deterministic semantic/product-quality guard inside the local v
 P9-5 starts from accepted P9-4 hotfix on branch `9_Product_Release_Hardening` at `647342bc420192bdf0267ef7ac31344eec786daa`. It targets the remaining P9-1B evidence/provenance usefulness finding: technically complete source coverage was not yet sufficient for fast human validation.
 
 The patch adds deterministic operator evidence cards to the local source-to-slide provenance manifest. Each card links a slide claim preview, bounded evidence excerpt, match score, usefulness score, review priority, and operator hint without storing raw source text in safe metadata. Acceptance is tracked by `scripts/kw_p9_5_provenance_usefulness_check.py` and `backend/tests/smoke/test_p9_5_provenance_usefulness.py`.
+
+## P9-6 — Semantic source coverage from human review
+
+P9-6 starts from accepted P9-5 on branch `9_Product_Release_Hardening` at `a126bcb33cfc94441d6d0edf41ee90edfccc041f`. It targets the human-review gap where technical provenance coverage can be complete while later semantic source sections are still missing from the generated deck.
+
+The patch adds a deterministic semantic coverage section to the local K5 provenance manifest. It tracks bounded signal identifiers for late source coverage such as K4 visual QA, K5 provenance, K6 workflow, closure/readiness, risks, next actions, decision matrix needs, and offline topology. Acceptance is tracked by `scripts/kw_p9_6_semantic_source_coverage_check.py` and `backend/tests/smoke/test_p9_6_semantic_source_coverage.py`.
