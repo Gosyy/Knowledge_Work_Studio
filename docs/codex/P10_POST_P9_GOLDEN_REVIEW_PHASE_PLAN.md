@@ -50,3 +50,9 @@ P10-1 is accepted only when:
 - production readiness `--checks-only` includes the P10-1 files;
 - after commit and push, the full runner passes with only known non-blocking warnings;
 - Docker smoke passes on profile 2.
+
+## Production readiness gate integration
+
+P10-1 is registered in the production readiness executable gate as an evidence-only checkpoint. The gate runs `scripts/kw_p10_1_post_p9_regeneration_readiness_check.py --require-ready --json` after the P9 closure checks so the start of the post-P9 regeneration phase is visible in full-runner logs rather than only in targeted runner logs.
+
+This integration does not generate artifacts, does not change approval state, does not run `npm audit fix --force`, does not change dependency versions, and does not claim Kimi-level parity.

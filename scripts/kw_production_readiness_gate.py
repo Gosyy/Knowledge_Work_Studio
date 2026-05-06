@@ -1140,6 +1140,15 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+
+    steps.append(
+        GateStep(
+            "P10-1 Post-P9 golden regeneration readiness",
+            (python, "scripts/kw_p10_1_post_p9_regeneration_readiness_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
     return steps
 
 

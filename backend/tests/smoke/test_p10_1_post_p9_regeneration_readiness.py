@@ -76,3 +76,9 @@ def test_p10_1_inherits_warning_classification_without_dependency_remediation() 
     assert payload["dependency_security_remediation_deferred_to_controlled_track"] is True
     assert payload["npm_audit_fix_force_run_by_p10_1"] is False
     assert payload["dependency_versions_changed_by_p10_1"] is False
+
+
+def test_p10_1_is_registered_in_production_readiness_executable_gate() -> None:
+    source = (repo_root() / "scripts/kw_production_readiness_gate.py").read_text(encoding="utf-8")
+    assert "P10-1 Post-P9 golden regeneration readiness" in source
+    assert "scripts/kw_p10_1_post_p9_regeneration_readiness_check.py" in source
