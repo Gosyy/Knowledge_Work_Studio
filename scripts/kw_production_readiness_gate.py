@@ -131,6 +131,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P9_2_RENDERER_CONTENT_HARDENING.md",
     "scripts/kw_p9_2_renderer_content_hardening_check.py",
     "backend/tests/smoke/test_p9_2_renderer_content_hardening.py",
+    "docs/codex/P9_3_RENDERER_LAYOUT_HARDENING.md",
+    "scripts/kw_p9_3_renderer_layout_hardening_check.py",
+    "backend/tests/smoke/test_p9_3_renderer_layout_hardening.py",
     "docs/codex/KRC_FINAL_BRANCH_CLOSURE.md",
     "scripts/kw_krc_final_branch_closure_check.py",
     "backend/tests/smoke/test_krc_final_branch_closure.py",
@@ -872,6 +875,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "P9-2 Renderer/content hardening",
             (python, "scripts/kw_p9_2_renderer_content_hardening_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "P9-3 Renderer/layout hardening",
+            (python, "scripts/kw_p9_3_renderer_layout_hardening_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )

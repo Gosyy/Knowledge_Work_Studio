@@ -26,6 +26,8 @@ LOCAL_THEME_SOURCE = "local_builtin_registry"
 DEFAULT_LOCAL_TEMPLATE_ID = "business_clean"
 RCH1_CHECKPOINT = "RCH1"
 RCH1_SCHEMA_VERSION = "rch1.renderer_density_layout_fixes.v1"
+P9_3_SCHEMA_VERSION = "p9.3.renderer_layout_hardening.v1"
+_BANNED_RENDERER_REVIEW_LABELS = ("Current / Option A", "Target / Option B", "review", "RCH1 structured data summary")
 _ALLOWED_RENDER_MODES = {"adaptive", "template"}
 
 
@@ -310,12 +312,9 @@ def assess_overflow_risk(slide: PlannedSlide, density_policy: ContentDensityPoli
 
 def select_layout_hint(slide: PlannedSlide, layout_policy: LayoutSelectionPolicy | None = None) -> str:
     policy = layout_policy or LayoutSelectionPolicy()
-    if _comparison_signal_score(slide) >= 2:
-        return policy.comparison_layout
-    if any(isinstance(block, TimelineBlock) for block in slide.blocks) or slide.slide_type is SlideType.TIMELINE:
-        return policy.timeline_layout
-    if _data_signal_score(slide) >= 2:
-        return policy.data_layout
+    # P9-3: preserve structural slide roles before semantic promotion. Earlier
+    # heuristics could promote title/conclusion slides that merely mentioned
+    # RC1, Server 2, or data locality into generic data tables.
     if slide.slide_type is SlideType.TITLE:
         return policy.title_layout if slide.visual_intent is not VisualIntent.NONE else "title_slide"
     if slide.slide_type is SlideType.SECTION:
@@ -324,6 +323,12 @@ def select_layout_hint(slide: PlannedSlide, layout_policy: LayoutSelectionPolicy
         return policy.conclusion_layout
     if slide.slide_type is SlideType.APPENDIX:
         return policy.appendix_layout
+    if any(isinstance(block, TimelineBlock) for block in slide.blocks) or slide.slide_type is SlideType.TIMELINE:
+        return policy.timeline_layout
+    if _comparison_signal_score(slide) >= 2:
+        return policy.comparison_layout
+    if _data_signal_score(slide) >= 2:
+        return policy.data_layout
     if slide.visual_intent is not VisualIntent.NONE:
         return policy.content_layout
     return slide.layout_hint or policy.fallback_layout
@@ -350,6 +355,11 @@ def build_k3_capabilities_report() -> dict[str, object]:
         "rch1_bullet_rebalancing_supported": True,
         "rch1_comparison_layout_hardening_supported": True,
         "rch1_data_layout_hardening_supported": True,
+        "p9_3_renderer_layout_hardening_supported": True,
+        "p9_3_case_aware_layout_selection_supported": True,
+        "p9_3_arbitrary_current_target_labels_removed": True,
+        "p9_3_generic_review_placeholder_removed": True,
+        "p9_3_decision_matrix_renderer_blocks_supported": True,
         "network_required": False,
         "cloud_llm_added_by_k3": False,
         "api_endpoint_added_by_k3": False,
@@ -368,6 +378,7 @@ def _normalize_slide_for_render_quality(slide: PlannedSlide, *, layout_hint: str
     title = _trim_words(slide.title, max_chars=density_policy.max_title_chars)
     bullets, overflow_count = _normalize_bullets_for_rch1(slide, density_policy=density_policy)
     blocks = _normalize_blocks(slide.blocks, density_policy=density_policy)
+    blocks = _normalize_p9_3_renderer_blocks(slide, bullets=bullets, blocks=blocks, layout_hint=layout_hint)
     blocks = _add_rch1_layout_blocks(slide, bullets=bullets, blocks=blocks, layout_hint=layout_hint)
     speaker_notes = slide.speaker_notes or ""
     if assess_overflow_risk(slide, density_policy).risk_level != "low" or overflow_count:
@@ -432,7 +443,7 @@ def _data_signal_score(slide: PlannedSlide) -> int:
     if any(isinstance(block, (TableBlock, ChartBlock, BusinessMetricBlock)) for block in slide.blocks):
         score += 3
     text = " ".join((slide.title, *slide.bullets)).lower()
-    markers = ("metric", "data", "table", "chart", "score", "kpi", "trend", "coverage", "ratio", "данн", "метрик", "таблиц")
+    markers = ("metric", "metrics", "table", "chart", "score", "kpi", "trend", "coverage", "ratio", "tabular", "данн", "метрик", "таблиц")
     if any(marker in text for marker in markers):
         score += 1
     if any(any(char.isdigit() for char in bullet) for bullet in slide.bullets):
@@ -468,26 +479,170 @@ def _add_rch1_layout_blocks(
     layout_hint: str,
 ) -> tuple[SlideBlock, ...]:
     if layout_hint == "two_column_comparison" and not any(isinstance(block, ComparisonBlock) for block in blocks) and len(bullets) >= 2:
-        midpoint = max(1, (len(bullets) + 1) // 2)
+        left_title, left_items, right_title, right_items = _p9_3_comparison_content(slide, bullets)
         comparison = ComparisonBlock(
             block_id=f"{slide.slide_id}_rch1_comparison",
-            left_title="Current / Option A",
-            left_items=bullets[:midpoint],
-            right_title="Target / Option B",
-            right_items=bullets[midpoint:] or ("Recommended next step",),
+            left_title=left_title,
+            left_items=left_items,
+            right_title=right_title,
+            right_items=right_items,
         )
         return (comparison, *blocks)
     if layout_hint == "data_summary" and not any(isinstance(block, (TableBlock, ChartBlock, BusinessMetricBlock)) for block in blocks) and len(bullets) >= 2:
-        rows = tuple((f"S{index}", bullet, "review") for index, bullet in enumerate(bullets[:4], start=1))
+        columns, rows, caption = _p9_3_data_summary_content(slide, bullets)
         table = TableBlock(
             block_id=f"{slide.slide_id}_rch1_table",
-            columns=("Signal", "Evidence", "Review"),
+            columns=columns,
             rows=rows,
-            caption="RCH1 structured data summary",
+            caption=caption,
         )
         return (table, *blocks)
     return blocks
 
+
+
+def _normalize_p9_3_renderer_blocks(
+    slide: PlannedSlide,
+    *,
+    bullets: tuple[str, ...],
+    blocks: tuple[SlideBlock, ...],
+    layout_hint: str,
+) -> tuple[SlideBlock, ...]:
+    """Remove generic renderer labels left by older RCH1 block synthesis.
+
+    P9-2 made fallback plans more source-aware, but RCH1 renderer block
+    synthesis could still turn good plan bullets into arbitrary Current/Target
+    comparisons or Review-placeholder data tables. P9-3 keeps this local and
+    deterministic by normalizing those synthesized labels before PPTX rendering.
+    """
+
+    normalized: list[SlideBlock] = []
+    for block in blocks:
+        if isinstance(block, ComparisonBlock):
+            left_title, _left_items, right_title, _right_items = _p9_3_comparison_content(
+                slide,
+                tuple(block.left_items) + tuple(block.right_items) or bullets,
+            )
+            normalized.append(
+                replace(
+                    block,
+                    left_title=left_title,
+                    right_title=right_title,
+                    left_items=tuple(block.left_items),
+                    right_items=tuple(block.right_items),
+                )
+            )
+        elif isinstance(block, TableBlock) and _table_has_generic_review_placeholder(block):
+            columns, rows, caption = _p9_3_data_summary_content(slide, bullets or tuple("; ".join(row) for row in block.rows))
+            normalized.append(replace(block, columns=columns, rows=rows, caption=caption))
+        else:
+            normalized.append(block)
+    return tuple(normalized)
+
+
+def _p9_3_comparison_content(slide: PlannedSlide, bullets: tuple[str, ...]) -> tuple[str, tuple[str, ...], str, tuple[str, ...]]:
+    text = " ".join((slide.title, *bullets)).lower()
+    if "decision matrix" in text or "runtime options" in text:
+        options = _extract_options_from_bullets(bullets)
+        criteria = tuple(
+            _trim_words(_strip_known_prefix(bullet), max_words=14, max_chars=120)
+            for bullet in bullets
+            if "compare" in bullet.lower() or "criteria" in bullet.lower() or "recommend" in bullet.lower()
+        )
+        return (
+            "Runtime options",
+            options or bullets[:1],
+            "Decision criteria",
+            criteria or ("Strength, weakness, recommendation",),
+        )
+    if _prefixed_bullet_map(bullets):
+        mapping = _prefixed_bullet_map(bullets)
+        return (
+            "Evidence signals",
+            tuple(mapping.get("strength", ()) + mapping.get("weakness", ())) or bullets[:1],
+            "Recommendation path",
+            tuple(mapping.get("recommendation", ()) + mapping.get("risk", ())) or bullets[1:] or ("Recommended next step",),
+        )
+    midpoint = max(1, (len(bullets) + 1) // 2)
+    return (
+        "Source signals",
+        bullets[:midpoint],
+        "Implications / next step",
+        bullets[midpoint:] or ("Recommended next step",),
+    )
+
+
+def _p9_3_data_summary_content(slide: PlannedSlide, bullets: tuple[str, ...]) -> tuple[tuple[str, ...], tuple[tuple[str, ...], ...], str]:
+    mapping = _prefixed_bullet_map(bullets)
+    if mapping:
+        rows: list[tuple[str, str, str]] = []
+        action_by_key = {
+            "strength": "Retain",
+            "weakness": "Mitigate",
+            "recommendation": "Act",
+            "risk": "Track",
+            "constraint": "Respect",
+            "option": "Compare",
+        }
+        for key in ("option", "strength", "weakness", "recommendation", "risk", "constraint"):
+            for item in mapping.get(key, ()):
+                rows.append((key.title(), _trim_words(item, max_words=14, max_chars=120), action_by_key.get(key, "Use")))
+        return ("Dimension", "Evidence", "Operator use"), tuple(rows[:4]), "P9-3 source-derived decision evidence"
+    rows = tuple(
+        (f"S{index}", _trim_words(bullet, max_words=14, max_chars=120), "source-derived")
+        for index, bullet in enumerate(bullets[:4], start=1)
+    )
+    return ("Signal", "Evidence", "Operator use"), rows, "P9-3 source-derived data summary"
+
+
+def _table_has_generic_review_placeholder(block: TableBlock) -> bool:
+    cells = [*(str(column) for column in block.columns), *(str(cell) for row in block.rows for cell in row)]
+    if block.caption:
+        cells.append(block.caption)
+    lowered = "\n".join(cells).lower()
+    return "review" in lowered or "rch1 structured data summary" in lowered
+
+
+def _extract_options_from_bullets(bullets: tuple[str, ...]) -> tuple[str, ...]:
+    for bullet in bullets:
+        if bullet.lower().startswith("options:"):
+            raw = bullet.split(":", 1)[1]
+            options = tuple(_trim_words(item.strip(), max_words=8, max_chars=72) for item in raw.split(";") if item.strip())
+            if options:
+                return options[:5]
+    return ()
+
+
+def _prefixed_bullet_map(bullets: tuple[str, ...]) -> dict[str, tuple[str, ...]]:
+    buckets: dict[str, list[str]] = {}
+    aliases = {
+        "option": "option",
+        "options": "option",
+        "strength": "strength",
+        "weakness": "weakness",
+        "recommendation": "recommendation",
+        "recommended": "recommendation",
+        "risk": "risk",
+        "constraint": "constraint",
+    }
+    for bullet in bullets:
+        if ":" not in bullet:
+            continue
+        prefix, value = bullet.split(":", 1)
+        key = aliases.get(prefix.strip().lower())
+        cleaned = _trim_words(value.strip(), max_words=16, max_chars=128)
+        if key and cleaned:
+            buckets.setdefault(key, []).append(cleaned)
+    return {key: tuple(value) for key, value in buckets.items()}
+
+
+def _strip_known_prefix(value: str) -> str:
+    if ":" not in value:
+        return value
+    prefix, rest = value.split(":", 1)
+    if prefix.strip().lower() in {"option", "options", "strength", "weakness", "recommendation", "recommended", "risk", "constraint"}:
+        return rest.strip()
+    return value
 
 def _layout_family_distribution(slide_results: tuple[RendererQualitySlideResult, ...]) -> dict[str, int]:
     distribution: dict[str, int] = {}
@@ -544,6 +699,12 @@ def _safe_metadata(
         "rch1_layout_family_distribution": _layout_family_distribution(slide_results),
         "rch1_dense_after_slide_count": sum(1 for result in slide_results if result.density_level_after == "dense"),
         "rch1_overloaded_after_slide_count": sum(1 for result in slide_results if result.density_level_after == "overloaded"),
+        "p9_3_schema_version": P9_3_SCHEMA_VERSION,
+        "p9_3_renderer_layout_hardening_supported": True,
+        "p9_3_case_aware_layout_selection_supported": True,
+        "p9_3_arbitrary_current_target_labels_removed": True,
+        "p9_3_generic_review_placeholder_removed": True,
+        "p9_3_decision_matrix_renderer_blocks_supported": True,
         "raw_source_text_stored": False,
         "raw_prompt_stored": False,
         "raw_sensitive_values_stored": False,

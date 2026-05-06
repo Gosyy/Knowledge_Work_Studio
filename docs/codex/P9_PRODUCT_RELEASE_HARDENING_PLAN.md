@@ -31,3 +31,9 @@ The first follow-up patch should be selected from tracked human-review findings,
 P9-2 implements the first focused quality hardening patch from P9-1B findings. It improves deterministic fallback planning for renderer-facing content without adding APIs, DB migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, or Kimi-level claims.
 
 The patch targets four conservative findings: removal of generic fallback labels, comparison-table decision-matrix handling, project-log late-phase coverage, and filler-slide prevention for long structured sources. Acceptance is tracked by `scripts/kw_p9_2_renderer_content_hardening_check.py` and `backend/tests/smoke/test_p9_2_renderer_content_hardening.py`.
+
+## P9-3 — Renderer layout hardening from human review
+
+P9-3 starts from accepted P9-2 on branch `9_Product_Release_Hardening` at `36bd460f605ad9dec532825f1820983657ebe5d4`. It targets the renderer/template portion of P9-1B findings that remained after P9-2 planning hardening.
+
+The patch removes arbitrary synthesized `Current / Option A` and `Target / Option B` renderer labels, replaces generic `Review` placeholder data cells with source-derived operator-use columns, preserves title/section/conclusion layout roles before semantic promotion, and renders comparison-table decision matrices as runtime options versus decision criteria. Acceptance is tracked by `scripts/kw_p9_3_renderer_layout_hardening_check.py` and `backend/tests/smoke/test_p9_3_renderer_layout_hardening.py`.
