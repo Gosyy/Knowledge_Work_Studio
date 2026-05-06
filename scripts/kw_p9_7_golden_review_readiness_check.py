@@ -33,6 +33,33 @@ REQUIRED_FILES = (
 EXPECTED_BASE_AFTER_P9_6 = "0879dfd81b00db67ea20a15cb326c44c17849984"
 P9_HARDENING_EVIDENCE = ("P9-2", "P9-3", "P9-4", "P9-5", "P9-6")
 
+KNOWN_NON_BLOCKING_FULL_RUNNER_WARNINGS: tuple[dict[str, object], ...] = (
+    {
+        "warning_id": "npm_deprecated_transitive_packages",
+        "source": "frontend npm ci",
+        "classification": "known_non_blocking_warning",
+        "blocks_p9_7_closure": False,
+        "remediation_track": "separate_controlled_dependency_security_patch",
+        "notes": "Deprecated transitive npm packages are tracked but not changed in P9-7.",
+    },
+    {
+        "warning_id": "npm_audit_vulnerabilities",
+        "source": "frontend npm audit summary",
+        "classification": "known_non_blocking_warning",
+        "blocks_p9_7_closure": False,
+        "remediation_track": "separate_controlled_dependency_security_patch",
+        "notes": "Do not run npm audit fix --force inside P9 feature/hardening patches.",
+    },
+    {
+        "warning_id": "rc2_quality_warning_findings",
+        "source": "RC2 golden benchmark quality review",
+        "classification": "conservative_human_review_evidence",
+        "blocks_p9_7_closure": False,
+        "remediation_track": "post_hardening_human_re_review",
+        "notes": "RC2 warning_findings remain evidence for re-review and do not auto-approve golden decks.",
+    },
+)
+
 FINDING_TO_EVIDENCE: dict[str, tuple[str, ...]] = {
     "generic_fallback_labels_and_filler_slides": ("P9-2", "P9-3", "P9-4"),
     "comparison_table_decision_matrix": ("P9-2", "P9-3", "P9-4"),
@@ -127,6 +154,15 @@ def inspect_readiness(repo_root: Path) -> dict[str, Any]:
         "errors": errors,
         "p9_7_golden_review_readiness_supported": True,
         "post_hardening_re_review_packet_supported": True,
+        "full_runner_known_warnings_classification_supported": True,
+        "full_runner_acceptance_mode": "pass_with_known_non_blocking_warnings",
+        "known_non_blocking_full_runner_warning_count": len(KNOWN_NON_BLOCKING_FULL_RUNNER_WARNINGS),
+        "known_non_blocking_full_runner_warnings": KNOWN_NON_BLOCKING_FULL_RUNNER_WARNINGS,
+        "full_runner_known_warnings_block_p9_7_closure": False,
+        "npm_audit_fix_force_run_by_p9_7": False,
+        "dependency_security_remediation_deferred_to_controlled_patch": True,
+        "rc2_warning_findings_are_conservative_review_evidence": True,
+        "docker_smoke_warnings_block_p9_7_closure": False,
         "human_review_replay_required": True,
         "golden_case_count": len(cases),
         "re_review_case_count": len(cards),
@@ -142,6 +178,8 @@ def inspect_readiness(repo_root: Path) -> dict[str, Any]:
         "db_schema_migration_added_by_p9_7": False,
         "frontend_runtime_changed_by_p9_7": False,
         "dependency_versions_changed_by_p9_7": False,
+        "npm_audit_fix_force_run_by_p9_7": False,
+        "dependency_security_remediation_deferred_to_controlled_patch": True,
         "dockerfiles_changed_by_p9_7": False,
         "cloud_llm_added_by_p9_7": False,
         "cloud_vision_added_by_p9_7": False,

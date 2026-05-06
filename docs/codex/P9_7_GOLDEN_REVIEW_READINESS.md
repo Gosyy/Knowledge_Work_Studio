@@ -32,6 +32,16 @@ The patch does not regenerate benchmark artifacts, does not approve any deck, an
 
 P9-7 does not add product APIs, database migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, public internet runtime requirements, or Kimi-level claims.
 
+## Known full-runner warnings
+
+P9-7 accepts the full runner only as `PASS with known non-blocking warnings`. The known warnings are explicitly classified so they are not mistaken for hidden closure blockers:
+
+- npm deprecated transitive packages from the frontend install path;
+- npm audit vulnerability summary, which is deferred to a separate controlled dependency/security patch;
+- RC2 `warning_findings`, which remain conservative human-review evidence for re-review rather than an automatic approval state.
+
+P9-7 does not run `npm audit fix --force`, does not change dependency versions, and does not treat RC2 warning findings as resolved product-quality approval. Docker smoke must still pass without blocker warnings.
+
 ## Acceptance
 
 P9-7 is accepted only when:

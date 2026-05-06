@@ -76,3 +76,23 @@ def test_p9_7_keeps_original_human_review_fixture_conservative() -> None:
     assert fixture["kimi_level_claimed"] is False
     assert fixture["whole_project_kimi_level_supported"] is False
     assert all(case["decision"] == "request_rework" for case in fixture["cases"])
+
+
+def test_p9_7_classifies_full_runner_warnings_as_non_blocking() -> None:
+    result = run_check("--json", "--require-ready")
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["full_runner_known_warnings_classification_supported"] is True
+    assert payload["full_runner_acceptance_mode"] == "pass_with_known_non_blocking_warnings"
+    assert payload["known_non_blocking_full_runner_warning_count"] == 3
+    warning_ids = {item["warning_id"] for item in payload["known_non_blocking_full_runner_warnings"]}
+    assert warning_ids == {
+        "npm_deprecated_transitive_packages",
+        "npm_audit_vulnerabilities",
+        "rc2_quality_warning_findings",
+    }
+    assert payload["full_runner_known_warnings_block_p9_7_closure"] is False
+    assert payload["npm_audit_fix_force_run_by_p9_7"] is False
+    assert payload["dependency_security_remediation_deferred_to_controlled_patch"] is True
+    assert payload["rc2_warning_findings_are_conservative_review_evidence"] is True
+    assert payload["docker_smoke_warnings_block_p9_7_closure"] is False
