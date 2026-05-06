@@ -153,7 +153,7 @@ def run_runtime_smoke(repo_root: Path) -> dict[str, Any]:
     if str(repo_root) not in sys.path:
         sys.path.insert(0, str(repo_root))
 
-    from backend.app.services.k_phase.visual_qa import build_p9_4_capabilities_report
+    from backend.app.services.k_phase.visual_qa import _has_raw_csv_rendering_signature, build_p9_4_capabilities_report
 
     bad = _render_and_qa(_build_bad_plan(), filename="p9-4-bad-smoke.pptx")
     good = _render_and_qa(_build_good_plan(), filename="p9-4-good-smoke.pptx")
@@ -161,8 +161,14 @@ def run_runtime_smoke(repo_root: Path) -> dict[str, Any]:
     errors: list[str] = []
 
     bad_checks = {issue.check_id for issue in bad.issues}
+    semantic_issues = tuple(issue for issue in bad.issues if issue.check_id.startswith("p9_4."))
+    natural_decision_language = "compare each option by strength, weakness, and recommendation"
     if bad.status != "blocked":
         errors.append(f"P9-4 bad semantic smoke should be blocked, got {bad.status}")
+    if not semantic_issues or any(getattr(issue, "issue_id", None) != issue.check_id for issue in semantic_issues):
+        errors.append("P9-4 semantic issues must expose issue_id for K6 operator gate compatibility")
+    if _has_raw_csv_rendering_signature(natural_decision_language):
+        errors.append("P9-4 raw CSV guard must not flag natural decision-matrix language")
     for check_id in ("p9_4.generic_fallback_label", "p9_4.raw_csv_rendering"):
         if check_id not in bad_checks:
             errors.append(f"missing expected semantic blocker: {check_id}")
@@ -181,6 +187,8 @@ def run_runtime_smoke(repo_root: Path) -> dict[str, Any]:
         ("visual_qa_product_quality_guard_supported", True),
         ("visual_qa_semantic_issue_detection_supported", True),
         ("visual_qa_human_review_alignment_supported", True),
+        ("visual_qa_issue_id_compatibility_supported", True),
+        ("visual_qa_raw_csv_false_positive_guard_supported", True),
         ("network_required_by_p9_4", False),
         ("api_endpoint_added_by_p9_4", False),
         ("db_schema_migration_added_by_p9_4", False),

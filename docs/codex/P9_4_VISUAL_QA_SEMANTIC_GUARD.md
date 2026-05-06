@@ -48,3 +48,9 @@ P9-4 is accepted only when:
 - after commit and push, the full runner and Docker smoke pass.
 
 P9-4 does not claim whole-project Kimi-level parity. It is a targeted product-release hardening patch derived from conservative human review findings.
+
+## P9-4 hotfix follow-up
+
+The full runner exposed two bounded integration issues after the initial targeted acceptance: P9-4 semantic issues introduced warning/info issue objects into K6 operator approval paths that expected a stable `issue_id`, and the raw CSV/header guard was too broad for natural decision-matrix language such as “compare each option by strength, weakness, and recommendation”.
+
+The hotfix keeps the semantic guard intact while adding a backward-compatible `issue_id` alias for visual QA issues and narrowing raw CSV detection to actual header/table signatures. It does not add APIs, DB migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, or Kimi-level claims.

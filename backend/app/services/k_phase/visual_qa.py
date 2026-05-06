@@ -60,8 +60,18 @@ class VisualQAIssue:
     message: str
     operator_hint: str
 
+    @property
+    def issue_id(self) -> str:
+        # Backward-compatible stable identifier consumed by the K6 operator gate.
+        # P9-4 semantic issues can introduce warning/info issues into previously
+        # clean benchmark runs, so this alias keeps existing review flows safe
+        # without changing serialized safe metadata or storing raw slide text.
+        return self.check_id
+
     def as_safe_dict(self) -> dict[str, object]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["issue_id"] = self.issue_id
+        return payload
 
 
 @dataclass(frozen=True)
@@ -356,6 +366,8 @@ def build_p9_4_capabilities_report() -> dict[str, object]:
         "visual_qa_arbitrary_current_target_guard_supported": True,
         "visual_qa_human_review_alignment_supported": True,
         "visual_qa_can_request_operator_review_for_semantic_issues": True,
+        "visual_qa_issue_id_compatibility_supported": True,
+        "visual_qa_raw_csv_false_positive_guard_supported": True,
         "network_required_by_p9_4": False,
         "api_endpoint_added_by_p9_4": False,
         "db_schema_migration_added_by_p9_4": False,
@@ -490,7 +502,16 @@ def _has_raw_csv_rendering_signature(lowered: str) -> bool:
     )
     if any(header in compact for header in csv_headers):
         return True
-    return lowered.count(",") >= 3 and all(marker in lowered for marker in ("option", "strength", "weakness"))
+    # Keep the guard focused on raw table/header rendering. Natural-language
+    # decision-matrix guidance such as "compare each option by strength,
+    # weakness, and recommendation" must not block accepted P9-2/P9-3
+    # comparison plans or the RC1/RC2/RC3 benchmark harnesses.
+    return (
+        "option," in lowered
+        and "strength," in lowered
+        and "weakness" in lowered
+        and ("recommendation" in lowered or "constraint" in lowered)
+    )
 
 
 def _comparison_titles_are_arbitrary_current_target(block: ComparisonBlock) -> bool:

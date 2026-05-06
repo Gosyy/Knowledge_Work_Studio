@@ -5,7 +5,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from backend.app.services.k_phase.visual_qa import VisualQARuntimeRequest, build_p9_4_capabilities_report, run_visual_qa_runtime
+from backend.app.services.k_phase.visual_qa import (
+    VisualQARuntimeRequest,
+    _has_raw_csv_rendering_signature,
+    build_p9_4_capabilities_report,
+    run_visual_qa_runtime,
+)
 from backend.app.services.slides_service.approved_plan import ApprovedPlanRenderRequest, render_approved_plan_to_pptx
 from backend.app.services.slides_service.blocks import ComparisonBlock, TableBlock
 from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideType, StoryArcStage
@@ -177,10 +182,30 @@ def test_p9_4_semantic_guard_allows_source_specific_decision_matrix() -> None:
     assert result.status in {"passed", "needs_operator_review"}
 
 
+
+
+def test_p9_4_raw_csv_guard_allows_natural_decision_matrix_language() -> None:
+    natural = "Compare each option by strength, weakness, and recommendation. Runtime options and decision criteria."
+    raw_header = "Option,Strength,Weakness,Recommendation"
+    assert _has_raw_csv_rendering_signature(natural.lower()) is False
+    assert _has_raw_csv_rendering_signature(raw_header.lower()) is True
+
+
+
+def test_p9_4_semantic_issues_keep_k6_operator_gate_issue_ids() -> None:
+    result = qa_plan(bad_semantic_plan(), "p9-4-operator-gate-test.pptx")
+    semantic_issues = [issue for issue in result.issues if issue.check_id.startswith("p9_4.")]
+    assert semantic_issues
+    assert all(issue.issue_id == issue.check_id for issue in semantic_issues)
+    safe_payload = [issue.as_safe_dict() for issue in semantic_issues]
+    assert all(item["issue_id"] == item["check_id"] for item in safe_payload)
+
 def test_p9_4_capabilities_keep_release_scope_bounded() -> None:
     capabilities = build_p9_4_capabilities_report()
     assert capabilities["p9_4_visual_qa_semantic_guard_supported"] is True
     assert capabilities["visual_qa_product_quality_guard_supported"] is True
+    assert capabilities["visual_qa_issue_id_compatibility_supported"] is True
+    assert capabilities["visual_qa_raw_csv_false_positive_guard_supported"] is True
     assert capabilities["network_required_by_p9_4"] is False
     assert capabilities["api_endpoint_added_by_p9_4"] is False
     assert capabilities["db_schema_migration_added_by_p9_4"] is False
