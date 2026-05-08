@@ -1175,6 +1175,22 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+
+    steps.append(
+        GateStep(
+            "P10-3 Post-P9 artifact comparison report",
+            (
+                python,
+                "scripts/kw_p10_3_post_p9_artifact_comparison.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
     return steps
 
 

@@ -65,3 +65,11 @@ P10-1 is accepted only when:
 P10-1 is registered in the production readiness executable gate as an evidence-only checkpoint. The gate runs `scripts/kw_p10_1_post_p9_regeneration_readiness_check.py --require-ready --json` after the P9 closure checks so the start of the post-P9 regeneration phase is visible in full-runner logs rather than only in targeted runner logs.
 
 This integration does not generate artifacts, does not change approval state, does not run `npm audit fix --force`, does not change dependency versions, and does not claim Kimi-level parity.
+
+## P10-3 - Post-P9 artifact comparison report
+
+P10-3 starts from accepted P10-2 on branch `9_Product_Release_Hardening` at `048443a073b807026a2de725e1d069f60a7e6a18`. It compares the regenerated post-P9 golden artifact pack against the original P9-1B human-review findings.
+
+The patch produces deterministic comparison cards for the same five golden benchmark cases. Each card preserves the original `request_rework` decision, original blocker/warning counts, regenerated artifact evidence, manifest/safe metadata availability, and the requirement for future human re-review.
+
+P10-3 does not approve any deck, does not change the original P9-1B review decisions, and does not claim Kimi-level parity. It is a comparison/evidence checkpoint that prepares inputs for P10-4 human re-review.
