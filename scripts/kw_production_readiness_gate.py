@@ -152,6 +152,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P10_POST_P9_GOLDEN_REVIEW_PHASE_PLAN.md",
     "scripts/kw_p10_1_post_p9_regeneration_readiness_check.py",
     "backend/tests/smoke/test_p10_1_post_p9_regeneration_readiness.py",
+    "docs/codex/P10_2_POST_P9_ARTIFACT_PACK.md",
+    "scripts/kw_p10_2_post_p9_artifact_pack.py",
+    "backend/tests/smoke/test_p10_2_post_p9_artifact_pack.py",
     "docs/codex/KRC_FINAL_BRANCH_CLOSURE.md",
     "scripts/kw_krc_final_branch_closure_check.py",
     "backend/tests/smoke/test_krc_final_branch_closure.py",
@@ -1145,6 +1148,15 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "P10-1 Post-P9 golden regeneration readiness",
             (python, "scripts/kw_p10_1_post_p9_regeneration_readiness_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "P10-2 Post-P9 golden artifact pack generation",
+            (python, "scripts/kw_p10_2_post_p9_artifact_pack.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )

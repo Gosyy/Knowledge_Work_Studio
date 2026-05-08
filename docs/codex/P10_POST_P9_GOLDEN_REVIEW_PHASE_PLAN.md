@@ -34,6 +34,15 @@ The intended follow-up sequence is:
 4. `P10-5` - create a release decision dossier from the new review results.
 5. Targeted fixes only if the new human review still finds blockers.
 
+
+## P10-2 - Post-P9 golden artifact pack generation
+
+P10-2 starts from accepted P10-1 on branch `9_Product_Release_Hardening` at `2bc43dad0a55011c8627841b6fd5e2cc7be12f09`. It runs the accepted local/offline RC1/K6 golden benchmark harness to generate a post-P9 artifact pack for the same five golden cases.
+
+The patch verifies one PPTX, one manifest, and one safe metadata file per case, plus a P10-2 artifact pack manifest. It does not approve any deck, does not change the original P9-1B review decisions, and does not claim Kimi-level parity. Human re-review remains required before any approval-state change.
+
+P10-2 is registered in the production readiness executable gate as an artifact-pack generation checkpoint. The production gate uses a temporary artifact directory, while operators can pass `--artifacts-dir` to persist the pack for P10-3/P10-4.
+
 ## Scope guard
 
 P10-1 does not add product APIs, database migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, public-internet runtime requirements, or Kimi-level claims.
