@@ -81,3 +81,11 @@ P10-4 starts from accepted P10-3 on branch `9_Product_Release_Hardening` at `c85
 The patch generates one review worksheet per case using the existing human-review rubric, original P9-1B findings, and regenerated post-P9 artifact evidence. Each worksheet keeps the post-P9 decision state as `pending_human_review` and requires an operator to enter reviewer ID, timestamp, decision, scores, slide findings, and follow-up backlog.
 
 P10-4 does not approve any deck, does not reject any deck, does not change the original P9-1B review decisions, and does not claim Kimi-level parity. It is a capture workflow that prepares inputs for P10-5 only after a real human review has been completed.
+
+## P10-5a - GigaChat API golden benchmark execution
+
+P10-5a starts from accepted P10-4 on branch `9_Product_Release_Hardening` at `0e29e74b3f275d9c3fbfbd517ff212bf62c88c56`. It runs the five golden benchmark cases through the real GigaChat public API development route before the P10-5 release decision dossier.
+
+The checkpoint is deliberately named `P10-5a` rather than `strict local GigaChat` because this run uses the internet/key-based GigaChat API route, not the production Server 3 local intranet route. It is real provider evidence, but it does not verify the offline/intranet topology.
+
+P10-5a forbids silent deterministic fallback in live mode: all five cases must use GigaChat output, and the RC3 comparison status must be `compared_local_gigachat_to_fallback`. It does not change approval state, does not auto-approve generated decks, and does not claim Kimi-level parity.

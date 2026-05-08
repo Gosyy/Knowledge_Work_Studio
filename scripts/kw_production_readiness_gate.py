@@ -155,6 +155,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P10_2_POST_P9_ARTIFACT_PACK.md",
     "scripts/kw_p10_2_post_p9_artifact_pack.py",
     "backend/tests/smoke/test_p10_2_post_p9_artifact_pack.py",
+    "docs/codex/P10_5A_GIGACHAT_API_GOLDEN_BENCHMARK.md",
+    "scripts/kw_p10_5a_gigachat_api_golden_benchmark.py",
+    "backend/tests/smoke/test_p10_5a_gigachat_api_golden_benchmark.py",
     "docs/codex/OPERATOR_LOGGING_AND_DOWNLOADS_POLICY.md",
     "scripts/kw_operator_log_archive.py",
     "scripts/kw_patch_full_tests_summary.py",
@@ -1195,6 +1198,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "P10-4 Post-P9 human re-review capture workflow",
             (python, "scripts/kw_p10_4_post_p9_human_re_review.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "P10-5a GigaChat API golden benchmark contract",
+            (python, "scripts/kw_p10_5a_gigachat_api_golden_benchmark.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
