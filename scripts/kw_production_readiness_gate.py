@@ -1191,6 +1191,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+    steps.append(
+        GateStep(
+            "P10-4 Post-P9 human re-review capture workflow",
+            (python, "scripts/kw_p10_4_post_p9_human_re_review.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
     return steps
 
 

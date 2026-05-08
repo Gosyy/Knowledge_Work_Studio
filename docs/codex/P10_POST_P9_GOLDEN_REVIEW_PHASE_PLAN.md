@@ -73,3 +73,11 @@ P10-3 starts from accepted P10-2 on branch `9_Product_Release_Hardening` at `048
 The patch produces deterministic comparison cards for the same five golden benchmark cases. Each card preserves the original `request_rework` decision, original blocker/warning counts, regenerated artifact evidence, manifest/safe metadata availability, and the requirement for future human re-review.
 
 P10-3 does not approve any deck, does not change the original P9-1B review decisions, and does not claim Kimi-level parity. It is a comparison/evidence checkpoint that prepares inputs for P10-4 human re-review.
+
+## P10-4 - Post-P9 human re-review capture workflow
+
+P10-4 starts from accepted P10-3 on branch `9_Product_Release_Hardening` at `c854830ae885ffdde80da6a3de6c0f7466433bd2`. It converts the P10-3 comparison report into a deterministic human re-review packet for the same five golden benchmark cases.
+
+The patch generates one review worksheet per case using the existing human-review rubric, original P9-1B findings, and regenerated post-P9 artifact evidence. Each worksheet keeps the post-P9 decision state as `pending_human_review` and requires an operator to enter reviewer ID, timestamp, decision, scores, slide findings, and follow-up backlog.
+
+P10-4 does not approve any deck, does not reject any deck, does not change the original P9-1B review decisions, and does not claim Kimi-level parity. It is a capture workflow that prepares inputs for P10-5 only after a real human review has been completed.
