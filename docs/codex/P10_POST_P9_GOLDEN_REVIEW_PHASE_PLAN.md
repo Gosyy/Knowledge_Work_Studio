@@ -111,3 +111,12 @@ P10-7a starts from accepted P10-6 on branch `9_Product_Release_Hardening` at `8c
 The checkpoint validates reviewer identity, review timestamp, decision, review-dimension scores, slide-level findings, and follow-up backlog for the same five golden benchmark cases. It rejects pending worksheets, missing cases, unknown cases, approval-state changes, Kimi-level claims, auto-approval flags, and Server 3 offline/intranet proof claims embedded in review payloads.
 
 P10-7a is tooling only. It does not ingest completed review results, does not approve or reject the release, does not approve any deck, and does not claim Kimi-level parity. The release decision remains `defer_pending_human_re_review` until a later P10-7 ingest patch runs against real completed, validator-passing human review results.
+
+
+## P10-7 - Human review results ingest
+
+P10-7 starts from accepted P10-7a on branch `9_Product_Release_Hardening` at `0084a9fd9e0b45480c4881097b291a8855517a92`. It ingests completed P10 human-review results that passed the P10-7a worksheet import validator.
+
+The ingested review evidence is the project-owner-accepted AI-assisted analysis of the P10-6 human-review packet. It records completed decisions for all five golden benchmark cases: four `approve`, one `request_rework`, and zero `reject`.
+
+P10-7 does not approve the release. Because `k0_arch_doc_to_architecture_deck` remains `request_rework`, the supported post-ingest decision remains deferred as `defer_pending_review_rework` / `defer_pending_human_re_review`. P10-7 also preserves the GigaChat boundary: the project may finish on accepted `public_api_dev` GigaChat benchmark evidence, but P10-7 does not verify the production Server 3 `local_intranet` route and does not represent public API evidence as offline/intranet proof.

@@ -1265,6 +1265,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+    steps.append(
+        GateStep(
+            "P10-7 Human review results ingest",
+            (
+                python,
+                "scripts/kw_p10_7_human_review_results_ingest.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
     return steps
 
 
