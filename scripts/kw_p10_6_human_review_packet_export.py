@@ -74,4 +74,4 @@ def main()->int:
         if report.get("export_zip_summary"): print(f"export zip: {report['export_zip_summary'].get('export_zip_file')}")
         for e in report.get("errors",[]): print(f"- {e}")
     return 0 if report["status"]=="ready" else 1
-if __name__=="__main__": raise SystemExit(main())\n
+if __name__=="__main__": raise SystemExit(main())
