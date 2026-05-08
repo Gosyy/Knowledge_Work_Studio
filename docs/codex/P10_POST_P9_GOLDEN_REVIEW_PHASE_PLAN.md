@@ -96,4 +96,10 @@ P10-5 starts from accepted P10-5a on branch `9_Product_Release_Hardening` at `15
 
 Because the P10-4 human re-review worksheets remain pending until a real reviewer fills them in, P10-5 does not approve or reject the release. The supported decision is `defer_pending_human_re_review`, with `release_approval_granted_by_p10_5 = false`.
 
-P10-5 also preserves the P10-5a boundary: public API GigaChat evidence is real provider evidence, but it is not proof of the production Server 3 offline/intranet route. P10-5 does not claim Kimi-level parity and does not change API, DB, frontend, dependency, Docker, or cloud-production runtime scope.
+P10-5 also preserves the P10-5a boundary: public API GigaChat evidence is real provider evidence, but it is not proof of the production Server 3 offline/intranet route. P10-5 does not claim Kimi-level parity and does not change API, DB, frontend, dependency, Docker, or cloud-production runtime scope.\n\n## P10-6 - Human review packet export
+
+P10-6 starts from accepted P10-5 on branch `9_Product_Release_Hardening` at `6ab666e845898731d27e0b109b722c2eace70787`. It exports a persistent human-review packet from the accepted P10 evidence chain.
+
+The packet bundles regenerated post-P9 artifact evidence, P10-3 comparison cards, and P10-4 pending review worksheets so a human reviewer can complete the five golden-case decisions. It does not complete the review, does not change approval state, and does not claim Kimi-level parity.
+
+P10-6 keeps the release decision deferred as `defer_pending_human_re_review` until P10-7 ingests completed human-review results. P10-5a public API GigaChat evidence remains explicitly separated from production Server 3 offline/intranet proof.\n

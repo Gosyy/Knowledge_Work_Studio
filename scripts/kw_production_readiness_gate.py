@@ -231,6 +231,9 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_runtime_foundation_closure_check.py",
     "backend/tests/smoke/test_rf_closure_runtime_foundation.py",
     "backend/tests/smoke/test_s9_litellm_gateway_contract.py",
+    "docs/codex/P10_6_HUMAN_REVIEW_PACKET_EXPORT.md",
+    "scripts/kw_p10_6_human_review_packet_export.py",
+    "backend/tests/smoke/test_p10_6_human_review_packet_export.py",
 )
 
 SECRET_MARKERS = (
@@ -1228,6 +1231,22 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             repo_root,
         )
     )
+
+
+    steps.append(
+
+        GateStep(
+
+            "P10-6 Human review packet export",
+
+            (python, "scripts/kw_p10_6_human_review_packet_export.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+
+            repo_root,
+
+        )
+
+    )
+
 
     return steps
 
