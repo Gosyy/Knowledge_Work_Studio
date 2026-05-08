@@ -234,6 +234,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P10_6_HUMAN_REVIEW_PACKET_EXPORT.md",
     "scripts/kw_p10_6_human_review_packet_export.py",
     "backend/tests/smoke/test_p10_6_human_review_packet_export.py",
+    "docs/codex/P10_7A_HUMAN_REVIEW_WORKSHEET_IMPORT_VALIDATOR.md",
+    "scripts/kw_p10_7a_human_review_worksheet_import_validator.py",
+    "backend/tests/smoke/test_p10_7a_human_review_worksheet_import_validator.py",
 )
 
 SECRET_MARKERS = (
@@ -1247,6 +1250,20 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
 
     )
 
+    steps.append(
+        GateStep(
+            "P10-7a Human review worksheet import validator",
+            (
+                python,
+                "scripts/kw_p10_7a_human_review_worksheet_import_validator.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
 
     return steps
 

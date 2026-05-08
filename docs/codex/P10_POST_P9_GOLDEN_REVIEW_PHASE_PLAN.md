@@ -103,3 +103,11 @@ P10-6 starts from accepted P10-5 on branch `9_Product_Release_Hardening` at `6ab
 The packet bundles regenerated post-P9 artifact evidence, P10-3 comparison cards, and P10-4 pending review worksheets so a human reviewer can complete the five golden-case decisions. It does not complete the review, does not change approval state, and does not claim Kimi-level parity.
 
 P10-6 keeps the release decision deferred as `defer_pending_human_re_review` until P10-7 ingests completed human-review results. P10-5a public API GigaChat evidence remains explicitly separated from production Server 3 offline/intranet proof.\n
+
+## P10-7a - Human review worksheet import validator
+
+P10-7a starts from accepted P10-6 on branch `9_Product_Release_Hardening` at `8c5b08bb11ac847fd5a165782f68081029ef43c5`. It adds a conservative validator for real completed human-review worksheet payloads before any P10-7 ingest step.
+
+The checkpoint validates reviewer identity, review timestamp, decision, review-dimension scores, slide-level findings, and follow-up backlog for the same five golden benchmark cases. It rejects pending worksheets, missing cases, unknown cases, approval-state changes, Kimi-level claims, auto-approval flags, and Server 3 offline/intranet proof claims embedded in review payloads.
+
+P10-7a is tooling only. It does not ingest completed review results, does not approve or reject the release, does not approve any deck, and does not claim Kimi-level parity. The release decision remains `defer_pending_human_re_review` until a later P10-7 ingest patch runs against real completed, validator-passing human review results.
