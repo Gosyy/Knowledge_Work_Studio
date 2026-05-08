@@ -89,3 +89,11 @@ P10-5a starts from accepted P10-4 on branch `9_Product_Release_Hardening` at `0e
 The checkpoint is deliberately named `P10-5a` rather than `strict local GigaChat` because this run uses the internet/key-based GigaChat API route, not the production Server 3 local intranet route. It is real provider evidence, but it does not verify the offline/intranet topology.
 
 P10-5a forbids silent deterministic fallback in live mode: all five cases must use GigaChat output, and the RC3 comparison status must be `compared_local_gigachat_to_fallback`. It does not change approval state, does not auto-approve generated decks, and does not claim Kimi-level parity.
+
+## P10-5 - Release decision dossier
+
+P10-5 starts from accepted P10-5a on branch `9_Product_Release_Hardening` at `157776bc14cb759c4a8b2bd3453d41f6c02dde52`. It creates a release decision dossier from the post-P9 regeneration, comparison, human re-review capture workflow, and GigaChat API benchmark evidence chain.
+
+Because the P10-4 human re-review worksheets remain pending until a real reviewer fills them in, P10-5 does not approve or reject the release. The supported decision is `defer_pending_human_re_review`, with `release_approval_granted_by_p10_5 = false`.
+
+P10-5 also preserves the P10-5a boundary: public API GigaChat evidence is real provider evidence, but it is not proof of the production Server 3 offline/intranet route. P10-5 does not claim Kimi-level parity and does not change API, DB, frontend, dependency, Docker, or cloud-production runtime scope.

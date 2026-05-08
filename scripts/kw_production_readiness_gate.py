@@ -158,6 +158,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P10_5A_GIGACHAT_API_GOLDEN_BENCHMARK.md",
     "scripts/kw_p10_5a_gigachat_api_golden_benchmark.py",
     "backend/tests/smoke/test_p10_5a_gigachat_api_golden_benchmark.py",
+    "docs/codex/P10_5_RELEASE_DECISION_DOSSIER.md",
+    "scripts/kw_p10_5_release_decision_dossier.py",
+    "backend/tests/smoke/test_p10_5_release_decision_dossier.py",
     "docs/codex/OPERATOR_LOGGING_AND_DOWNLOADS_POLICY.md",
     "scripts/kw_operator_log_archive.py",
     "scripts/kw_patch_full_tests_summary.py",
@@ -1206,6 +1209,22 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "P10-5a GigaChat API golden benchmark contract",
             (python, "scripts/kw_p10_5a_gigachat_api_golden_benchmark.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "P10-5 Release decision dossier",
+            (
+                python,
+                "scripts/kw_p10_5_release_decision_dossier.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )
