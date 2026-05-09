@@ -250,6 +250,13 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P10_10_FINAL_RELEASE_APPROVAL_DOSSIER.md",
     "scripts/kw_p10_10_final_release_approval_dossier.py",
     "backend/tests/smoke/test_p10_10_final_release_approval_dossier.py",
+    "docs/codex/P10_11_FINAL_OPERATOR_RELEASE_CLOSURE.md",
+    "scripts/kw_p10_11_final_operator_release_closure.py",
+    "backend/tests/smoke/test_p10_11_final_operator_release_closure.py",
+    "docs/codex/S_PHASE_KIMI_SLIDES_CLASS_ROADMAP.md",
+    "docs/codex/S1_KIMI_SLIDES_CLASS_GAP_DOSSIER.md",
+    "scripts/kw_s1_kimi_slides_gap_check.py",
+    "backend/tests/smoke/test_s1_kimi_slides_gap.py",
 )
 
 SECRET_MARKERS = (
@@ -1329,6 +1336,36 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_p10_10_final_release_approval_dossier.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "P10-11 Final operator release closure",
+            (
+                python,
+                "scripts/kw_p10_11_final_operator_release_closure.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "S1 Kimi Slides-class gap dossier",
+            (
+                python,
+                "scripts/kw_s1_kimi_slides_gap_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

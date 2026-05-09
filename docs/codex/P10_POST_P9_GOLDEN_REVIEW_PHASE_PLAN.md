@@ -144,3 +144,17 @@ P10-10 starts from accepted P10-9 on branch `9_Product_Release_Hardening` at `40
 The checkpoint grants release approval because all five golden benchmark cases are approved after P10-9, with zero request-rework decisions, zero rejects, and no blocking case IDs. This is not an owner-waiver path; it is based on completed review evidence plus targeted rework closure.
 
 P10-10 preserves all release boundaries: no Kimi-level parity claim, no Server 3 `local_intranet` verification claim, no dependency/security remediation, no API/DB/frontend/Docker/cloud runtime scope changes, and no hidden public-internet production dependency. The accepted P10-5a `public_api_dev` GigaChat benchmark remains real provider evidence for the project completion path, but not production Server 3 offline/intranet proof.
+
+## P10-11 - Final operator release closure
+
+P10-11 starts from accepted P10-10 on branch `9_Product_Release_Hardening` at `f369412ba284f5f149a81ab42cb25b45b74bfaa4`. It closes the release workflow for operator handoff after P10-10 granted release approval.
+
+The checkpoint records `project_release_status_after_p10_11 = approved_for_operator_handoff`, preserves profile-specific operator paths, keeps logs in `<repo>/logs`, treats Downloads as handoff-only, and records that future assistant patches must be applied and tested locally before handoff whenever technically possible.
+
+P10-11 does not add runtime scope. It keeps all release boundaries: no Kimi-level parity claim, no Server 3 `local_intranet` verification claim, no dependency/security remediation, and no hidden public-internet production dependency.
+
+## S1 - Kimi Slides-class gap dossier
+
+S1 starts the S-phase Kimi Slides-class workflow quality track after P10 release closure. It defines ten controlled S-phase targets: outline-first workflow, editable plan before generation, adaptive deck modes, native table/chart/diagram rendering, template/master ingestion, image/screenshot-to-slide workflow, offline research citations, conversational edit loop, render-based visual QA, and expanded Kimi-style benchmark.
+
+S1 is a gap dossier and roadmap checkpoint only. It does not claim Kimi-level parity and does not change runtime, API, DB, frontend, Docker, dependency, cloud LLM, or cloud vision scope. The next execution phase is S2 outline-first frontend workflow.
