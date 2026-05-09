@@ -13,6 +13,10 @@ S3 established the product rule: create or revise slides through an editable pla
 5. retry must confirm render mode;
 6. retry must register a new artifact and link provenance.
 
+## S2 frontend contract bridge
+
+S2 treats the plan-first journey events as **safe task events** for the outline-first frontend workflow. The frontend must expose the outline draft, editable plan review, explicit plan approval, render mode selection, generation from the approved plan, artifact registration, plan snapshot registration, and retry from saved plan as an auditable sequence before later S-phase implementations add richer event streaming.
+
 ## Required event schema
 
 Every slides task event must carry:

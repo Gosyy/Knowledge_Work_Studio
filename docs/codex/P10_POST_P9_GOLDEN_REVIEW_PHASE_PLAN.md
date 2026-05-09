@@ -158,3 +158,11 @@ P10-11 does not add runtime scope. It keeps all release boundaries: no Kimi-leve
 S1 starts the S-phase Kimi Slides-class workflow quality track after P10 release closure. It defines ten controlled S-phase targets: outline-first workflow, editable plan before generation, adaptive deck modes, native table/chart/diagram rendering, template/master ingestion, image/screenshot-to-slide workflow, offline research citations, conversational edit loop, render-based visual QA, and expanded Kimi-style benchmark.
 
 S1 is a gap dossier and roadmap checkpoint only. It does not claim Kimi-level parity and does not change runtime, API, DB, frontend, Docker, dependency, cloud LLM, or cloud vision scope. The next execution phase is S2 outline-first frontend workflow.
+
+## S2 - Outline-first frontend workflow
+
+S2 starts from accepted S1 on branch `9_Product_Release_Hardening` at `9bade7ea43ef8cc5db994a183d9cdb984e541ebe`. It turns the S1 outline-first gap into a controlled frontend-facing workflow contract.
+
+The checkpoint requires the operator journey to show an outline before generation, allow editable plan review, require explicit plan approval, require adaptive/template render mode selection, generate PPTX from the approved plan, register artifact history and plan snapshots, and retry from saved plans.
+
+S2 does not change runtime scope. It does not add API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker changes, cloud LLM, cloud vision, Kimi-level claims, or Server 3 `local_intranet` verification. It advances the Kimi Slides-class roadmap while preserving offline/intranet production boundaries.

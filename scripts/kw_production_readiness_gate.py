@@ -257,6 +257,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/S1_KIMI_SLIDES_CLASS_GAP_DOSSIER.md",
     "scripts/kw_s1_kimi_slides_gap_check.py",
     "backend/tests/smoke/test_s1_kimi_slides_gap.py",
+    "docs/codex/S2_OUTLINE_FIRST_FRONTEND_WORKFLOW.md",
+    "scripts/kw_s2_outline_first_frontend_workflow_check.py",
+    "backend/tests/smoke/test_s2_outline_first_frontend_workflow.py",
 )
 
 SECRET_MARKERS = (
@@ -1366,6 +1369,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_s1_kimi_slides_gap_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "S2 Outline-first frontend workflow",
+            (
+                python,
+                "scripts/kw_s2_outline_first_frontend_workflow_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

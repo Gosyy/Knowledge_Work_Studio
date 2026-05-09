@@ -37,3 +37,9 @@ Kimi Slides-class offline workflow parity for selected benchmark scenarios.
 The production target remains offline/intranet. Public API GigaChat evidence remains accepted release evidence for the current project completion path, but it is not Server 3 local-intranet proof.
 
 Server 3 `local_intranet` operator readiness can be prepared in S-phase without claiming live verification unless a real Server 3 endpoint is tested.
+
+## S2 checkpoint
+
+S2 closes the first execution checkpoint of the S-phase roadmap: outline-first frontend workflow. The accepted contract is source intake -> outline draft -> editable plan review -> explicit plan approval -> render mode selection -> generation from the approved plan -> artifact history -> plan snapshot -> retry from saved plan.
+
+This is not Kimi Slides-class parity. It is the frontend-facing workflow foundation required before S3 adaptive deck modes and later visual/rendering improvements.

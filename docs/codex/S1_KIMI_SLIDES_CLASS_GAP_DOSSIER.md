@@ -37,3 +37,7 @@ S1 is accepted when the checker reports all ten S-phase entries, all ten capabil
 ## Non-goals
 
 S1 does not add public API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud LLM, cloud vision, or hidden public-internet production dependency.
+
+## S2 follow-up closure
+
+S2 implements the first S1 execution target as an outline-first frontend workflow contract. S2 advances the roadmap but still does not support a Kimi Slides-class parity claim.
