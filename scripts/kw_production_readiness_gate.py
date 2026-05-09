@@ -237,6 +237,13 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P10_7A_HUMAN_REVIEW_WORKSHEET_IMPORT_VALIDATOR.md",
     "scripts/kw_p10_7a_human_review_worksheet_import_validator.py",
     "backend/tests/smoke/test_p10_7a_human_review_worksheet_import_validator.py",
+    "docs/codex/P10_7_HUMAN_REVIEW_RESULTS_INGEST.md",
+    "backend/tests/fixtures/p10/p10_7_human_review_results.json",
+    "scripts/kw_p10_7_human_review_results_ingest.py",
+    "backend/tests/smoke/test_p10_7_human_review_results_ingest.py",
+    "docs/codex/P10_8_FINAL_RELEASE_DECISION_DOSSIER.md",
+    "scripts/kw_p10_8_final_release_decision_dossier.py",
+    "backend/tests/smoke/test_p10_8_final_release_decision_dossier.py",
 )
 
 SECRET_MARKERS = (
@@ -1271,6 +1278,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_p10_7_human_review_results_ingest.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "P10-8 Final release decision dossier",
+            (
+                python,
+                "scripts/kw_p10_8_final_release_decision_dossier.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

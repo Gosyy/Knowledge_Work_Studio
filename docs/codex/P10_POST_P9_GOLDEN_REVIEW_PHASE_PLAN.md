@@ -120,3 +120,11 @@ P10-7 starts from accepted P10-7a on branch `9_Product_Release_Hardening` at `00
 The ingested review evidence is the project-owner-accepted AI-assisted analysis of the P10-6 human-review packet. It records completed decisions for all five golden benchmark cases: four `approve`, one `request_rework`, and zero `reject`.
 
 P10-7 does not approve the release. Because `k0_arch_doc_to_architecture_deck` remains `request_rework`, the supported post-ingest decision remains deferred as `defer_pending_review_rework` / `defer_pending_human_re_review`. P10-7 also preserves the GigaChat boundary: the project may finish on accepted `public_api_dev` GigaChat benchmark evidence, but P10-7 does not verify the production Server 3 `local_intranet` route and does not represent public API evidence as offline/intranet proof.
+
+## P10-8 - Final release decision dossier after completed human review
+
+P10-8 starts from accepted P10-7 on branch `9_Product_Release_Hardening` at `6bf239d5f5399923a451d93ddd5f305fc3e51f6a`. It creates the final P10 release decision dossier from completed human-review evidence.
+
+The completed review results contain four `approve` decisions, one `request_rework`, and zero `reject` decisions. The remaining request-rework case is `k0_arch_doc_to_architecture_deck`, so P10-8 does not grant release approval and keeps the supported final decision as `defer_pending_targeted_rework`.
+
+P10-8 records that the project completion path may rely on the accepted real GigaChat `public_api_dev` benchmark evidence, while explicitly preserving that this is not production Server 3 `local_intranet` proof. Production/offline mode remains the target deployment mode, and Server 3 local-intranet operator readiness can be prepared separately without claiming verification.
