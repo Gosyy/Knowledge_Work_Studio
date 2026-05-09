@@ -244,6 +244,9 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P10_8_FINAL_RELEASE_DECISION_DOSSIER.md",
     "scripts/kw_p10_8_final_release_decision_dossier.py",
     "backend/tests/smoke/test_p10_8_final_release_decision_dossier.py",
+    "docs/codex/P10_9_TARGETED_ARCHITECTURE_REWORK.md",
+    "scripts/kw_p10_9_targeted_architecture_rework.py",
+    "backend/tests/smoke/test_p10_9_targeted_architecture_rework.py",
 )
 
 SECRET_MARKERS = (
@@ -1293,6 +1296,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_p10_8_final_release_decision_dossier.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "P10-9 Targeted architecture rework",
+            (
+                python,
+                "scripts/kw_p10_9_targeted_architecture_rework.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

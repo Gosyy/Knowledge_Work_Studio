@@ -243,13 +243,22 @@ def _long_structured_source_specs(source_text: str, count: int) -> list[dict[str
 
 
 def _technical_architecture_specs(source_text: str, count: int) -> list[dict[str, Any]]:
+    server1 = _sentence_containing(source_text, "Server 1") or "Server 1 hosts KW Studio: backend, frontend, Postgres, workflows, artifact storage, and operator UI."
+    server2 = _sentence_containing(source_text, "Server 2") or "Server 2 is optional for LiteLLM-compatible gateway experiments and heavy runtime modules."
+    server3 = _sentence_containing(source_text, "Server 3") or "Server 3 hosts local GigaChat behind an internal endpoint."
+    default_route = _sentence_containing(source_text, "default production") or "The default production path is direct local GigaChat, not cloud fallback."
+    foundation = _sentence_containing(source_text, "Runtime Foundation") or "Runtime Foundation closed deployment hardening, schema preflight, diagnostics, backup, and dependency controls."
+    k_phase = _sentence_containing(source_text, "K-phase") or "K-phase added planning, editable approval, render quality, visual QA, provenance, and workflow gates."
+    review_focus = _sentence_containing(source_text, "boundaries") or "The architecture review must highlight boundaries, failure modes, and release-readiness checks."
     specs = [
         _spec(SlideType.TITLE, "Architecture review: offline KW Studio topology", [_sentence_containing(source_text, "three offline") or _segments(source_text)[0]]),
-        _spec(SlideType.SECTION, "Server responsibilities: app, heavy runtime, GigaChat", [_sentence_containing(source_text, "Server 1") or "Server 1 hosts the app runtime.", _sentence_containing(source_text, "Server 2") or "Server 2 is optional for heavy runtime modules.", _sentence_containing(source_text, "Server 3") or "Server 3 hosts local GigaChat."]),
-        _spec(SlideType.CONTENT, "Default route: direct local GigaChat", [_sentence_containing(source_text, "default production") or "The default production path is direct local GigaChat, not cloud fallback."]),
-        _spec(SlideType.DATA, "Foundation controls already closed", [_sentence_containing(source_text, "Runtime Foundation") or "Runtime Foundation closed deployment hardening and diagnostics controls."]),
-        _spec(SlideType.CONTENT, "K-phase runtime capabilities", [_sentence_containing(source_text, "K-phase") or "K-phase added planning, editing, renderer quality, visual QA, provenance, and workflow gates."]),
-        _spec(SlideType.CONCLUSION, "Review focus: boundaries, failure modes, gates", [_sentence_containing(source_text, "boundaries") or "The review must highlight boundaries, failure modes, and release-readiness checks."]),
+        _spec(SlideType.SECTION, "Topology map: Server 1/2/3 responsibilities", [server1, server2, server3]),
+        _spec(SlideType.CONTENT, "Production path: direct local GigaChat", [default_route, "Keep cloud LLM routes outside the default production runtime."]),
+        _spec(SlideType.CONTENT, "Server 2 boundary: optional gateway and heavy runtime", [server2, "Treat LiteLLM/Ollama paths as optional transport, fallback, or experimental capacity, not production default."]),
+        _spec(SlideType.DATA, "Closed foundation controls: deployment and diagnostics", [foundation, "Use preflight, readiness, diagnostics, backup, restore, and dependency checks as operator gates."]),
+        _spec(SlideType.CONTENT, "Runtime capabilities: plan, render, QA, provenance", [k_phase, "Preserve editable plans, retry, source-to-slide evidence, and artifact history for operator review."]),
+        _spec(SlideType.CONCLUSION, "Failure modes and operator gates", [review_focus, "Gate endpoint misconfiguration, hidden network use, fallback drift, provenance gaps, and visual/layout regressions."]),
+        _spec(SlideType.CONCLUSION, "Release readiness checks and ownership", ["Verify Server 1 app readiness, optional Server 2 boundary, and Server 3 local GigaChat configuration before offline operation.", "Keep public_api_dev benchmark evidence separate from Server 3 local_intranet proof."]),
     ]
     return _fit_specs(specs, source_text, count)
 

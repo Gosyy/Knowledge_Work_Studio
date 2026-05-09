@@ -128,3 +128,11 @@ P10-8 starts from accepted P10-7 on branch `9_Product_Release_Hardening` at `6bf
 The completed review results contain four `approve` decisions, one `request_rework`, and zero `reject` decisions. The remaining request-rework case is `k0_arch_doc_to_architecture_deck`, so P10-8 does not grant release approval and keeps the supported final decision as `defer_pending_targeted_rework`.
 
 P10-8 records that the project completion path may rely on the accepted real GigaChat `public_api_dev` benchmark evidence, while explicitly preserving that this is not production Server 3 `local_intranet` proof. Production/offline mode remains the target deployment mode, and Server 3 local-intranet operator readiness can be prepared separately without claiming verification.
+
+## P10-9 - Targeted architecture deck rework and re-review closure
+
+P10-9 starts from accepted P10-8 on branch `9_Product_Release_Hardening` at `8d34eab97eb89920e9f73a19e38b3cad4190c187`. It resolves the single remaining P10-8 request-rework case, `k0_arch_doc_to_architecture_deck`, without reopening the whole golden benchmark phase.
+
+The checkpoint hardens the technical architecture planning path so the 8-slide architecture deck uses a complete architecture-review storyline: topology map, production path, Server 2 boundary, closed foundation controls, runtime capabilities, failure modes/operator gates, and release-readiness ownership. The previous repetitive tail slides are replaced and slide 7 is guarded as `Failure modes and operator gates`.
+
+P10-9 does not grant final release approval. It supports the next decision state `ready_for_final_release_approval_dossier` and leaves the actual approval to a separate P10-10 checkpoint. It also does not claim Kimi-level parity and does not verify Server 3 `local_intranet`; public API GigaChat evidence remains real provider evidence but not offline/intranet proof.
