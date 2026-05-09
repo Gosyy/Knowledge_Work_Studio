@@ -136,3 +136,11 @@ P10-9 starts from accepted P10-8 on branch `9_Product_Release_Hardening` at `8d3
 The checkpoint hardens the technical architecture planning path so the 8-slide architecture deck uses a complete architecture-review storyline: topology map, production path, Server 2 boundary, closed foundation controls, runtime capabilities, failure modes/operator gates, and release-readiness ownership. The previous repetitive tail slides are replaced and slide 7 is guarded as `Failure modes and operator gates`.
 
 P10-9 does not grant final release approval. It supports the next decision state `ready_for_final_release_approval_dossier` and leaves the actual approval to a separate P10-10 checkpoint. It also does not claim Kimi-level parity and does not verify Server 3 `local_intranet`; public API GigaChat evidence remains real provider evidence but not offline/intranet proof.
+
+## P10-10 - Final release approval dossier
+
+P10-10 starts from accepted P10-9 on branch `9_Product_Release_Hardening` at `405a6ea1a418ec1aa5df5648ce0dcba1da2e073d`. It creates the final release approval dossier after the targeted architecture rework resolved the only remaining P10-8 request-rework case.
+
+The checkpoint grants release approval because all five golden benchmark cases are approved after P10-9, with zero request-rework decisions, zero rejects, and no blocking case IDs. This is not an owner-waiver path; it is based on completed review evidence plus targeted rework closure.
+
+P10-10 preserves all release boundaries: no Kimi-level parity claim, no Server 3 `local_intranet` verification claim, no dependency/security remediation, no API/DB/frontend/Docker/cloud runtime scope changes, and no hidden public-internet production dependency. The accepted P10-5a `public_api_dev` GigaChat benchmark remains real provider evidence for the project completion path, but not production Server 3 offline/intranet proof.
