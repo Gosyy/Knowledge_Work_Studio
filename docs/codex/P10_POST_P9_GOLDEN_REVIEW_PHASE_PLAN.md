@@ -205,3 +205,11 @@ S7 starts from accepted S6 on branch `9_Product_Release_Hardening` at `7a0e67324
 The checkpoint requires citations for slide-level claims, S4 native PPTX tables/charts/diagrams, and S6 image/screenshot crop-region reconstructions. Allowed evidence sources are uploaded documents, internal browser evidence packets, local knowledge-base entries, intranet documents, image-region evidence, and generated artifact manifests.
 
 S7 does not add public API endpoints, DB migrations, frontend runtime, dependency, Docker, cloud LLM, cloud vision, or hidden public-internet production requirements. It does not claim Kimi-level parity and does not verify Server 3 `local_intranet`.
+
+## S8 - Conversational edit loop
+
+S8 starts from accepted S7 on branch `9_Product_Release_Hardening` at `16887ec2c764f5bc149802357682ae381e7885fe`. It defines the conversational edit loop over saved plan snapshots and citation-aware deck revisions.
+
+The checkpoint supports edit intents such as shortening a deck, reframing it for a board audience, adding risk slides, replacing tables with decision matrices, revising slide order, tightening citations, and converting an approved plan into an architecture-review deck. All edits require a saved plan snapshot, approved plan digest, operator edit instruction, citation manifest, plan patch preview, explicit operator approval, and citation revalidation before revised generation.
+
+S8 does not add API, DB, frontend runtime, dependency, Docker, cloud LLM, or cloud vision scope. It does not allow hidden public internet or transient-prompt-only generation, does not claim Kimi-level parity, and does not verify Server 3 `local_intranet`. The next controlled phase is S9 render-based visual QA.

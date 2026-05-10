@@ -74,3 +74,9 @@ S6 keeps Kimi Slides-class as a future benchmark target, not a current parity cl
 S7 turns source-grounded evidence into a first-class offline/intranet citation manifest. Slide-level claims, S4 native visuals, and S6 image-region reconstructions must link to uploaded documents, internal browser evidence packets, local knowledge-base entries, intranet documents, image regions, or generated artifact manifests.
 
 S7 explicitly forbids hidden public-web lookups, cloud research, cloud vision, and unattributed model memory as production-default citation sources. The next phase is S8 conversational edit loop over saved plans and citation-aware revisions.
+
+## S8 checkpoint — Conversational edit loop
+
+S8 turns the S2 saved-plan workflow and S7 citation manifest into a controlled conversational revision loop. Operators can request revisions such as shortening a deck, reframing it for a board audience, adding a risk slide, replacing a table with a decision matrix, revising slide order, tightening citations, or converting a saved plan into an architecture-review deck.
+
+Every S8 revision must load a saved plan snapshot, produce a reviewable plan patch, require explicit operator approval, preserve plan lineage, revalidate citations, and generate from the revised approved plan. Hidden public web research, cloud vision, transient-prompt-only generation, and Kimi-level claims remain out of scope.
