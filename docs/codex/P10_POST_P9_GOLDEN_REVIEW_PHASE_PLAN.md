@@ -166,3 +166,9 @@ S2 starts from accepted S1 on branch `9_Product_Release_Hardening` at `9bade7ea4
 The checkpoint requires the operator journey to show an outline before generation, allow editable plan review, require explicit plan approval, require adaptive/template render mode selection, generate PPTX from the approved plan, register artifact history and plan snapshots, and retry from saved plans.
 
 S2 does not change runtime scope. It does not add API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker changes, cloud LLM, cloud vision, Kimi-level claims, or Server 3 `local_intranet` verification. It advances the Kimi Slides-class roadmap while preserving offline/intranet production boundaries.
+
+## S3 - Adaptive deck modes
+
+S3 starts from accepted S2 on branch `9_Product_Release_Hardening` at `fb5d888f9348c07a57b94387f0b201f38c785010`. It adds a benchmark-aligned adaptive deck mode registry for executive, architecture, status, decision-matrix, and long-document explainer decks.
+
+The checkpoint requires mode-specific storylines, slide archetypes, table/chart policies, visual QA expectations, provenance expectations, and failure guards before later S4/S9 rendering and visual QA work. S3 does not claim Kimi-level parity, does not verify Server 3 `local_intranet`, and does not add API, DB, frontend runtime, dependency, Docker, cloud LLM, or cloud vision scope.

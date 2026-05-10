@@ -260,6 +260,10 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/S2_OUTLINE_FIRST_FRONTEND_WORKFLOW.md",
     "scripts/kw_s2_outline_first_frontend_workflow_check.py",
     "backend/tests/smoke/test_s2_outline_first_frontend_workflow.py",
+    "docs/codex/S3_ADAPTIVE_DECK_MODES.md",
+    "backend/app/services/slides_service/adaptive_deck_modes.py",
+    "scripts/kw_s3_adaptive_deck_modes_check.py",
+    "backend/tests/smoke/test_s3_adaptive_deck_modes.py",
 )
 
 SECRET_MARKERS = (
@@ -1384,6 +1388,22 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_s2_outline_first_frontend_workflow_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "S3 Adaptive deck modes",
+            (
+                python,
+                "scripts/kw_s3_adaptive_deck_modes_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

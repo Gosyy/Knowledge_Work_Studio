@@ -43,3 +43,9 @@ Server 3 `local_intranet` operator readiness can be prepared in S-phase without 
 S2 closes the first execution checkpoint of the S-phase roadmap: outline-first frontend workflow. The accepted contract is source intake -> outline draft -> editable plan review -> explicit plan approval -> render mode selection -> generation from the approved plan -> artifact history -> plan snapshot -> retry from saved plan.
 
 This is not Kimi Slides-class parity. It is the frontend-facing workflow foundation required before S3 adaptive deck modes and later visual/rendering improvements.
+
+## S3 execution checkpoint
+
+S3 implements the adaptive deck mode registry needed after S2 outline-first workflow. The accepted modes are `executive_board_deck`, `architecture_review_deck`, `project_status_deck`, `decision_matrix_deck`, and `long_document_explainer`.
+
+S3 prepares S4 native table/chart/diagram rendering and S9 render-based visual QA by recording mode-specific slide archetypes, table/chart policies, visual QA expectations, provenance expectations, and known failure guards. It is still not Kimi Slides-class parity.
