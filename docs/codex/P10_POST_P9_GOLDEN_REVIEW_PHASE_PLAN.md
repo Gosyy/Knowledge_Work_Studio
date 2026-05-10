@@ -196,3 +196,12 @@ S6 starts from accepted S5 on branch `9_Product_Release_Hardening` at `0ce33b744
 The checkpoint defines local heavy-module boundaries for OCR, layout detection, region segmentation, and table-structure detection; requires source-image-to-region and region-to-slide-element provenance; and prefers editable PPTX reconstruction over raster fallback. Raster fallback is allowed only as a non-primary path with an explicit reason.
 
 S6 does not add cloud vision, public-internet dependency, public API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker changes, Kimi-level claims, or Server 3 `local_intranet` verification claims. The next execution phase is S7 offline/intranet research citations.
+
+
+## S7 - Offline/intranet research citations
+
+S7 starts from accepted S6 on branch `9_Product_Release_Hardening` at `7a0e6732429b6fc9e29e78ef49453f6715f320d3`. It adds an offline/intranet citation manifest contract for source-grounded slides.
+
+The checkpoint requires citations for slide-level claims, S4 native PPTX tables/charts/diagrams, and S6 image/screenshot crop-region reconstructions. Allowed evidence sources are uploaded documents, internal browser evidence packets, local knowledge-base entries, intranet documents, image-region evidence, and generated artifact manifests.
+
+S7 does not add public API endpoints, DB migrations, frontend runtime, dependency, Docker, cloud LLM, cloud vision, or hidden public-internet production requirements. It does not claim Kimi-level parity and does not verify Server 3 `local_intranet`.

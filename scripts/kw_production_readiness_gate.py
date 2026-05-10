@@ -276,6 +276,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/slides_service/image_to_slide_workflow.py",
     "scripts/kw_s6_image_to_slide_workflow_check.py",
     "backend/tests/smoke/test_s6_image_to_slide_workflow.py",
+    "docs/codex/S7_OFFLINE_INTRANET_RESEARCH_CITATIONS.md",
+    "backend/app/services/slides_service/offline_research_citations.py",
+    "scripts/kw_s7_offline_research_citations_check.py",
+    "backend/tests/smoke/test_s7_offline_research_citations.py",
 )
 
 SECRET_MARKERS = (
@@ -1445,6 +1449,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S6 Image/screenshot-to-slide workflow",
             (python, "scripts/kw_s6_image_to_slide_workflow_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "S7 Offline/intranet research citations",
+            (
+                python,
+                "scripts/kw_s7_offline_research_citations_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )

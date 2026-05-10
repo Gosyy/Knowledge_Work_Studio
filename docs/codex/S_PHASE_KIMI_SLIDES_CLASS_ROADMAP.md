@@ -67,3 +67,10 @@ S5 keeps the production target offline/intranet, does not use cloud template dis
 S6 turns the roadmap item `Image/screenshot to slide workflow` into a controlled offline-safe contract. The accepted scope is local image/screenshot ingestion, local heavy-module OCR/layout/region metadata, editable PPTX reconstruction preference, raster fallback only with an explicit reason, and source-to-region-to-slide provenance.
 
 S6 keeps Kimi Slides-class as a future benchmark target, not a current parity claim.
+
+
+## S7 - Offline/intranet research citations
+
+S7 turns source-grounded evidence into a first-class offline/intranet citation manifest. Slide-level claims, S4 native visuals, and S6 image-region reconstructions must link to uploaded documents, internal browser evidence packets, local knowledge-base entries, intranet documents, image regions, or generated artifact manifests.
+
+S7 explicitly forbids hidden public-web lookups, cloud research, cloud vision, and unattributed model memory as production-default citation sources. The next phase is S8 conversational edit loop over saved plans and citation-aware revisions.
