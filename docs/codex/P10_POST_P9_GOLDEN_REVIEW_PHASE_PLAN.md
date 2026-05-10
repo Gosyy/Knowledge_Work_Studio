@@ -172,3 +172,11 @@ S2 does not change runtime scope. It does not add API endpoints, DB migrations, 
 S3 starts from accepted S2 on branch `9_Product_Release_Hardening` at `fb5d888f9348c07a57b94387f0b201f38c785010`. It adds a benchmark-aligned adaptive deck mode registry for executive, architecture, status, decision-matrix, and long-document explainer decks.
 
 The checkpoint requires mode-specific storylines, slide archetypes, table/chart policies, visual QA expectations, provenance expectations, and failure guards before later S4/S9 rendering and visual QA work. S3 does not claim Kimi-level parity, does not verify Server 3 `local_intranet`, and does not add API, DB, frontend runtime, dependency, Docker, cloud LLM, or cloud vision scope.
+
+## S4 - Native table/chart/diagram rendering
+
+S4 starts from accepted S3 on branch `9_Product_Release_Hardening` at `c75656b23b5166a4b79ded85c1968ab74ee0185c`. It defines an offline-safe native visual-rendering registry for editable PPTX tables, charts, and diagrams.
+
+The checkpoint consumes the S3 adaptive deck-mode registry and adds mode-specific native visual specifications for decision matrices, architecture topology diagrams, failure-mode/operator-gate tables, project milestone timelines, risk registers, and long-document evidence packages.
+
+S4 does not rewrite the renderer or change runtime scope. It does not add API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker changes, cloud LLM, cloud vision, public-internet production dependency, Kimi-level claims, or Server 3 local-intranet verification claims.

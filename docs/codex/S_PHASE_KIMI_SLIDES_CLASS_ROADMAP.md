@@ -49,3 +49,9 @@ This is not Kimi Slides-class parity. It is the frontend-facing workflow foundat
 S3 implements the adaptive deck mode registry needed after S2 outline-first workflow. The accepted modes are `executive_board_deck`, `architecture_review_deck`, `project_status_deck`, `decision_matrix_deck`, and `long_document_explainer`.
 
 S3 prepares S4 native table/chart/diagram rendering and S9 render-based visual QA by recording mode-specific slide archetypes, table/chart policies, visual QA expectations, provenance expectations, and known failure guards. It is still not Kimi Slides-class parity.
+
+## S4 execution checkpoint
+
+S4 accepts native table/chart/diagram rendering as a registry and contract layer. It binds native PPTX tables, charts, and shape diagrams to the S3 adaptive deck modes so later implementation can render decision matrices, topology diagrams, timelines, risk tables, and evidence packages without raster-only fallbacks.
+
+S4 remains offline/intranet-compatible and does not claim Kimi Slides-class parity. The next controlled step is `S5 — template and slide-master ingestion`.

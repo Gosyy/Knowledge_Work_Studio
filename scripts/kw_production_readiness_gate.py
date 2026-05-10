@@ -264,6 +264,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/slides_service/adaptive_deck_modes.py",
     "scripts/kw_s3_adaptive_deck_modes_check.py",
     "backend/tests/smoke/test_s3_adaptive_deck_modes.py",
+    "docs/codex/S4_NATIVE_TABLE_CHART_DIAGRAM_RENDERING.md",
+    "backend/app/services/slides_service/native_visuals.py",
+    "scripts/kw_s4_native_visual_rendering_check.py",
+    "backend/tests/smoke/test_s4_native_visual_rendering.py",
 )
 
 SECRET_MARKERS = (
@@ -1413,6 +1417,13 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+    steps.append(
+        GateStep(
+            "S4 Native table/chart/diagram rendering",
+            (python, "scripts/kw_s4_native_visual_rendering_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
     return steps
 
 
