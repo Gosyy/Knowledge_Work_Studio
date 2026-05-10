@@ -188,3 +188,11 @@ S5 starts from accepted S4 on branch `9_Product_Release_Hardening` at `f04190dc5
 The checkpoint extracts local template master/theme/layout metadata from the bundled registry, rejects external template references, and maps deck archetypes plus native visuals to available local slide layouts.
 
 S5 does not add API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker changes, cloud LLM, cloud vision, public-internet production dependency, Kimi-level claims, or Server 3 local-intranet verification claims.
+
+## S6 - Image/screenshot-to-slide workflow
+
+S6 starts from accepted S5 on branch `9_Product_Release_Hardening` at `0ce33b74473e8ffdbf6e47f4096da86b66b898eb`. It adds an offline-safe workflow contract for turning screenshots, images, and scanned page images into slide-ready structures.
+
+The checkpoint defines local heavy-module boundaries for OCR, layout detection, region segmentation, and table-structure detection; requires source-image-to-region and region-to-slide-element provenance; and prefers editable PPTX reconstruction over raster fallback. Raster fallback is allowed only as a non-primary path with an explicit reason.
+
+S6 does not add cloud vision, public-internet dependency, public API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker changes, Kimi-level claims, or Server 3 `local_intranet` verification claims. The next execution phase is S7 offline/intranet research citations.

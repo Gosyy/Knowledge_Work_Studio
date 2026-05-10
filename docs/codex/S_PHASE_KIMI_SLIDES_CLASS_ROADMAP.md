@@ -61,3 +61,9 @@ S4 remains offline/intranet-compatible and does not claim Kimi Slides-class pari
 S5 accepts local/offline template and slide-master ingestion as a contract layer. It extracts bundled template metadata, maps S3 deck-mode archetypes and S4 native visuals to local slide layouts, and rejects external template references.
 
 S5 keeps the production target offline/intranet, does not use cloud template discovery, and does not claim Kimi Slides-class parity. The next controlled step is `S6 — image/screenshot-to-slide workflow`.
+
+## S6 acceptance note
+
+S6 turns the roadmap item `Image/screenshot to slide workflow` into a controlled offline-safe contract. The accepted scope is local image/screenshot ingestion, local heavy-module OCR/layout/region metadata, editable PPTX reconstruction preference, raster fallback only with an explicit reason, and source-to-region-to-slide provenance.
+
+S6 keeps Kimi Slides-class as a future benchmark target, not a current parity claim.
