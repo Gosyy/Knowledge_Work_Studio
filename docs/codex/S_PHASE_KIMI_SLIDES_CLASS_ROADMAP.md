@@ -55,3 +55,9 @@ S3 prepares S4 native table/chart/diagram rendering and S9 render-based visual Q
 S4 accepts native table/chart/diagram rendering as a registry and contract layer. It binds native PPTX tables, charts, and shape diagrams to the S3 adaptive deck modes so later implementation can render decision matrices, topology diagrams, timelines, risk tables, and evidence packages without raster-only fallbacks.
 
 S4 remains offline/intranet-compatible and does not claim Kimi Slides-class parity. The next controlled step is `S5 — template and slide-master ingestion`.
+
+## S5 execution checkpoint
+
+S5 accepts local/offline template and slide-master ingestion as a contract layer. It extracts bundled template metadata, maps S3 deck-mode archetypes and S4 native visuals to local slide layouts, and rejects external template references.
+
+S5 keeps the production target offline/intranet, does not use cloud template discovery, and does not claim Kimi Slides-class parity. The next controlled step is `S6 — image/screenshot-to-slide workflow`.

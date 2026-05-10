@@ -180,3 +180,11 @@ S4 starts from accepted S3 on branch `9_Product_Release_Hardening` at `c75656b23
 The checkpoint consumes the S3 adaptive deck-mode registry and adds mode-specific native visual specifications for decision matrices, architecture topology diagrams, failure-mode/operator-gate tables, project milestone timelines, risk registers, and long-document evidence packages.
 
 S4 does not rewrite the renderer or change runtime scope. It does not add API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker changes, cloud LLM, cloud vision, public-internet production dependency, Kimi-level claims, or Server 3 local-intranet verification claims.
+
+## S5 - Template and slide-master ingestion
+
+S5 starts from accepted S4 on branch `9_Product_Release_Hardening` at `f04190dc56d7817401482f04b1289aa6bb2d0a6e`. It defines an offline-safe template and slide-master ingestion contract that maps local template metadata to S3 adaptive deck modes and S4 native visual specifications.
+
+The checkpoint extracts local template master/theme/layout metadata from the bundled registry, rejects external template references, and maps deck archetypes plus native visuals to available local slide layouts.
+
+S5 does not add API endpoints, DB migrations, frontend runtime changes, dependency changes, Docker changes, cloud LLM, cloud vision, public-internet production dependency, Kimi-level claims, or Server 3 local-intranet verification claims.

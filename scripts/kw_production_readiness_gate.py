@@ -268,6 +268,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/slides_service/native_visuals.py",
     "scripts/kw_s4_native_visual_rendering_check.py",
     "backend/tests/smoke/test_s4_native_visual_rendering.py",
+    "docs/codex/S5_TEMPLATE_MASTER_INGESTION.md",
+    "backend/app/services/slides_service/template_master_ingestion.py",
+    "scripts/kw_s5_template_master_ingestion_check.py",
+    "backend/tests/smoke/test_s5_template_master_ingestion.py",
 )
 
 SECRET_MARKERS = (
@@ -1421,6 +1425,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S4 Native table/chart/diagram rendering",
             (python, "scripts/kw_s4_native_visual_rendering_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "S5 Template and slide-master ingestion",
+            (python, "scripts/kw_s5_template_master_ingestion_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
