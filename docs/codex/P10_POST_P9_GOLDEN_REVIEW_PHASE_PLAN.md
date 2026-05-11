@@ -228,3 +228,10 @@ S10 starts from accepted S9 on branch `9_Product_Release_Hardening` at `e2954d5e
 The checkpoint defines twelve benchmark scenarios covering executive, architecture, project-status, decision-matrix, long-document, research, KPI, product-launch, training, screenshot/image, branded-template, and browser-evidence workflows. Each scenario requires S1-S9 evidence, approved plan snapshots, generated PPTX artifacts, manifests, citations, render geometry, render-based visual QA, and real completed human review before any selected parity claim.
 
 S10 does not claim Kimi-level parity. It only permits a future evidence-backed and scoped wording: `Kimi Slides-class offline workflow parity for selected benchmark scenarios.` S10 also does not verify Server 3 `local_intranet` and does not add API, DB, frontend runtime, dependency, Docker, cloud LLM, cloud vision, or hidden public-internet production scope.
+## S11 - S-phase closure dossier
+
+S11 starts from accepted S10 on branch `9_Product_Release_Hardening` at `c2ad133c54b872b8af69e1611464e9466016cbec`. It closes the S1-S10 capability foundation as an S-phase closure dossier.
+
+The checkpoint records that S1-S10 are complete as controlled capability contracts and that the future selected parity wording is limited to `Kimi Slides-class offline workflow parity for selected benchmark scenarios.` S11 does not run the 12-scenario benchmark, does not fabricate human review results, and does not claim Kimi-level parity.
+
+S11 preserves all boundaries: no Server 3 `local_intranet` verification claim, no hidden public-internet production dependency, no cloud research, no cloud vision, no API/DB/frontend/Docker/dependency scope change, and no `npm audit fix --force`.

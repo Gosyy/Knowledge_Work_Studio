@@ -292,6 +292,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/slides_service/kimi_style_benchmark.py",
     "scripts/kw_s10_kimi_style_benchmark_check.py",
     "backend/tests/smoke/test_s10_kimi_style_benchmark.py",
+    "docs/codex/S11_S_PHASE_CLOSURE_DOSSIER.md",
+    "backend/app/services/slides_service/s_phase_closure.py",
+    "scripts/kw_s11_s_phase_closure_check.py",
+    "backend/tests/smoke/test_s11_s_phase_closure.py",
 )
 
 SECRET_MARKERS = (
@@ -1508,6 +1512,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S10 Expanded Kimi-style benchmark and human review",
             (python, "scripts/kw_s10_kimi_style_benchmark_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "S11 S-phase closure dossier",
+            (python, "scripts/kw_s11_s_phase_closure_check.py", "--repo-root", str(repo_root), "--require-ready"),
             repo_root,
         )
     )

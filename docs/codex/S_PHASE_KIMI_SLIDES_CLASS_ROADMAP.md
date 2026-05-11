@@ -95,3 +95,8 @@ Kimi Slides-class offline workflow parity for selected benchmark scenarios.
 ```
 
 S10 does not claim whole-project Kimi-level parity, does not verify Server 3 `local_intranet`, and does not add hidden public-internet production dependencies.
+## S11 — S-phase closure dossier
+
+S11 closes the S1-S10 capability foundation. It records that the product now has controlled contracts for outline-first workflow, adaptive modes, native visuals, template/master ingestion, image-to-slide workflow, offline citations, conversational edits, render-based visual QA, and an expanded 12-scenario benchmark.
+
+S11 does not claim completed Kimi Slides parity. The only accepted future wording remains `Kimi Slides-class offline workflow parity for selected benchmark scenarios`, and that wording requires future completed benchmark execution plus real human review results.
