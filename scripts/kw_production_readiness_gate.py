@@ -314,6 +314,11 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_s13c_live_gigachat_evidence_packet_check.py",
     "scripts/kw_s13c_live_gigachat_evidence_packet_export.py",
     "backend/tests/smoke/test_s13c_live_gigachat_evidence_packet.py",
+    "docs/codex/S13D_LIVE_BENCHMARK_PROMPT_SCHEMA_HARDENING.md",
+    "backend/app/services/slides_service/live_benchmark_prompt_schema_hardening.py",
+    "scripts/kw_s13d_live_benchmark_prompt_schema_hardening_check.py",
+    "scripts/kw_s13d_live_gigachat_hardened_benchmark_run.py",
+    "backend/tests/smoke/test_s13d_live_benchmark_prompt_schema_hardening.py",
 )
 
 SECRET_MARKERS = (
@@ -1588,6 +1593,20 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S13c Live GigaChat evidence packet export",
             (python, "scripts/kw_s13c_live_gigachat_evidence_packet_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "S13d Live benchmark prompt/schema hardening",
+            (
+                python,
+                "scripts/kw_s13d_live_benchmark_prompt_schema_hardening_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+            ),
             repo_root,
         )
     )

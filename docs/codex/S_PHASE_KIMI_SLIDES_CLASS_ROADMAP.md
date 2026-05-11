@@ -119,3 +119,7 @@ Accepted future claim wording remains gated by completed S10/S12/S13 evidence an
 ## S13c — live GigaChat evidence packet export
 
 S13c packages S13b live public_api_dev GigaChat artifacts into review-ready evidence packets and pending human-review worksheets. It is a handoff/export stage, not a review-completion or parity-claim stage.
+
+## S13d — Live benchmark prompt/schema hardening and rerun
+
+S13d upgrades the selected benchmark live rerun path from generic plan generation to strict scenario-specific JSON output: at least eight slides per scenario, native visual plans, citation manifests, render QA obligations, evidence manifest fields, and human review handoff. The route remains `public_api_dev`; no Server 3 production proof or selected parity claim is implied.

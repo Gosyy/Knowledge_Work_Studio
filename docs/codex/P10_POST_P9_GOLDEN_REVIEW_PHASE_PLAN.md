@@ -260,3 +260,9 @@ S13b preserves these boundaries: public API evidence is not Server 3 `local_intr
 ## S13c — live GigaChat evidence packet export
 
 S13c exports the completed S13b public_api_dev GigaChat live outputs into a human-review evidence packet for the 12 selected benchmark scenarios. It keeps review state pending, records public_api_dev as non-Server-3 evidence, and does not claim selected parity or Kimi-level.
+
+## S13d — Live benchmark prompt/schema hardening and rerun
+
+S13d hardens the live `public_api_dev` GigaChat benchmark prompts after the first S13b/S13c review packet showed generic planning evidence across all 12 selected scenarios. The stage adds a strict JSON schema, scenario-specific slide outline requirements, native visual requirements, citation obligations, render QA obligations, and claim-safety guardrails.
+
+S13d does not auto-fill human review, does not claim selected offline workflow parity, does not claim Kimi-level, and does not verify Server 3 `local_intranet`.
