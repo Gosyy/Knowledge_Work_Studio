@@ -282,3 +282,9 @@ S13f introduces a stricter public_api_dev rerun path after S13d/S13e validation 
 S13g records the next controlled benchmark correction after strict large-schema prompting proved unstable. It introduces a minimal model-facing prompt and deterministic canonical adapter that separates model-provided content from adapter-added workflow metadata.
 
 S13g does not complete human review, does not claim selected offline workflow parity, does not claim Kimi-level, and does not verify Server 3 local_intranet. Live execution remains a separate operator step using shell-provided GigaChat credentials only.
+
+## S13h — Targeted retry for failed S13g scenarios
+
+S13h narrows the post-S13g workflow to the two failed canonical adapter scenarios from the live run: `executive_memo_to_board_deck` and `browser_evidence_packet_to_cited_deck`. It reuses the 10 prior canonical-valid S13g outputs and retries only the failed scenarios through `public_api_dev` GigaChat in an explicit execution command.
+
+S13h does not perform human review, does not auto-approve scenarios, does not claim selected offline workflow parity, does not claim Kimi-level, and does not verify Server 3 `local_intranet`.

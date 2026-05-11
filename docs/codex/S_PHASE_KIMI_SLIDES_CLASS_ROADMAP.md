@@ -139,3 +139,7 @@ S13f hardens the selected benchmark execution path after S13e repair remained be
 Status: controlled workflow added.
 
 The S13g path replaces large strict schema prompting with a minimal prompt plus canonical adapter. The adapter must preserve provenance for model-provided versus adapter-added fields and keep human review pending until real completed worksheets are ingested.
+
+## S13h — Targeted retry for failed S13g scenarios
+
+S13h adds a targeted retry stage after S13g. The stage is intended to avoid wasting live calls on already canonical-valid scenarios and to merge reused canonical-valid outputs with newly retried failed outputs. A merged result can proceed to evidence packet export only if all 12 selected scenarios are canonical-valid after merge.

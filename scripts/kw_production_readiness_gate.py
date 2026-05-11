@@ -330,6 +330,11 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_s13f_strict_json_per_scenario_rerun.py",
     "backend/tests/smoke/test_s13f_strict_json_per_scenario_rerun.py",
     "backend/tests/smoke/test_s13g_canonical_schema_adapter.py",
+    "docs/codex/S13H_TARGETED_RETRY_FAILED_S13G.md",
+    "backend/app/services/slides_service/targeted_s13g_retry.py",
+    "scripts/kw_s13h_targeted_s13g_retry_check.py",
+    "scripts/kw_s13h_targeted_s13g_retry.py",
+    "backend/tests/smoke/test_s13h_targeted_s13g_retry.py",
     "scripts/kw_s13g_canonical_schema_adapter_rerun.py",
     "scripts/kw_s13g_canonical_schema_adapter_check.py",
     "backend/app/services/slides_service/canonical_schema_adapter.py",
@@ -1655,6 +1660,15 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
                 str(repo_root),
                 "--require-ready",
             ),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "S13h Targeted retry failed S13g scenarios",
+            (python, "scripts/kw_s13h_targeted_s13g_retry_check.py", "--repo-root", str(repo_root), "--require-ready"),
             repo_root,
         )
     )
