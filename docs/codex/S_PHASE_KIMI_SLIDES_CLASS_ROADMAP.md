@@ -110,3 +110,8 @@ S12 converts the S10 benchmark contract and S11 closure dossier into an executio
 S13a creates the execution/review packet skeleton for all 12 S10 scenarios. It prepares packet indexes, evidence-manifest skeletons, worksheet skeletons, reviewer instructions, operator handoff notes, and review-result ingest schema boundaries.
 
 S13a intentionally does not run live GigaChat. S13b is the controlled phase for `public_api_dev` generation of real artifacts.
+## S13b — live public_api_dev GigaChat generation workflow
+
+S13b prepares and validates the live GigaChat `public_api_dev` execution workflow for the twelve selected benchmark scenarios. It is intentionally separated from default full-runner readiness so normal offline/intranet checks do not require secrets or internet access.
+
+Accepted future claim wording remains gated by completed S10/S12/S13 evidence and human review: `Kimi Slides-class offline workflow parity for selected benchmark scenarios.`

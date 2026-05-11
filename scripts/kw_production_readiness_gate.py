@@ -304,6 +304,11 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/slides_service/selected_benchmark_review_packet.py",
     "scripts/kw_s13a_selected_benchmark_review_packet_check.py",
     "backend/tests/smoke/test_s13a_selected_benchmark_review_packet.py",
+    "docs/codex/S13B_LIVE_PUBLIC_API_DEV_GIGACHAT_GENERATION.md",
+    "backend/app/services/slides_service/live_gigachat_selected_benchmark.py",
+    "scripts/kw_s13b_live_gigachat_selected_benchmark_check.py",
+    "scripts/kw_s13b_live_gigachat_selected_benchmark_run.py",
+    "backend/tests/smoke/test_s13b_live_gigachat_selected_benchmark.py",
 )
 
 SECRET_MARKERS = (
@@ -1548,6 +1553,22 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_s13a_selected_benchmark_review_packet_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "S13b Live public_api_dev GigaChat generation workflow",
+            (
+                python,
+                "scripts/kw_s13b_live_gigachat_selected_benchmark_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",

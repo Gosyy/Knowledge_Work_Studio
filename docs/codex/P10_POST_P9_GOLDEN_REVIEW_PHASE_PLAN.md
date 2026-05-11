@@ -249,3 +249,10 @@ S12 does not execute the benchmark, does not fabricate completed human review re
 S13a prepares the review-packet skeleton for the 12 S10 selected benchmark scenarios. It does not run live GigaChat, does not perform public_api_dev execution, does not fill human review results, and does not support a selected offline workflow parity claim yet.
 
 The initial execution state is `packet_skeleton_ready`; the initial review state remains `pending_human_review`. Real completed human review results are still required before any selected offline workflow parity claim.
+## S13b — live public_api_dev GigaChat generation for 12 selected benchmark scenarios
+
+Status: planned/controlled live-generation workflow.
+
+S13b adds the explicit `public_api_dev` GigaChat generation path for the twelve S10 selected benchmark scenarios. The normal production readiness gate validates the static live-generation contract without requiring secrets or network access. The actual live run must be invoked separately with shell environment credentials and must never commit or log raw credential values.
+
+S13b preserves these boundaries: public API evidence is not Server 3 `local_intranet` proof; generated artifacts do not complete human review; selected offline workflow parity is not supported until real completed human review results are ingested.
