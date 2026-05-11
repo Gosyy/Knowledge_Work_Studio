@@ -235,3 +235,11 @@ S11 starts from accepted S10 on branch `9_Product_Release_Hardening` at `c2ad133
 The checkpoint records that S1-S10 are complete as controlled capability contracts and that the future selected parity wording is limited to `Kimi Slides-class offline workflow parity for selected benchmark scenarios.` S11 does not run the 12-scenario benchmark, does not fabricate human review results, and does not claim Kimi-level parity.
 
 S11 preserves all boundaries: no Server 3 `local_intranet` verification claim, no hidden public-internet production dependency, no cloud research, no cloud vision, no API/DB/frontend/Docker/dependency scope change, and no `npm audit fix --force`.
+
+### S12 — Selected benchmark execution packet / human review workflow
+
+Status: targeted implementation pending full-runner closure.
+
+S12 prepares the execution packet for the selected S10 12-scenario benchmark and human review workflow. It creates the contract for scenario execution manifests, evidence manifests, reviewer worksheets, reviewer instructions, and review-result ingest boundaries.
+
+S12 does not execute the benchmark, does not fabricate completed human review results, does not auto-approve scenarios, and does not support the selected offline workflow parity claim until future completed benchmark results and real human review exist.

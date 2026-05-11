@@ -100,3 +100,7 @@ S10 does not claim whole-project Kimi-level parity, does not verify Server 3 `lo
 S11 closes the S1-S10 capability foundation. It records that the product now has controlled contracts for outline-first workflow, adaptive modes, native visuals, template/master ingestion, image-to-slide workflow, offline citations, conversational edits, render-based visual QA, and an expanded 12-scenario benchmark.
 
 S11 does not claim completed Kimi Slides parity. The only accepted future wording remains `Kimi Slides-class offline workflow parity for selected benchmark scenarios`, and that wording requires future completed benchmark execution plus real human review results.
+
+## S12 — Selected benchmark execution packet / human review workflow
+
+S12 converts the S10 benchmark contract and S11 closure dossier into an execution-ready review packet workflow. It requires 12 scenario packets, evidence manifests, review worksheets, reviewer instructions, and an ingest schema while preserving the claim boundary: no selected parity claim without future completed results and real human review.
