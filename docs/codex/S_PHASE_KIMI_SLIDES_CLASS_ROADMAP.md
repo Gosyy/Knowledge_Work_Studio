@@ -123,3 +123,9 @@ S13c packages S13b live public_api_dev GigaChat artifacts into review-ready evid
 ## S13d — Live benchmark prompt/schema hardening and rerun
 
 S13d upgrades the selected benchmark live rerun path from generic plan generation to strict scenario-specific JSON output: at least eight slides per scenario, native visual plans, citation manifests, render QA obligations, evidence manifest fields, and human review handoff. The route remains `public_api_dev`; no Server 3 production proof or selected parity claim is implied.
+
+## S13e — Hardened output repair/parser
+
+Status: targeted implementation stage.
+
+S13e adds deterministic repair and revalidation for failed S13d hardened live outputs. It does not call GigaChat again, does not fabricate human review results, and does not support any selected parity claim by itself.

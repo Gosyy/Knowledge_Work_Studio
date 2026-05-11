@@ -319,6 +319,11 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_s13d_live_benchmark_prompt_schema_hardening_check.py",
     "scripts/kw_s13d_live_gigachat_hardened_benchmark_run.py",
     "backend/tests/smoke/test_s13d_live_benchmark_prompt_schema_hardening.py",
+    "docs/codex/S13E_HARDENED_OUTPUT_REPAIR.md",
+    "backend/app/services/slides_service/hardened_output_repair.py",
+    "scripts/kw_s13e_hardened_output_repair_check.py",
+    "scripts/kw_s13e_hardened_output_repair_run.py",
+    "backend/tests/smoke/test_s13e_hardened_output_repair.py",
 )
 
 SECRET_MARKERS = (
@@ -1607,6 +1612,15 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
                 str(repo_root),
                 "--require-ready",
             ),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "S13e Hardened output repair/parser",
+            (python, "scripts/kw_s13e_hardened_output_repair_check.py", "--repo-root", str(repo_root), "--require-ready"),
             repo_root,
         )
     )

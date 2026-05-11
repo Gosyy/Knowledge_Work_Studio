@@ -266,3 +266,7 @@ S13c exports the completed S13b public_api_dev GigaChat live outputs into a huma
 S13d hardens the live `public_api_dev` GigaChat benchmark prompts after the first S13b/S13c review packet showed generic planning evidence across all 12 selected scenarios. The stage adds a strict JSON schema, scenario-specific slide outline requirements, native visual requirements, citation obligations, render QA obligations, and claim-safety guardrails.
 
 S13d does not auto-fill human review, does not claim selected offline workflow parity, does not claim Kimi-level, and does not verify Server 3 `local_intranet`.
+
+## S13e hardened output repair/parser
+
+S13e is a post-S13d repair stage for already generated hardened live outputs. It preserves original response digests, writes repair manifests, and keeps all claim boundaries unchanged: no auto approval, no completed human review, no Server 3 local_intranet claim, and no Kimi-level claim.
