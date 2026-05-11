@@ -80,3 +80,6 @@ S7 explicitly forbids hidden public-web lookups, cloud research, cloud vision, a
 S8 turns the S2 saved-plan workflow and S7 citation manifest into a controlled conversational revision loop. Operators can request revisions such as shortening a deck, reframing it for a board audience, adding a risk slide, replacing a table with a decision matrix, revising slide order, tightening citations, or converting a saved plan into an architecture-review deck.
 
 Every S8 revision must load a saved plan snapshot, produce a reviewable plan patch, require explicit operator approval, preserve plan lineage, revalidate citations, and generate from the revised approved plan. Hidden public web research, cloud vision, transient-prompt-only generation, and Kimi-level claims remain out of scope.
+### S9 acceptance expansion
+
+S9 is accepted when render-based visual QA requires actual local render evidence and geometry manifests, detects overlap/clipping/tiny text/table overflow/diagram collisions, links checks to S4/S6/S7/S8 evidence, and preserves offline/intranet boundaries without claiming Kimi-level parity.

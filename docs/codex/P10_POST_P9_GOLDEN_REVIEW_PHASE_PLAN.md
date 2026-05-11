@@ -213,3 +213,10 @@ S8 starts from accepted S7 on branch `9_Product_Release_Hardening` at `16887ec2c
 The checkpoint supports edit intents such as shortening a deck, reframing it for a board audience, adding risk slides, replacing tables with decision matrices, revising slide order, tightening citations, and converting an approved plan into an architecture-review deck. All edits require a saved plan snapshot, approved plan digest, operator edit instruction, citation manifest, plan patch preview, explicit operator approval, and citation revalidation before revised generation.
 
 S8 does not add API, DB, frontend runtime, dependency, Docker, cloud LLM, or cloud vision scope. It does not allow hidden public internet or transient-prompt-only generation, does not claim Kimi-level parity, and does not verify Server 3 `local_intranet`. The next controlled phase is S9 render-based visual QA.
+## S9 - Render-based visual QA
+
+S9 starts from accepted S8 on branch `9_Product_Release_Hardening` at `79e4e71463f2a68668c039f2e9f35d6faabe7f52`. It defines render-based visual QA for actual slide screenshots and local geometry manifests.
+
+The checkpoint requires rendered slide evidence, slide geometry manifests, native visual geometry from S4, image-region reconstruction evidence from S6, citation manifests from S7, and revised plan snapshot metadata from S8. It guards title/body collisions, text overlap, clipped text, tiny text, table overflow, dense native visuals, chart label collisions, diagram node overlap, image reconstruction mismatches, and citation marker visibility.
+
+S9 does not add API endpoints, database migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud vision, public internet, or Kimi-level claims. It prepares the final S10 benchmark by making visual QA evidence human-reviewable and render-grounded.
