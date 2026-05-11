@@ -220,3 +220,11 @@ S9 starts from accepted S8 on branch `9_Product_Release_Hardening` at `79e4e7146
 The checkpoint requires rendered slide evidence, slide geometry manifests, native visual geometry from S4, image-region reconstruction evidence from S6, citation manifests from S7, and revised plan snapshot metadata from S8. It guards title/body collisions, text overlap, clipped text, tiny text, table overflow, dense native visuals, chart label collisions, diagram node overlap, image reconstruction mismatches, and citation marker visibility.
 
 S9 does not add API endpoints, database migrations, frontend runtime changes, dependency changes, Docker/base-image changes, cloud vision, public internet, or Kimi-level claims. It prepares the final S10 benchmark by making visual QA evidence human-reviewable and render-grounded.
+
+## S10 - Expanded Kimi-style benchmark and human review
+
+S10 starts from accepted S9 on branch `9_Product_Release_Hardening` at `e2954d5e9d837571567c14b184cbc5dcebe86a7f`. It defines the expanded Kimi-style offline benchmark and human-review contract for selected workflow parity scenarios.
+
+The checkpoint defines twelve benchmark scenarios covering executive, architecture, project-status, decision-matrix, long-document, research, KPI, product-launch, training, screenshot/image, branded-template, and browser-evidence workflows. Each scenario requires S1-S9 evidence, approved plan snapshots, generated PPTX artifacts, manifests, citations, render geometry, render-based visual QA, and real completed human review before any selected parity claim.
+
+S10 does not claim Kimi-level parity. It only permits a future evidence-backed and scoped wording: `Kimi Slides-class offline workflow parity for selected benchmark scenarios.` S10 also does not verify Server 3 `local_intranet` and does not add API, DB, frontend runtime, dependency, Docker, cloud LLM, cloud vision, or hidden public-internet production scope.

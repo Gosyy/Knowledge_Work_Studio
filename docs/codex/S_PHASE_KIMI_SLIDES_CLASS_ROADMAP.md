@@ -83,3 +83,15 @@ Every S8 revision must load a saved plan snapshot, produce a reviewable plan pat
 ### S9 acceptance expansion
 
 S9 is accepted when render-based visual QA requires actual local render evidence and geometry manifests, detects overlap/clipping/tiny text/table overflow/diagram collisions, links checks to S4/S6/S7/S8 evidence, and preserves offline/intranet boundaries without claiming Kimi-level parity.
+
+## S10 checkpoint
+
+S10 defines the expanded Kimi-style benchmark and human-review contract for selected offline/intranet workflow parity scenarios.
+
+The benchmark scope contains twelve scenarios and requires the full S1-S9 evidence chain. A future parity claim is allowed only after completed benchmark execution and real human review. The only permitted scoped claim wording is:
+
+```text
+Kimi Slides-class offline workflow parity for selected benchmark scenarios.
+```
+
+S10 does not claim whole-project Kimi-level parity, does not verify Server 3 `local_intranet`, and does not add hidden public-internet production dependencies.

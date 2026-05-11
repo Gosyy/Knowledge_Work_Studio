@@ -288,6 +288,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/slides_service/render_based_visual_qa.py",
     "scripts/kw_s9_render_based_visual_qa_check.py",
     "backend/tests/smoke/test_s9_render_based_visual_qa.py",
+    "docs/codex/S10_EXPANDED_KIMI_STYLE_BENCHMARK.md",
+    "backend/app/services/slides_service/kimi_style_benchmark.py",
+    "scripts/kw_s10_kimi_style_benchmark_check.py",
+    "backend/tests/smoke/test_s10_kimi_style_benchmark.py",
 )
 
 SECRET_MARKERS = (
@@ -1496,6 +1500,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S9 Render-based visual QA",
             (python, "scripts/kw_s9_render_based_visual_qa_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "S10 Expanded Kimi-style benchmark and human review",
+            (python, "scripts/kw_s10_kimi_style_benchmark_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
