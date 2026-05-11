@@ -104,3 +104,9 @@ S11 does not claim completed Kimi Slides parity. The only accepted future wordin
 ## S12 — Selected benchmark execution packet / human review workflow
 
 S12 converts the S10 benchmark contract and S11 closure dossier into an execution-ready review packet workflow. It requires 12 scenario packets, evidence manifests, review worksheets, reviewer instructions, and an ingest schema while preserving the claim boundary: no selected parity claim without future completed results and real human review.
+
+## S13a - Selected benchmark review packet skeleton
+
+S13a creates the execution/review packet skeleton for all 12 S10 scenarios. It prepares packet indexes, evidence-manifest skeletons, worksheet skeletons, reviewer instructions, operator handoff notes, and review-result ingest schema boundaries.
+
+S13a intentionally does not run live GigaChat. S13b is the controlled phase for `public_api_dev` generation of real artifacts.

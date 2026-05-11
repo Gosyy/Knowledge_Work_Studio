@@ -300,6 +300,10 @@ REQUIRED_P_PHASE_FILES = (
     "backend/app/services/slides_service/selected_benchmark_execution_packet.py",
     "scripts/kw_s12_selected_benchmark_execution_packet_check.py",
     "backend/tests/smoke/test_s12_selected_benchmark_execution_packet.py",
+    "docs/codex/S13A_SELECTED_BENCHMARK_REVIEW_PACKET.md",
+    "backend/app/services/slides_service/selected_benchmark_review_packet.py",
+    "scripts/kw_s13a_selected_benchmark_review_packet_check.py",
+    "backend/tests/smoke/test_s13a_selected_benchmark_review_packet.py",
 )
 
 SECRET_MARKERS = (
@@ -1533,6 +1537,22 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S12 Selected benchmark execution packet",
             (python, "scripts/kw_s12_selected_benchmark_execution_packet_check.py", "--repo-root", str(repo_root), "--require-ready"),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "S13a Selected benchmark review packet skeleton",
+            (
+                python,
+                "scripts/kw_s13a_selected_benchmark_review_packet_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )

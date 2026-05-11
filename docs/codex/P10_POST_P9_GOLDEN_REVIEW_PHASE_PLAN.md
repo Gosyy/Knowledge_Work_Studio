@@ -243,3 +243,9 @@ Status: targeted implementation pending full-runner closure.
 S12 prepares the execution packet for the selected S10 12-scenario benchmark and human review workflow. It creates the contract for scenario execution manifests, evidence manifests, reviewer worksheets, reviewer instructions, and review-result ingest boundaries.
 
 S12 does not execute the benchmark, does not fabricate completed human review results, does not auto-approve scenarios, and does not support the selected offline workflow parity claim until future completed benchmark results and real human review exist.
+
+## S13a - Selected benchmark review packet skeleton
+
+S13a prepares the review-packet skeleton for the 12 S10 selected benchmark scenarios. It does not run live GigaChat, does not perform public_api_dev execution, does not fill human review results, and does not support a selected offline workflow parity claim yet.
+
+The initial execution state is `packet_skeleton_ready`; the initial review state remains `pending_human_review`. Real completed human review results are still required before any selected offline workflow parity claim.
