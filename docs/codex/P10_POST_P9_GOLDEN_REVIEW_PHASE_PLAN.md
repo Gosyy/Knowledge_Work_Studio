@@ -256,3 +256,7 @@ Status: planned/controlled live-generation workflow.
 S13b adds the explicit `public_api_dev` GigaChat generation path for the twelve S10 selected benchmark scenarios. The normal production readiness gate validates the static live-generation contract without requiring secrets or network access. The actual live run must be invoked separately with shell environment credentials and must never commit or log raw credential values.
 
 S13b preserves these boundaries: public API evidence is not Server 3 `local_intranet` proof; generated artifacts do not complete human review; selected offline workflow parity is not supported until real completed human review results are ingested.
+
+## S13c — live GigaChat evidence packet export
+
+S13c exports the completed S13b public_api_dev GigaChat live outputs into a human-review evidence packet for the 12 selected benchmark scenarios. It keeps review state pending, records public_api_dev as non-Server-3 evidence, and does not claim selected parity or Kimi-level.

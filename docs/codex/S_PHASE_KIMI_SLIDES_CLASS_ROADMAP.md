@@ -115,3 +115,7 @@ S13a intentionally does not run live GigaChat. S13b is the controlled phase for 
 S13b prepares and validates the live GigaChat `public_api_dev` execution workflow for the twelve selected benchmark scenarios. It is intentionally separated from default full-runner readiness so normal offline/intranet checks do not require secrets or internet access.
 
 Accepted future claim wording remains gated by completed S10/S12/S13 evidence and human review: `Kimi Slides-class offline workflow parity for selected benchmark scenarios.`
+
+## S13c — live GigaChat evidence packet export
+
+S13c packages S13b live public_api_dev GigaChat artifacts into review-ready evidence packets and pending human-review worksheets. It is a handoff/export stage, not a review-completion or parity-claim stage.
