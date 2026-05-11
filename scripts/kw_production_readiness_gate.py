@@ -329,6 +329,11 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_s13f_strict_json_per_scenario_rerun_check.py",
     "scripts/kw_s13f_strict_json_per_scenario_rerun.py",
     "backend/tests/smoke/test_s13f_strict_json_per_scenario_rerun.py",
+    "backend/tests/smoke/test_s13g_canonical_schema_adapter.py",
+    "scripts/kw_s13g_canonical_schema_adapter_rerun.py",
+    "scripts/kw_s13g_canonical_schema_adapter_check.py",
+    "backend/app/services/slides_service/canonical_schema_adapter.py",
+    "docs/codex/S13G_CANONICAL_SCHEMA_ADAPTER.md",
 )
 
 SECRET_MARKERS = (
@@ -1635,6 +1640,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S13f Strict per-scenario JSON rerun",
             (python, "scripts/kw_s13f_strict_json_per_scenario_rerun_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "S13g Canonical schema adapter minimal rerun",
+            (
+                python,
+                "scripts/kw_s13g_canonical_schema_adapter_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+            ),
             repo_root,
         )
     )

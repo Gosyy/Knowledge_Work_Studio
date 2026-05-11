@@ -276,3 +276,9 @@ S13e is a post-S13d repair stage for already generated hardened live outputs. It
 Status: targeted patch in progress.
 
 S13f introduces a stricter public_api_dev rerun path after S13d/S13e validation showed that generic or partially repaired outputs are not enough. S13f requires one scenario per request, exact JSON object output, schema echo, minimum eight slides, non-empty slide purpose fields, slide-level citations, render QA obligations, and safety boundaries. Static checks do not call GigaChat or require credentials; the explicit S13f live runner is an execution-stage command only.
+
+## S13g — canonical schema adapter + minimal strict rerun
+
+S13g records the next controlled benchmark correction after strict large-schema prompting proved unstable. It introduces a minimal model-facing prompt and deterministic canonical adapter that separates model-provided content from adapter-added workflow metadata.
+
+S13g does not complete human review, does not claim selected offline workflow parity, does not claim Kimi-level, and does not verify Server 3 local_intranet. Live execution remains a separate operator step using shell-provided GigaChat credentials only.

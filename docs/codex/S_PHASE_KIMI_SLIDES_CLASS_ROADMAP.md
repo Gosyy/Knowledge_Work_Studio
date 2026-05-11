@@ -133,3 +133,9 @@ S13e adds deterministic repair and revalidation for failed S13d hardened live ou
 ## S13f — strict per-scenario JSON rerun
 
 S13f hardens the selected benchmark execution path after S13e repair remained below acceptance. It adds strict per-scenario JSON schema echo, fail-fast validation, and deterministic repair fallback for syntax only. It does not claim selected parity, Kimi-level, or Server 3 local_intranet verification.
+
+## S13g — canonical schema adapter + minimal strict rerun
+
+Status: controlled workflow added.
+
+The S13g path replaces large strict schema prompting with a minimal prompt plus canonical adapter. The adapter must preserve provenance for model-provided versus adapter-added fields and keep human review pending until real completed worksheets are ingested.
