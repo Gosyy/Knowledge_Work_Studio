@@ -129,3 +129,7 @@ S13d upgrades the selected benchmark live rerun path from generic plan generatio
 Status: targeted implementation stage.
 
 S13e adds deterministic repair and revalidation for failed S13d hardened live outputs. It does not call GigaChat again, does not fabricate human review results, and does not support any selected parity claim by itself.
+
+## S13f — strict per-scenario JSON rerun
+
+S13f hardens the selected benchmark execution path after S13e repair remained below acceptance. It adds strict per-scenario JSON schema echo, fail-fast validation, and deterministic repair fallback for syntax only. It does not claim selected parity, Kimi-level, or Server 3 local_intranet verification.

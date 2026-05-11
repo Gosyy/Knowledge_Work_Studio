@@ -270,3 +270,9 @@ S13d does not auto-fill human review, does not claim selected offline workflow p
 ## S13e hardened output repair/parser
 
 S13e is a post-S13d repair stage for already generated hardened live outputs. It preserves original response digests, writes repair manifests, and keeps all claim boundaries unchanged: no auto approval, no completed human review, no Server 3 local_intranet claim, and no Kimi-level claim.
+
+### S13f — strict per-scenario JSON rerun with schema echo and repair fallback
+
+Status: targeted patch in progress.
+
+S13f introduces a stricter public_api_dev rerun path after S13d/S13e validation showed that generic or partially repaired outputs are not enough. S13f requires one scenario per request, exact JSON object output, schema echo, minimum eight slides, non-empty slide purpose fields, slide-level citations, render QA obligations, and safety boundaries. Static checks do not call GigaChat or require credentials; the explicit S13f live runner is an execution-stage command only.

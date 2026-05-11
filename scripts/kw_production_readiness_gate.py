@@ -324,6 +324,11 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_s13e_hardened_output_repair_check.py",
     "scripts/kw_s13e_hardened_output_repair_run.py",
     "backend/tests/smoke/test_s13e_hardened_output_repair.py",
+    "docs/codex/S13F_STRICT_JSON_PER_SCENARIO_RERUN.md",
+    "backend/app/services/slides_service/strict_json_per_scenario_rerun.py",
+    "scripts/kw_s13f_strict_json_per_scenario_rerun_check.py",
+    "scripts/kw_s13f_strict_json_per_scenario_rerun.py",
+    "backend/tests/smoke/test_s13f_strict_json_per_scenario_rerun.py",
 )
 
 SECRET_MARKERS = (
@@ -1621,6 +1626,15 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S13e Hardened output repair/parser",
             (python, "scripts/kw_s13e_hardened_output_repair_check.py", "--repo-root", str(repo_root), "--require-ready"),
+            repo_root,
+        )
+    )
+
+
+    steps.append(
+        GateStep(
+            "S13f Strict per-scenario JSON rerun",
+            (python, "scripts/kw_s13f_strict_json_per_scenario_rerun_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
             repo_root,
         )
     )
