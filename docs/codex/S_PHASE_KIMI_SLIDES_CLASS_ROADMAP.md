@@ -155,3 +155,9 @@ S13j is a narrow deterministic recovery step after S13i live retry left `executi
 ## S13k human review packet export from S13j merged artifacts
 
 Status target: controlled patch-stage plus live packet export from the S13j 12/12 ZIP. S13k creates human review worksheets, evidence manifests, canonical response copies, and S13j provenance files. The executive memo worksheet must preserve the deterministic fallback adapter warning so reviewers can distinguish salvage-generated fields from model-generated content. Review remains pending until real completed worksheets are ingested.
+
+## S13l completed S13k review results ingest
+
+Status target: controlled patch-stage plus live ingest of completed S13k review results. S13l validates the completed worksheets and produces an ingest manifest, scenario decisions, and follow-up backlog. For the current assistant-assisted review, all 12 scenarios request rework because the packet lacks actual PPTX/render/citation/source artifacts and the executive memo scenario was recovered through a fallback adapter.
+
+S13l does not close the selected offline workflow parity claim. It records the completed review decision and preserves that Kimi-level, selected parity, and Server 3 `local_intranet` verification remain unsupported until future evidence and review steps justify them.

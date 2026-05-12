@@ -1719,6 +1719,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             repo_root,
         )
     )
+
+    steps.append(
+        GateStep(
+            "S13l Completed S13k review results ingest",
+            (
+                python,
+                "scripts/kw_s13l_review_results_ingest_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
     return steps
 
 

@@ -300,3 +300,9 @@ S13j is a narrow deterministic recovery step after S13i live retry left `executi
 ## S13k human review packet export from S13j merged artifacts
 
 S13k exports blank manual review worksheets and provenance from the S13j merged 12/12 canonical-valid ZIP. It preserves the `executive_memo_to_board_deck` fallback salvage marker, source S13i response digest, and the fact that salvage-generated fields are not model-generated. S13k does not call GigaChat, does not auto-fill review decisions, and does not support selected parity, Kimi-level, or Server 3 `local_intranet` claims by itself.
+
+## S13l completed S13k review results ingest
+
+S13l ingests completed S13k review results and exports a deterministic decision/backlog artifact. It requires the completed review results ZIP and the source S13k packet ZIP, validates all 12 worksheets, verifies decision counts, preserves the assistant-assisted review caveat when present, and checks that the `executive_memo_to_board_deck` salvage markers remain intact.
+
+Current expected decision from the assistant-assisted S13k review results is `request_rework` for all 12 scenarios. This is a completed review ingest result, not an approval. S13l does not call GigaChat, does not rerun generation, does not alter canonical payloads, and does not support selected offline workflow parity, Kimi-level, or Server 3 `local_intranet` verification claims.
