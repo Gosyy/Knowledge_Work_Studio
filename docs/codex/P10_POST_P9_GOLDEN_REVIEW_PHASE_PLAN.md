@@ -288,3 +288,7 @@ S13g does not complete human review, does not claim selected offline workflow pa
 S13h narrows the post-S13g workflow to the two failed canonical adapter scenarios from the live run: `executive_memo_to_board_deck` and `browser_evidence_packet_to_cited_deck`. It reuses the 10 prior canonical-valid S13g outputs and retries only the failed scenarios through `public_api_dev` GigaChat in an explicit execution command.
 
 S13h does not perform human review, does not auto-approve scenarios, does not claim selected offline workflow parity, does not claim Kimi-level, and does not verify Server 3 `local_intranet`.
+
+## S13i — single-scenario executive memo retry / merge with successful S13h output
+
+S13i narrows live retry to `executive_memo_to_board_deck` after S13h produced an 11/12 canonical-valid merge. It reuses the 11 prior S13h canonical-valid outputs and only retries the executive memo scenario through public_api_dev GigaChat. Human review remains pending and no selected parity, Kimi-level, or Server 3 local_intranet claim is supported by S13i alone.
