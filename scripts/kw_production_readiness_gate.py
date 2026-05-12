@@ -340,6 +340,11 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_s13i_single_scenario_retry_check.py",
     "scripts/kw_s13i_single_scenario_retry.py",
     "backend/tests/smoke/test_s13i_single_scenario_retry.py",
+    "docs/codex/S13J_EXECUTIVE_MEMO_SALVAGE.md",
+    "backend/app/services/slides_service/executive_memo_salvage.py",
+    "scripts/kw_s13j_executive_memo_salvage_check.py",
+    "scripts/kw_s13j_executive_memo_salvage.py",
+    "backend/tests/smoke/test_s13j_executive_memo_salvage.py",
     "scripts/kw_s13g_canonical_schema_adapter_rerun.py",
     "scripts/kw_s13g_canonical_schema_adapter_check.py",
     "backend/app/services/slides_service/canonical_schema_adapter.py",
@@ -1683,6 +1688,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S13i Single-scenario executive memo retry",
             (python, "scripts/kw_s13i_single_scenario_retry_check.py", "--require-ready"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "S13j Deterministic executive memo salvage",
+            (python, "scripts/kw_s13j_executive_memo_salvage_check.py", "--repo-root", str(repo_root), "--require-ready"),
             repo_root,
         )
     )

@@ -147,3 +147,7 @@ S13h adds a targeted retry stage after S13g. The stage is intended to avoid wast
 ## S13i — single-scenario executive memo retry
 
 Status target: controlled patch-stage plus later live execution. S13i uses the latest S13h 11/12 ZIP as input, retries only `executive_memo_to_board_deck`, and accepts the result only if the merged canonical output count becomes 12/12. Review worksheets remain `pending_human_review`.
+
+## S13j deterministic executive memo salvage
+
+S13j is a narrow deterministic recovery step after S13i live retry left `executive_memo_to_board_deck` malformed while eleven selected scenarios remained canonical-valid. S13j does not call GigaChat; it salvages the failed S13i response, preserves source digests, marks salvage-generated fields as not model-generated, and keeps human review pending. It does not support selected parity, Kimi-level, or Server 3 `local_intranet` claims by itself.

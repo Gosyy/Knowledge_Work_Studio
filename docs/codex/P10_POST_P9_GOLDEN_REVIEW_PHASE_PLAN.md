@@ -292,3 +292,7 @@ S13h does not perform human review, does not auto-approve scenarios, does not cl
 ## S13i — single-scenario executive memo retry / merge with successful S13h output
 
 S13i narrows live retry to `executive_memo_to_board_deck` after S13h produced an 11/12 canonical-valid merge. It reuses the 11 prior S13h canonical-valid outputs and only retries the executive memo scenario through public_api_dev GigaChat. Human review remains pending and no selected parity, Kimi-level, or Server 3 local_intranet claim is supported by S13i alone.
+
+## S13j deterministic executive memo salvage
+
+S13j is a narrow deterministic recovery step after S13i live retry left `executive_memo_to_board_deck` malformed while eleven selected scenarios remained canonical-valid. S13j does not call GigaChat; it salvages the failed S13i response, preserves source digests, marks salvage-generated fields as not model-generated, and keeps human review pending. It does not support selected parity, Kimi-level, or Server 3 `local_intranet` claims by itself.
