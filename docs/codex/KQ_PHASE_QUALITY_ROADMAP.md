@@ -27,3 +27,7 @@ The KQ-1 vertical slice moves from canonical schema outputs to real deck evidenc
 ## KQ acceptance style
 
 A KQ checkpoint is only meaningful if it changes the quality feedback loop. It should add a real artifact, a real artifact validator, or a real repair mechanism. Metadata-only stages should be avoided unless they protect a concrete deck-quality gate.
+
+## KQ-1B — actual executive memo PPTX generation
+
+KQ-1B adds the first deterministic artifact-generation vertical slice for `executive_memo_to_board_deck`. It must generate a real PPTX plus rendered preview screenshots, geometry QA, visual QA, citation manifest, source evidence manifest, and review packet over actual deck artifacts. The output must pass KQ-1A. KQ-1B still does not claim Kimi-level quality, parity, or Server 3 verification, and independent Office/LibreOffice render QA is deferred to KQ-1C.

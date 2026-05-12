@@ -356,6 +356,11 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_kq1_deck_quality_check.py",
     "scripts/kw_kq1_exec_memo_deck_quality.py",
     "backend/tests/smoke/test_kq1_deck_quality.py",
+    "docs/codex/KQ1B_EXEC_MEMO_ACTUAL_PPTX_GENERATION.md",
+    "backend/app/services/slides_service/kq_exec_memo_deck_generation.py",
+    "scripts/kw_kq1b_exec_memo_pptx_check.py",
+    "scripts/kw_kq1b_exec_memo_pptx_generate.py",
+    "backend/tests/smoke/test_kq1b_exec_memo_deck_generation.py",
     "scripts/kw_s13g_canonical_schema_adapter_rerun.py",
     "scripts/kw_s13g_canonical_schema_adapter_check.py",
     "backend/app/services/slides_service/canonical_schema_adapter.py",
@@ -1747,6 +1752,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_kq1_deck_quality_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "KQ-1B Executive memo actual PPTX generation",
+            (
+                python,
+                "scripts/kw_kq1b_exec_memo_pptx_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
