@@ -350,6 +350,12 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_s13k_human_review_packet_check.py",
     "scripts/kw_s13k_human_review_packet_export.py",
     "backend/tests/smoke/test_s13k_human_review_packet.py",
+    "docs/codex/KQ_PHASE_QUALITY_ROADMAP.md",
+    "docs/codex/KQ1A_DECK_ARTIFACT_QUALITY_HARNESS.md",
+    "backend/app/services/slides_service/kq_deck_quality.py",
+    "scripts/kw_kq1_deck_quality_check.py",
+    "scripts/kw_kq1_exec_memo_deck_quality.py",
+    "backend/tests/smoke/test_kq1_deck_quality.py",
     "scripts/kw_s13g_canonical_schema_adapter_rerun.py",
     "scripts/kw_s13g_canonical_schema_adapter_check.py",
     "backend/app/services/slides_service/canonical_schema_adapter.py",
@@ -1726,6 +1732,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             (
                 python,
                 "scripts/kw_s13l_review_results_ingest_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "KQ-1A Deck artifact quality harness",
+            (
+                python,
+                "scripts/kw_kq1_deck_quality_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
