@@ -296,3 +296,7 @@ S13i narrows live retry to `executive_memo_to_board_deck` after S13h produced an
 ## S13j deterministic executive memo salvage
 
 S13j is a narrow deterministic recovery step after S13i live retry left `executive_memo_to_board_deck` malformed while eleven selected scenarios remained canonical-valid. S13j does not call GigaChat; it salvages the failed S13i response, preserves source digests, marks salvage-generated fields as not model-generated, and keeps human review pending. It does not support selected parity, Kimi-level, or Server 3 `local_intranet` claims by itself.
+
+## S13k human review packet export from S13j merged artifacts
+
+S13k exports blank manual review worksheets and provenance from the S13j merged 12/12 canonical-valid ZIP. It preserves the `executive_memo_to_board_deck` fallback salvage marker, source S13i response digest, and the fact that salvage-generated fields are not model-generated. S13k does not call GigaChat, does not auto-fill review decisions, and does not support selected parity, Kimi-level, or Server 3 `local_intranet` claims by itself.

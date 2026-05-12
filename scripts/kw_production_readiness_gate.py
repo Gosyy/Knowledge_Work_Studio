@@ -345,6 +345,11 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_s13j_executive_memo_salvage_check.py",
     "scripts/kw_s13j_executive_memo_salvage.py",
     "backend/tests/smoke/test_s13j_executive_memo_salvage.py",
+    "docs/codex/S13K_HUMAN_REVIEW_PACKET_FROM_S13J.md",
+    "backend/app/services/slides_service/s13j_human_review_packet.py",
+    "scripts/kw_s13k_human_review_packet_check.py",
+    "scripts/kw_s13k_human_review_packet_export.py",
+    "backend/tests/smoke/test_s13k_human_review_packet.py",
     "scripts/kw_s13g_canonical_schema_adapter_rerun.py",
     "scripts/kw_s13g_canonical_schema_adapter_check.py",
     "backend/app/services/slides_service/canonical_schema_adapter.py",
@@ -1696,6 +1701,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         GateStep(
             "S13j Deterministic executive memo salvage",
             (python, "scripts/kw_s13j_executive_memo_salvage_check.py", "--repo-root", str(repo_root), "--require-ready"),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "S13k Human review packet export from S13j",
+            (
+                python,
+                "scripts/kw_s13k_human_review_packet_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )

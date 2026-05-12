@@ -151,3 +151,7 @@ Status target: controlled patch-stage plus later live execution. S13i uses the l
 ## S13j deterministic executive memo salvage
 
 S13j is a narrow deterministic recovery step after S13i live retry left `executive_memo_to_board_deck` malformed while eleven selected scenarios remained canonical-valid. S13j does not call GigaChat; it salvages the failed S13i response, preserves source digests, marks salvage-generated fields as not model-generated, and keeps human review pending. It does not support selected parity, Kimi-level, or Server 3 `local_intranet` claims by itself.
+
+## S13k human review packet export from S13j merged artifacts
+
+Status target: controlled patch-stage plus live packet export from the S13j 12/12 ZIP. S13k creates human review worksheets, evidence manifests, canonical response copies, and S13j provenance files. The executive memo worksheet must preserve the deterministic fallback adapter warning so reviewers can distinguish salvage-generated fields from model-generated content. Review remains pending until real completed worksheets are ingested.
