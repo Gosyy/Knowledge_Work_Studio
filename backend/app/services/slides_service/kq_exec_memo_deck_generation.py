@@ -283,7 +283,19 @@ def write_minimal_ooxml_pptx(path: Path, slides: tuple[KQ1BSlideSpec, ...]) -> N
         zf.writestr("[Content_Types].xml", "<Types xmlns='http://schemas.openxmlformats.org/package/2006/content-types'>" + "".join(overrides) + "</Types>")
         zf.writestr("_rels/.rels", "<Relationships xmlns='http://schemas.openxmlformats.org/package/2006/relationships'><Relationship Id='rId1' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument' Target='ppt/presentation.xml'/></Relationships>")
         slide_ids = "".join(f"<p:sldId id='{256 + idx}' r:id='rId{idx}'/>" for idx in range(1, len(slides) + 1))
-        zf.writestr("ppt/presentation.xml", f"<p:presentation xmlns:p='http://schemas.openxmlformats.org/presentationml/2006/main' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships'><p:sldIdLst>{slide_ids}</p:sldIdLst></p:presentation>")
+        # Keep the dependency-free fallback strict enough for independent
+        # LibreOffice rendering. Without explicit slide/notes sizes,
+        # LibreOffice can open the file but fail PDF export with
+        # SfxBaseModel::impl_store Io Class:Write Code:16.
+        zf.writestr(
+            "ppt/presentation.xml",
+            "<p:presentation xmlns:p='http://schemas.openxmlformats.org/presentationml/2006/main' "
+            "xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships'>"
+            f"<p:sldIdLst>{slide_ids}</p:sldIdLst>"
+            "<p:sldSz cx='12192000' cy='6858000' type='wide'/>"
+            "<p:notesSz cx='6858000' cy='9144000'/>"
+            "</p:presentation>",
+        )
         rels = "".join(f"<Relationship Id='rId{idx}' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide' Target='slides/slide{idx}.xml'/>" for idx in range(1, len(slides) + 1))
         zf.writestr("ppt/_rels/presentation.xml.rels", f"<Relationships xmlns='http://schemas.openxmlformats.org/package/2006/relationships'>{rels}</Relationships>")
         for idx, spec in enumerate(slides, start=1):

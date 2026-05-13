@@ -31,3 +31,7 @@ A KQ checkpoint is only meaningful if it changes the quality feedback loop. It s
 ## KQ-1B — actual executive memo PPTX generation
 
 KQ-1B adds the first deterministic artifact-generation vertical slice for `executive_memo_to_board_deck`. It must generate a real PPTX plus rendered preview screenshots, geometry QA, visual QA, citation manifest, source evidence manifest, and review packet over actual deck artifacts. The output must pass KQ-1A. KQ-1B still does not claim Kimi-level quality, parity, or Server 3 verification, and independent Office/LibreOffice render QA is deferred to KQ-1C.
+
+## KQ-1C — independent PPTX render and visual QA
+
+KQ-1C adds the first independent render loop over the actual KQ-1B PPTX. It reads the PPTX from the deck bundle, renders it to independent PNG outputs, writes render and visual QA reports, updates the review packet with independent render references, and validates the enhanced bundle through KQ-1A. Auto mode uses LibreOffice plus `pdftoppm` when available and falls back to a deterministic PPTX text renderer when the Office render stack is unavailable. KQ-1C still does not claim Kimi-level quality, parity, Server 3 verification, or human acceptance.

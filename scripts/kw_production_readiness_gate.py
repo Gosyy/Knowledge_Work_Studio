@@ -1775,6 +1775,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             repo_root,
         )
     )
+
+    steps.append(
+        GateStep(
+            "KQ-1C Independent PPTX render visual QA",
+            (
+                python,
+                "scripts/kw_kq1c_independent_render_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
     return steps
 
 
