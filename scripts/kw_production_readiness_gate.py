@@ -1785,6 +1785,7 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
+                    "--allow-missing-render-stack",
                 "--json",
             ),
             repo_root,

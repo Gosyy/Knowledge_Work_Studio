@@ -19,6 +19,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--require-ready", action="store_true")
     parser.add_argument("--require-office-render-stack", action="store_true")
+    parser.add_argument(
+        "--allow-missing-render-stack",
+        action="store_true",
+        help=(
+            "Allow capability-contract checks to pass on machines without LibreOffice/pdftoppm "
+            "or python-pptx/Pillow. Targeted KQ-1C artifact runs should still use "
+            "--require-office-render when real independent render evidence is required."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -34,8 +43,20 @@ def main() -> int:
 
     fallback_stack_available = payload.get("python_pptx_available") is True and payload.get("pillow_available") is True
     office_stack_available = payload.get("office_render_stack_available") is True
+    payload["render_stack_available"] = office_stack_available or fallback_stack_available
+    payload["render_stack_requirement_mode"] = (
+        "required" if not args.allow_missing_render_stack else "portable-contract-check"
+    )
+    payload["warnings"] = []
     if not office_stack_available and not fallback_stack_available:
-        missing.append("office_render_stack_available_or_python_fallback_stack")
+        if args.allow_missing_render_stack:
+            payload["warnings"].append(
+                "independent render stack is not installed on this machine; "
+                "KQ-1C implementation contract is checked, but real render evidence requires "
+                "LibreOffice/pdftoppm or python-pptx/Pillow."
+            )
+        else:
+            missing.append("office_render_stack_available_or_python_fallback_stack")
 
     if args.require_office_render_stack and not office_stack_available:
         missing.append("office_render_stack_available")
