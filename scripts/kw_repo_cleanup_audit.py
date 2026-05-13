@@ -181,8 +181,6 @@ def classify_doc(path: Path, repo_root: Path) -> FileClassification | None:
     rel = path.relative_to(repo_root).as_posix()
     if not rel.startswith("docs/") or path.suffix.lower() != ".md":
         return None
-    if rel.startswith("docs/archive/"):
-        return FileClassification(rel, "doc", "archived_legacy", "archived development history; not active product documentation")
     if rel.startswith(PRODUCT_DOC_PREFIXES):
         return FileClassification(rel, "doc", "keep_or_rewrite_as_product_doc", "active product documentation area")
     if rel.startswith("docs/codex/") or STAGE_NAME_RE.search(rel):
