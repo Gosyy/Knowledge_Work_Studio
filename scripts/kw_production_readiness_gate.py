@@ -439,9 +439,29 @@ def run_step(step: GateStep) -> None:
     print(f"[PASS] {step.name} completed in {elapsed:.1f}s")
 
 
+LEGACY_DOC_ARCHIVE_PREFIX = "docs/archive/development-history"
+
+
+def required_file_exists(repo_root: Path, path: str) -> bool:
+    direct_path = repo_root / path
+    if direct_path.exists():
+        return True
+    if path.startswith("docs/") and path.endswith(".md"):
+        archive_path = repo_root / LEGACY_DOC_ARCHIVE_PREFIX / path[len("docs/") :]
+        return archive_path.exists()
+    return False
+
+
+def missing_required_file_message(path: str) -> str:
+    if path.startswith("docs/") and path.endswith(".md"):
+        archived = f"{LEGACY_DOC_ARCHIVE_PREFIX}/{path[len('docs/') :]}"
+        return f"missing expected file: {path} or archived legacy copy: {archived}"
+    return f"missing expected P-phase file: {path}"
+
+
 def require_files(repo_root: Path) -> list[str]:
-    missing = [path for path in REQUIRED_P_PHASE_FILES if not (repo_root / path).exists()]
-    return [f"missing expected P-phase file: {path}" for path in missing]
+    missing = [path for path in REQUIRED_P_PHASE_FILES if not required_file_exists(repo_root, path)]
+    return [missing_required_file_message(path) for path in missing]
 
 
 def is_text_candidate(path: Path) -> bool:
