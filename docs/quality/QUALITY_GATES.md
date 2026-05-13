@@ -24,3 +24,6 @@ Quality gates define when KW Studio can trust an artifact enough to show, downlo
 ## Non-goals
 
 A passing quality gate does not automatically mean the output is expert-level, Kimi-level, legally approved, financially approved, or human-approved. Gates prove specific technical and provenance properties.
+
+Important: passing KW Studio quality gates does not prove Kimi-level quality, does not claim selected workflow parity, and does not replace human review. Quality gates prove specific technical, provenance, render, and artifact properties only.
+
