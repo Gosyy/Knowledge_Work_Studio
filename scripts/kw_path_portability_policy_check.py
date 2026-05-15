@@ -47,6 +47,7 @@ MARKER_CATALOG_ALLOWLIST = {
     "scripts/kw_product_test_aliases_check.py",
     "scripts/kw_low_risk_operator_static_replacements_check.py",
     "backend/tests/integrations/test_path_portability_policy_check.py",
+    "backend/tests/integrations/test_path_portability_cleanup_plan.py",
     "backend/tests/integrations/test_product_path_portability_contract.py",
     "backend/tests/operators/test_product_docs_operator_contract.py",
 }
@@ -54,6 +55,7 @@ MARKER_CATALOG_ALLOWLIST = {
 REQUIRED_POLICY_FILES = (
     "scripts/kw_path_portability_policy_check.py",
     "backend/tests/integrations/test_path_portability_policy_check.py",
+    "backend/tests/integrations/test_path_portability_cleanup_plan.py",
     "backend/tests/smoke/test_path_portability_policy.py",
     "docs/refactor/PATH_PORTABILITY_POLICY.md",
 )
