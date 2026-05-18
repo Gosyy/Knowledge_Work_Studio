@@ -229,6 +229,37 @@ KR-5B: XLSX validation and artifact bundle;
 KR-6A: source-grounded slides continuation.
 ```
 
+
+## Project-resident validation runners
+
+Full tests and Docker smoke validation must have project-resident entrypoints. External helper scripts from a local downloads directory are allowed only as bootstrap or recovery helpers; the validation scripts used to close a patch must live in the repository and be committed with the patch series.
+
+Current committed entrypoints:
+
+```text
+scripts/kw_product_full_runner_logged.sh
+scripts/kw_product_docker_smoke_logged.sh
+```
+
+Default behavior:
+
+```text
+logs are written under <repo>/logs;
+output is duplicated to the terminal;
+wrapper logs are archived as .log.tar.gz;
+source wrapper .log files are removed after archive creation;
+proxy environment variables are inherited instead of being globally overwritten;
+known generated frontend/next-env.d.ts changes are restored before final cleanliness checks.
+```
+
+Profile 2 operators may run the committed scripts directly from the project checkout:
+
+```bash
+cd /home/editor/workplace/Knowledge_Work_Studio
+bash scripts/kw_product_full_runner_logged.sh
+bash scripts/kw_product_docker_smoke_logged.sh
+```
+
 ## Rules for the next patch
 
 ```text
