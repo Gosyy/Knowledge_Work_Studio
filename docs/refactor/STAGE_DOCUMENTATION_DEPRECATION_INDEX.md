@@ -25,6 +25,16 @@ Canonical product docs are the source of truth for the product:
 
 `docs/codex` is deprecated development history. New product documentation must not be added there.
 
+## Current continuation checkpoint
+
+The active continuation checkpoint is maintained in:
+
+```text
+docs/refactor/KR_CURRENT_CONTINUATION_PLAN.md
+```
+
+That document supersedes older migration anchors that stopped at KR-2A or treated KR-2B as unresolved. The current cleanup direction remains conservative: product replacements first, dependency retirement second, physical archive/delete only after active references are cleared.
+
 ## Why physical archive is blocked
 
 The failed KR-1B attempt showed that moving stage documentation before test cleanup breaks the test suite. Some legacy checker scripts assert exact `docs/codex/*.md` paths. Moving those files first creates a noisy failure mode and hides the real cleanup objective.

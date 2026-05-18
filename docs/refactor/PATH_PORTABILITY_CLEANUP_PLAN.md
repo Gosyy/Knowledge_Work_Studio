@@ -64,6 +64,24 @@ Legacy smoke tests may encode old stage assumptions. They should be replaced wit
 
 Operator scripts should use arguments such as `--repo-root`, `--output-dir`, environment variables, or relative paths instead of fixed branch/commit/machine assumptions.
 
+## Current continuation after KR-3C
+
+The active continuation checkpoint is recorded in:
+
+```text
+docs/refactor/KR_CURRENT_CONTINUATION_PLAN.md
+```
+
+Development should continue from the accepted KR-3C branch head, not from older KR-2A / KR-2B migration notes. The next cleanup batches are:
+
+```text
+KR-3D: product entrypoint and local-example cleanup
+KR-3E: active gate reference retirement for legacy baseline-pinned stage scripts
+KR-3F: controlled archive/delete batch after dependencies are cleared
+```
+
+KR-3D should rewrite unmarked local examples as placeholders or mark them as local-only. It must not physically move `docs/codex`, delete legacy scripts, or weaken production gates.
+
 ## Non-goals
 
 KR-3B does not:
