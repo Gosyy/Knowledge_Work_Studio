@@ -367,7 +367,7 @@ def _run_libreoffice_pdf_convert(soffice: str, pptx_path: Path, pdf_dir: Path, w
         env.update({
             "HOME": str(profile_dir),
             "TMPDIR": str(work_dir),
-            "SAL_USE_VCLPLUGIN": env.get("SAL_USE_VCLPLUGIN", "gen"),
+            "SAL_USE_VCLPLUGIN": env.get("SAL_USE_VCLPLUGIN", "svp"),
         })
         last_result = subprocess.run(
             command,

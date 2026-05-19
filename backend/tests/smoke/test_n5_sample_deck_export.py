@@ -4,7 +4,7 @@ from dataclasses import dataclass, replace
 from io import BytesIO
 from pathlib import Path
 import shutil
-import subprocess
+import tempfile
 import zipfile
 
 import pytest
@@ -25,6 +25,8 @@ from backend.app.services.slides_service import (
     generate_pptx_from_outline,
     generate_pptx_from_plan,
 )
+from backend.app.services.slides_service.kq_pptx_render_qa import render_pptx_independently
+
 
 
 _PNG_1X1 = (
@@ -328,34 +330,47 @@ def test_n5_sample_deck_zip_metadata_is_deterministic() -> None:
     assert {info.compress_type for info in infos} == {zipfile.ZIP_DEFLATED}
 
 
-def test_n5_optional_libreoffice_visual_smoke(tmp_path: Path) -> None:
-    office_binary = shutil.which("soffice") or shutil.which("libreoffice")
-    if office_binary is None:
-        pytest.skip("LibreOffice/soffice is not installed; optional visual smoke skipped honestly.")
+def test_n5_required_libreoffice_visual_smoke(tmp_path: Path) -> None:
+    missing = []
+    if not (shutil.which("soffice") or shutil.which("libreoffice")):
+        missing.append("soffice/libreoffice")
+    if not shutil.which("pdftoppm"):
+        missing.append("pdftoppm")
+    if missing:
+        pytest.fail(
+            "Required Office/render stack is missing: "
+            + ", ".join(missing)
+            + ". Install it with: bash scripts/dev/install_system_dependencies_ubuntu.sh"
+        )
 
     sample = _structured_blocks_sample()
-    input_path = tmp_path / f"{sample.name}.pptx"
-    output_dir = tmp_path / "converted"
-    output_dir.mkdir()
-    input_path.write_bytes(sample.payload)
+    render_root = Path.cwd() / "logs" / "n5-libreoffice-visual-smoke"
+    render_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="case-", dir=str(render_root)) as tmp:
+        work = Path(tmp)
+        input_path = work / f"{sample.name}.pptx"
+        render_dir = work / "rendered"
+        input_path.write_bytes(sample.payload)
 
-    result = subprocess.run(
-        [
-            office_binary,
-            "--headless",
-            "--convert-to",
-            "pdf",
-            "--outdir",
-            str(output_dir),
-            str(input_path),
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+        try:
+            rendered_paths, engine, independent_render, office_render, warnings = render_pptx_independently(
+                input_path,
+                render_dir,
+                render_mode="libreoffice",
+            )
+        except Exception as exc:  # noqa: BLE001 - operator-facing smoke should expose render diagnostics.
+            pytest.fail(
+                "Required LibreOffice render stack is installed but not usable. "
+                "Run: python scripts/kw_system_dependencies_check.py --repo-root . "
+                f"--validate-render-stack --require-ready --json. Error: {exc}"
+            )
 
-    assert result.returncode == 0, result.stderr or result.stdout
-    output_pdf = output_dir / f"{sample.name}.pdf"
-    assert output_pdf.exists()
-    assert output_pdf.stat().st_size > 0
+        rendered_sizes = [path.stat().st_size for path in rendered_paths if path.exists()]
+
+    assert engine == "libreoffice_pdf_pdftoppm"
+    assert independent_render is True
+    assert office_render is True
+    assert not warnings
+    assert rendered_paths
+    assert rendered_sizes
+    assert all(size > 0 for size in rendered_sizes)

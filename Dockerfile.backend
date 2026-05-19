@@ -12,6 +12,12 @@ RUN groupadd --system kwstudio \
     && useradd --system --gid kwstudio --home-dir /app --shell /usr/sbin/nologin kwstudio
 
 COPY requirements.txt ./
+COPY infra/system-packages/ubuntu-render-stack.txt ./infra/system-packages/ubuntu-render-stack.txt
+
+RUN apt-get update \
+    && xargs -a ./infra/system-packages/ubuntu-render-stack.txt apt-get install -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN python -m pip install --upgrade pip \
     && python -m pip install -r requirements.txt
 

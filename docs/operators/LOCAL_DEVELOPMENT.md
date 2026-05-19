@@ -4,6 +4,14 @@ KW Studio must be portable across machines and checkout paths.
 
 ## Basic setup
 
+Install required OS packages first when the machine is expected to run Office/PDF render checks:
+
+```bash
+bash scripts/dev/install_system_dependencies_ubuntu.sh
+```
+
+Then create the Python environment and install project dependencies:
+
 ```bash
 cp .env.example .env
 python3 -m venv .venv
@@ -12,6 +20,12 @@ make install
 make create-dirs
 make test
 make run
+```
+
+Validate the render stack when working on Slides render QA:
+
+```bash
+python scripts/kw_system_dependencies_check.py --repo-root . --validate-render-stack --require-ready --json
 ```
 
 ## Portability rules
