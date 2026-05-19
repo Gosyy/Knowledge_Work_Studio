@@ -298,6 +298,28 @@ local GigaChat intranet proof with evidence
 artifact preview, retry, and recovery loops
 ```
 
+
+## Migration handoff requirement
+
+KR is now treated as a continuously portable project state, not only a sequence of isolated patches.
+The durable migration anchor is:
+
+```text
+docs/refactor/PROJECT_MIGRATION_HANDOFF.md
+```
+
+Future patches must review and update that handoff document whenever they change project status, accepted checkpoints, workflow direction, validation rules, operating profiles, system dependencies, or the agreed new phase plan.
+This is especially required immediately after the user and assistant agree on the plan for a new phase.
+
+The handoff guardrail is:
+
+```text
+scripts/kw_project_migration_handoff_check.py
+```
+
+The goal is that the project can be moved into another chat, another account, or another assistant with enough context to continue safely.
+
+
 ## Rules for all future patches
 
 Every future patch should state:
