@@ -187,6 +187,15 @@ record every path moved or removed;
 keep restore/audit information available.
 ```
 
+Batch 1 starts with root-level historical prompt packs and old runbooks that are not active product entrypoints.
+The archive manifest and machine-checkable guardrail live in:
+
+```text
+docs/refactor/CONTROLLED_ARCHIVE_DELETE_READINESS.md
+scripts/kw_controlled_archive_delete_readiness_check.py
+docs/archive/development-history/root-prompt-packs/
+```
+
 Non-goal:
 
 ```text

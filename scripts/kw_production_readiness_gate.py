@@ -910,6 +910,21 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
 
     steps.append(
         GateStep(
+            "KR-3F controlled archive/delete readiness guardrail",
+            (
+                python,
+                "scripts/kw_controlled_archive_delete_readiness_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
             "Product workflow and quality aliases",
             (
                 python,
