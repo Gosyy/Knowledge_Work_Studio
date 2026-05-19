@@ -7,6 +7,23 @@ from backend.app.workflows.contracts import (
     validate_workflow_contracts,
     workflow_contract_report,
 )
+from backend.app.workflows.core_contracts import (
+    MANDATORY_PRODUCT_WORKFLOW_IDS,
+    WORKFLOW_CONTRACT_CORE,
+    WORKFLOW_CONTRACT_CORE_VERSION,
+    WorkflowArtifact,
+    WorkflowContractCore,
+    WorkflowInput,
+    WorkflowManifest,
+    WorkflowPlan,
+    WorkflowProvenance,
+    WorkflowQualityReport,
+    WorkflowRun,
+    get_workflow_contract_core,
+    list_workflow_contract_core,
+    validate_workflow_contract_core,
+    workflow_contract_core_report,
+)
 
 __all__ = [
     "REQUIRED_WORKFLOW_IDS",
@@ -16,4 +33,19 @@ __all__ = [
     "list_workflow_contracts",
     "validate_workflow_contracts",
     "workflow_contract_report",
+    "MANDATORY_PRODUCT_WORKFLOW_IDS",
+    "WORKFLOW_CONTRACT_CORE",
+    "WORKFLOW_CONTRACT_CORE_VERSION",
+    "WorkflowArtifact",
+    "WorkflowContractCore",
+    "WorkflowInput",
+    "WorkflowManifest",
+    "WorkflowPlan",
+    "WorkflowProvenance",
+    "WorkflowQualityReport",
+    "WorkflowRun",
+    "get_workflow_contract_core",
+    "list_workflow_contract_core",
+    "validate_workflow_contract_core",
+    "workflow_contract_core_report",
 ]

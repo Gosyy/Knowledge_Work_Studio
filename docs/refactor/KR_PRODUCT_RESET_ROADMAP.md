@@ -212,6 +212,46 @@ unify plan, manifest, quality, provenance, artifact, and failure reporting conce
 make future DOCX/PDF/XLSX/Slides/Python/Browser workflows consistent.
 ```
 
+KR-4A adds the first product-facing contract core rather than rewriting all runtime workflows at once.
+The contract core lives in:
+
+```text
+backend/app/workflows/core_contracts.py
+scripts/kw_workflow_contract_core_check.py
+docs/architecture/WORKFLOW_CONTRACT_CORE.md
+```
+
+It defines and validates the shared vocabulary future workflows must converge on:
+
+```text
+WorkflowInput
+WorkflowPlan
+WorkflowRun
+WorkflowArtifact
+WorkflowManifest
+WorkflowQualityReport
+WorkflowProvenance
+```
+
+Mandatory product workflow IDs for the core are:
+
+```text
+docx
+pdf
+xlsx
+slides
+python_analysis
+browser_evidence
+```
+
+Non-goal for KR-4A:
+
+```text
+do not rewrite every runtime service yet;
+do not remove the older S2 workflow registry until compatibility and replacement coverage are proven;
+do not collapse Python analysis into XLSX, because both are distinct product pillars.
+```
+
 ### KR-5A — XLSX inspect workflow
 
 Purpose:
