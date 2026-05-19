@@ -30,3 +30,11 @@ def test_backend_dockerfile_installs_declared_system_dependency_list() -> None:
     dockerfile = (REPO_ROOT / "Dockerfile.backend").read_text(encoding="utf-8")
     assert "infra/system-packages/ubuntu-render-stack.txt" in dockerfile
     assert "apt-get install" in dockerfile
+    assert "grep -vE" in dockerfile
+    assert "xargs -r apt-get install" in dockerfile
+    assert "xargs -a ./infra/system-packages/ubuntu-render-stack.txt" not in dockerfile
+
+
+def test_backend_dockerfile_ignores_package_list_comments() -> None:
+    dockerfile = (REPO_ROOT / "Dockerfile.backend").read_text(encoding="utf-8")
+    assert "^[[:space:]]*(#|$)" in dockerfile
