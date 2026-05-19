@@ -61,8 +61,9 @@ def test_k0_scoring_contract_accepts_strong_future_candidate_but_rejects_weak_so
     assert rejected["kimi_level_claimed"] is False
 
 
-def test_k0_production_readiness_gate_mentions_checkpoint() -> None:
+def test_k0_legacy_checker_is_retired_from_active_production_gate() -> None:
     gate = (repo_root() / "scripts/kw_production_readiness_gate.py").read_text(encoding="utf-8")
-    assert "K0 Kimi-level rubric and golden benchmark" in gate
-    assert "scripts/kw_k0_kimi_rubric_check.py" in gate
-    assert "docs/codex/K0_KIMI_LEVEL_RUBRIC_AND_GOLDEN_BENCHMARK.md" in gate
+    retirement_policy = (repo_root() / "docs/refactor/ACTIVE_GATE_LEGACY_RETIREMENT.md").read_text(encoding="utf-8")
+    assert "scripts/kw_k0_kimi_rubric_check.py" not in gate
+    assert "scripts/kw_k0_kimi_rubric_check.py" in retirement_policy
+    assert (repo_root() / "docs/codex/K0_KIMI_LEVEL_RUBRIC_AND_GOLDEN_BENCHMARK.md").exists()

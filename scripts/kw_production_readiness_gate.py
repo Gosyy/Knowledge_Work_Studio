@@ -66,7 +66,6 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/K_PHASE_PRODUCT_POWER_PLAN.md",
     "docs/codex/K0_KIMI_LEVEL_RUBRIC_AND_GOLDEN_BENCHMARK.md",
     "backend/app/services/k_phase/kimi_level_rubric.py",
-    "scripts/kw_k0_kimi_rubric_check.py",
     "backend/tests/smoke/test_k0_kimi_rubric.py",
     "docs/codex/K1_LOCAL_GIGACHAT_PLANNING_ENGINE.md",
     "backend/app/services/k_phase/local_gigachat_planner.py",
@@ -74,26 +73,20 @@ REQUIRED_P_PHASE_FILES = (
     "backend/tests/smoke/test_k1_local_gigachat_planner.py",
     "docs/codex/K2_PLAN_EDITOR_PRODUCT_WORKFLOW.md",
     "backend/app/services/k_phase/plan_editor.py",
-    "scripts/kw_k2_plan_editor_check.py",
     "backend/tests/smoke/test_k2_plan_editor_workflow.py",
     "docs/codex/K3_RENDERER_QUALITY_RUNTIME.md",
     "backend/app/services/k_phase/renderer_quality.py",
-    "scripts/kw_k3_renderer_quality_check.py",
     "backend/tests/smoke/test_k3_renderer_quality_runtime.py",
     "docs/codex/K4_VISUAL_QA_RUNTIME.md",
     "backend/app/services/k_phase/visual_qa.py",
-    "scripts/kw_k4_visual_qa_check.py",
     "backend/tests/smoke/test_k4_visual_qa_runtime.py",
     "docs/codex/K5_SOURCE_TO_SLIDE_PROVENANCE.md",
     "backend/app/services/k_phase/source_to_slide_provenance.py",
-    "scripts/kw_k5_source_to_slide_provenance_check.py",
     "backend/tests/smoke/test_k5_source_to_slide_provenance.py",
     "docs/codex/K6_END_TO_END_KIMI_LIKE_WORKFLOW.md",
     "backend/app/services/k_phase/end_to_end_workflow.py",
-    "scripts/kw_k6_end_to_end_workflow_check.py",
     "backend/tests/smoke/test_k6_end_to_end_workflow.py",
     "docs/codex/K_PHASE_RELEASE_READINESS_CHECKPOINT.md",
-    "scripts/kw_k_phase_release_readiness_check.py",
     "backend/tests/smoke/test_k_phase_release_readiness_checkpoint.py",
     "docs/codex/RC1_GOLDEN_BENCHMARK_EXECUTION_HARNESS.md",
     "scripts/kw_rc1_golden_benchmark_harness.py",
@@ -126,7 +119,6 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/P9_PRODUCT_RELEASE_HARDENING_PLAN.md",
     "docs/codex/P9_1_GOLDEN_HUMAN_REVIEW_RESULTS.md",
     "backend/tests/fixtures/p9/p9_1_human_review_results.json",
-    "scripts/kw_p9_1_human_review_results_check.py",
     "backend/tests/smoke/test_p9_1_human_review_results.py",
     "docs/codex/P9_2_RENDERER_CONTENT_HARDENING.md",
     "scripts/kw_p9_2_renderer_content_hardening_check.py",
@@ -150,10 +142,8 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_p9_8_product_release_hardening_closure_check.py",
     "backend/tests/smoke/test_p9_8_product_release_hardening_closure.py",
     "docs/codex/P10_POST_P9_GOLDEN_REVIEW_PHASE_PLAN.md",
-    "scripts/kw_p10_1_post_p9_regeneration_readiness_check.py",
     "backend/tests/smoke/test_p10_1_post_p9_regeneration_readiness.py",
     "docs/codex/P10_2_POST_P9_ARTIFACT_PACK.md",
-    "scripts/kw_p10_2_post_p9_artifact_pack.py",
     "backend/tests/smoke/test_p10_2_post_p9_artifact_pack.py",
     "docs/codex/P10_5A_GIGACHAT_API_GOLDEN_BENCHMARK.md",
     "scripts/kw_p10_5a_gigachat_api_golden_benchmark.py",
@@ -248,10 +238,8 @@ REQUIRED_P_PHASE_FILES = (
     "scripts/kw_p10_9_targeted_architecture_rework.py",
     "backend/tests/smoke/test_p10_9_targeted_architecture_rework.py",
     "docs/codex/P10_10_FINAL_RELEASE_APPROVAL_DOSSIER.md",
-    "scripts/kw_p10_10_final_release_approval_dossier.py",
     "backend/tests/smoke/test_p10_10_final_release_approval_dossier.py",
     "docs/codex/P10_11_FINAL_OPERATOR_RELEASE_CLOSURE.md",
-    "scripts/kw_p10_11_final_operator_release_closure.py",
     "backend/tests/smoke/test_p10_11_final_operator_release_closure.py",
     "docs/codex/S_PHASE_KIMI_SLIDES_CLASS_ROADMAP.md",
     "docs/codex/S1_KIMI_SLIDES_CLASS_GAP_DOSSIER.md",
@@ -353,7 +341,6 @@ REQUIRED_P_PHASE_FILES = (
     "docs/codex/KQ_PHASE_QUALITY_ROADMAP.md",
     "docs/codex/KQ1A_DECK_ARTIFACT_QUALITY_HARNESS.md",
     "backend/app/services/slides_service/kq_deck_quality.py",
-    "scripts/kw_kq1_deck_quality_check.py",
     "scripts/kw_kq1_exec_memo_deck_quality.py",
     "backend/tests/smoke/test_kq1_deck_quality.py",
     "docs/codex/KQ1B_EXEC_MEMO_ACTUAL_PPTX_GENERATION.md",
@@ -889,13 +876,14 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+    product_checks_dir = repo_root / "logs" / "production_readiness_product_checks"
 
     steps.append(
         GateStep(
-            "K0 Kimi-level rubric and golden benchmark",
+            "KR product reset roadmap guardrail",
             (
                 python,
-                "scripts/kw_k0_kimi_rubric_check.py",
+                "scripts/kw_kr_product_reset_roadmap_check.py",
                 "--repo-root",
                 str(repo_root),
                 "--require-ready",
@@ -905,55 +893,149 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
-
-
     steps.append(
         GateStep(
-            "K2 Plan editor product workflow",
-            (python, "scripts/kw_k2_plan_editor_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            "KR-3E active gate legacy retirement guardrail",
+            (
+                python,
+                "scripts/kw_active_gate_legacy_retirement_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )
 
     steps.append(
         GateStep(
-            "K3 Renderer quality runtime",
-            (python, "scripts/kw_k3_renderer_quality_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            "Product workflow and quality aliases",
+            (
+                python,
+                "scripts/kw_product_test_aliases_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "product_test_aliases"),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )
 
     steps.append(
         GateStep(
-            "K4 Visual QA runtime",
-            (python, "scripts/kw_k4_visual_qa_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            "Low-risk operator static replacement tests",
+            (
+                python,
+                "scripts/kw_low_risk_operator_static_replacements_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "low_risk_operator_static_replacements"),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )
 
     steps.append(
         GateStep(
-            "K5 Source-to-slide provenance runtime",
-            (python, "scripts/kw_k5_source_to_slide_provenance_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            "Slides product quality replacement tests",
+            (
+                python,
+                "scripts/kw_slides_product_quality_replacements_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "slides_product_quality_replacements"),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )
 
     steps.append(
         GateStep(
-            "K6 End-to-end Kimi-like workflow",
-            (python, "scripts/kw_k6_end_to_end_workflow_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            "DOCX PDF XLSX product workflow tests",
+            (
+                python,
+                "scripts/kw_docx_pdf_xlsx_product_workflows_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "docx_pdf_xlsx_product_workflows"),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )
 
     steps.append(
         GateStep(
-            "K-phase release readiness checkpoint",
-            (python, "scripts/kw_k_phase_release_readiness_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
+            "Path portability policy",
+            (
+                python,
+                "scripts/kw_path_portability_policy_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "path_portability_policy"),
+                "--require-ready",
+                "--json",
+            ),
             repo_root,
         )
     )
+
+    steps.append(
+        GateStep(
+            "Path portability cleanup plan",
+            (
+                python,
+                "scripts/kw_path_portability_cleanup_plan.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "path_portability_cleanup_plan"),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
+            "Legacy stage baseline pin retirement manifest",
+            (
+                python,
+                "scripts/kw_legacy_stage_baseline_pin_retirement.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "legacy_stage_baseline_pin_retirement"),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+
+
+
+
+
+
+
+
+
 
     steps.append(
         GateStep(
@@ -1030,13 +1112,6 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
-    steps.append(
-        GateStep(
-            "P9-1B Golden human review results",
-            (python, "scripts/kw_p9_1_human_review_results_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
-            repo_root,
-        )
-    )
 
     steps.append(
         GateStep(
@@ -1290,22 +1365,8 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
     )
 
 
-    steps.append(
-        GateStep(
-            "P10-1 Post-P9 golden regeneration readiness",
-            (python, "scripts/kw_p10_1_post_p9_regeneration_readiness_check.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
-            repo_root,
-        )
-    )
 
 
-    steps.append(
-        GateStep(
-            "P10-2 Post-P9 golden artifact pack generation",
-            (python, "scripts/kw_p10_2_post_p9_artifact_pack.py", "--repo-root", str(repo_root), "--require-ready", "--json"),
-            repo_root,
-        )
-    )
 
     steps.append(
         GateStep(
@@ -1438,35 +1499,7 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
-    steps.append(
-        GateStep(
-            "P10-10 Final release approval dossier",
-            (
-                python,
-                "scripts/kw_p10_10_final_release_approval_dossier.py",
-                "--repo-root",
-                str(repo_root),
-                "--require-ready",
-                "--json",
-            ),
-            repo_root,
-        )
-    )
 
-    steps.append(
-        GateStep(
-            "P10-11 Final operator release closure",
-            (
-                python,
-                "scripts/kw_p10_11_final_operator_release_closure.py",
-                "--repo-root",
-                str(repo_root),
-                "--require-ready",
-                "--json",
-            ),
-            repo_root,
-        )
-    )
 
     steps.append(
         GateStep(
@@ -1746,20 +1779,6 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
-    steps.append(
-        GateStep(
-            "KQ-1A Deck artifact quality harness",
-            (
-                python,
-                "scripts/kw_kq1_deck_quality_check.py",
-                "--repo-root",
-                str(repo_root),
-                "--require-ready",
-                "--json",
-            ),
-            repo_root,
-        )
-    )
 
     steps.append(
         GateStep(

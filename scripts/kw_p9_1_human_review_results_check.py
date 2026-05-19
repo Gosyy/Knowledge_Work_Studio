@@ -210,15 +210,19 @@ def collect_backlog(payload: dict[str, Any]) -> list[dict[str, object]]:
 
 def production_gate_errors(repo_root: Path) -> list[str]:
     gate = repo_root / "scripts/kw_production_readiness_gate.py"
+    policy = repo_root / "docs/refactor/ACTIVE_GATE_LEGACY_RETIREMENT.md"
     if not gate.exists():
         return ["missing production readiness gate"]
-    text = gate.read_text(encoding="utf-8")
+    if not policy.exists():
+        return ["missing KR-3E active gate legacy retirement policy"]
+    gate_text = gate.read_text(encoding="utf-8")
+    policy_text = policy.read_text(encoding="utf-8")
     errors: list[str] = []
-    for rel in REQUIRED_FILES[:5]:
-        if rel not in text:
-            errors.append(f"production readiness gate does not require P9-1B file: {rel}")
-    if "P9-1B Golden human review results" not in text:
-        errors.append("production readiness gate does not execute P9-1B checker")
+    retired_script = "scripts/kw_p9_1_human_review_results_check.py"
+    if retired_script in gate_text:
+        errors.append("P9-1B legacy checker must not remain active in production readiness gate after KR-3E")
+    if retired_script not in policy_text:
+        errors.append("P9-1B legacy checker retirement is not recorded in ACTIVE_GATE_LEGACY_RETIREMENT.md")
     return errors
 
 

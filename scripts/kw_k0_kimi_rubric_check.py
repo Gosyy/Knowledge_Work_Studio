@@ -21,7 +21,7 @@ REQUIRED_MARKERS = {
     "k0_service_report": ("backend/app/services/k_phase/kimi_level_rubric.py", "def build_k0_rubric_report"),
     "k0_service_score_helper": ("backend/app/services/k_phase/kimi_level_rubric.py", "def score_candidate_dimension_scores"),
     "k0_branch": ("backend/app/services/k_phase/kimi_level_rubric.py", "K_PHASE_BRANCH = \"8_K_Phase\""),
-    "k0_gate": ("scripts/kw_production_readiness_gate.py", "K0 Kimi-level rubric and golden benchmark"),
+    "k0_retirement_policy": ("docs/refactor/ACTIVE_GATE_LEGACY_RETIREMENT.md", "scripts/kw_k0_kimi_rubric_check.py"),
 }
 
 

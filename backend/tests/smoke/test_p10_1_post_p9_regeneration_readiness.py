@@ -78,7 +78,8 @@ def test_p10_1_inherits_warning_classification_without_dependency_remediation() 
     assert payload["dependency_versions_changed_by_p10_1"] is False
 
 
-def test_p10_1_is_registered_in_production_readiness_executable_gate() -> None:
+def test_p10_1_legacy_checker_is_retired_from_active_production_gate() -> None:
     source = (repo_root() / "scripts/kw_production_readiness_gate.py").read_text(encoding="utf-8")
-    assert "P10-1 Post-P9 golden regeneration readiness" in source
-    assert "scripts/kw_p10_1_post_p9_regeneration_readiness_check.py" in source
+    retirement_policy = (repo_root() / "docs/refactor/ACTIVE_GATE_LEGACY_RETIREMENT.md").read_text(encoding="utf-8")
+    assert "scripts/kw_p10_1_post_p9_regeneration_readiness_check.py" not in source
+    assert "scripts/kw_p10_1_post_p9_regeneration_readiness_check.py" in retirement_policy
