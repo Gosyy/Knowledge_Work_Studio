@@ -347,3 +347,8 @@ claim offline/GigaChat/Kimi parity without evidence.
 ```
 
 Profile-specific paths may appear only in local bootstrap scripts or operator instructions for that profile, not in portable project logic.
+
+
+## KR-5A implementation note
+
+KR-5A adds the first concrete XLSX inspect runtime. Future KR-5B work should build validation and artifact-bundle hardening on this runtime rather than reintroducing ad-hoc spreadsheet checks.

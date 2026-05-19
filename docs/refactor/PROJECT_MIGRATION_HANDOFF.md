@@ -58,6 +58,14 @@ accepted commit short id: 3eaa9f8
 accepted subject: KR-4A add workflow contract core
 ```
 
+Current phase being prepared after this handoff update:
+
+```text
+phase: KR-5A
+subject: XLSX inspect workflow
+intent: add first concrete XLSX / CSV inspect runtime with workbook metadata, formulas, table previews, manifests, provenance, and quality report artifacts
+```
+
 Do not rely on this status blindly in future chats. Always verify the current remote state before creating a patch:
 
 ```bash
@@ -83,7 +91,7 @@ KR-4A: added workflow contract core
 Next planned product direction after KR-4A:
 
 ```text
-KR-5A: XLSX inspect workflow
+KR-5A: XLSX inspect workflow — in progress for this patch
 KR-5B: XLSX validation and artifact bundle
 KR-6A: source-grounded Slides continuation
 ```
@@ -463,3 +471,31 @@ Initial entry:
 ```text
 2026-05-20 / KR handoff anchor / pending commit / created durable migration handoff document and guardrail / next: KR-5A XLSX inspect workflow
 ```
+
+
+## 15. KR-5A XLSX inspect workflow handoff update
+
+KR-5A starts the first concrete spreadsheet runtime after the KR-4A workflow contract core. The work must remain inspect-only and non-destructive. It should not claim full Excel parity. The required implementation surface is:
+
+```text
+backend/app/services/xlsx_service/
+scripts/kw_xlsx_inspect_workflow_check.py
+backend/tests/workflows/test_xlsx_inspect_workflow.py
+backend/tests/quality/test_xlsx_inspect_artifact_bundle.py
+backend/tests/smoke/test_xlsx_inspect_workflow_smoke.py
+```
+
+The expected bundle contract is:
+
+```text
+workbook.xlsx or workbook.csv
+workbook_manifest.json
+xlsx_analysis_report.json
+formula_inventory.json
+table_previews/*.csv
+source_evidence_manifest.json
+artifact_manifest.json
+quality_report.json
+```
+
+Before KR-5A can be accepted, `scripts/kw_xlsx_inspect_workflow_check.py --require-ready`, targeted pytest, project-resident full runner, project-resident Docker smoke, log review, clean working tree, commit, push, and remote verification must all pass.

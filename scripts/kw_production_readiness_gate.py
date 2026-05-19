@@ -1016,6 +1016,23 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
 
     steps.append(
         GateStep(
+            "KR-5A XLSX inspect workflow",
+            (
+                python,
+                "scripts/kw_xlsx_inspect_workflow_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "xlsx_inspect_workflow"),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
             "Path portability policy",
             (
                 python,

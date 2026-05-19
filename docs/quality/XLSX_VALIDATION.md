@@ -21,3 +21,26 @@ XLSX validation ensures workbook artifacts are safe, inspectable, and traceable.
 ## Relationship to Slides
 
 Slides may consume XLSX-derived tables and charts. When that happens, slide citations and evidence manifests should reference workbook, sheet, and range.
+
+## KR-5A inspect validation contract
+
+KR-5A makes XLSX inspection a runtime capability rather than only a documentation promise. The validation guardrail lives in:
+
+```text
+scripts/kw_xlsx_inspect_workflow_check.py
+```
+
+The guardrail must confirm that:
+
+```text
+the sample workbook opens;
+sheet metadata is extracted;
+formula inventory is written;
+table previews are written as CSV artifacts;
+source_evidence_manifest.json maps sheets/ranges to previews;
+artifact_manifest.json lists the generated bundle files;
+quality_report.json fails closed when required inspection data is missing;
+destructive_edit_performed remains false for inspect-only workflows.
+```
+
+If the workbook is malformed, the workflow must return a failed inspection result with explicit errors instead of pretending success.
