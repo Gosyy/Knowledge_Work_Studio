@@ -35,3 +35,21 @@ The Slides workflow creates source-grounded, editable PowerPoint decks.
 - **Template mode**: the renderer follows a selected or uploaded PPTX template.
 
 Both modes must produce downloadable PPTX and validation artifacts.
+
+## KR-6A source-grounded continuation
+
+KR-6A adds a deterministic source-grounded Slides continuation layer. It builds on the existing plan-first Slides workflow and `build_source_grounded_plan` runtime by producing a machine-checkable source grounding bundle before later render/visual QA phases.
+
+KR-6A required bundle outputs are:
+
+```text
+slide_plan.json
+citation_manifest.json
+source_evidence_manifest.json
+quality_report.json
+artifact_manifest.json
+```
+
+The quality rule is simple: when source references are supplied, every planned slide must carry a citation and source note, each citation must map to a source evidence item, and the artifact manifest must list the generated bundle. Missing sources or missing citations fail closed.
+
+KR-6A does not claim OCR, figure extraction, table extraction from arbitrary slides, visual QA completion, or complete presentation feature coverage. It is the evidence/citation continuation step that later render and visual QA work must consume.

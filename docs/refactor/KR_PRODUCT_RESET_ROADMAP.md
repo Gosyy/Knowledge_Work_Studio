@@ -372,3 +372,17 @@ The machine-checkable guardrail is:
 ```text
 scripts/kw_xlsx_validation_bundle_check.py
 ```
+
+## KR-6A implementation note
+
+KR-6A adds source-grounded Slides continuation on top of the existing Slides source grounding runtime. Acceptance requires:
+
+```text
+backend/app/services/slides_service/source_grounded_continuation.py
+scripts/kw_slides_source_grounded_continuation_check.py
+backend/tests/workflows/test_slides_source_grounded_continuation.py
+backend/tests/quality/test_slides_source_grounding_quality.py
+backend/tests/smoke/test_slides_source_grounded_continuation_smoke.py
+```
+
+The phase is accepted only when citation coverage, source evidence manifest, artifact manifest, quality report, production readiness gate, full runner, Docker smoke, log review, commit, push, and remote verification pass.

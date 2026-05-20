@@ -1882,6 +1882,24 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
             repo_root,
         )
     )
+
+    steps.append(
+        GateStep(
+            "KR-6A source-grounded Slides continuation",
+            (
+                python,
+                "scripts/kw_slides_source_grounded_continuation_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "slides_source_grounded_continuation"),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
     return steps
 
 

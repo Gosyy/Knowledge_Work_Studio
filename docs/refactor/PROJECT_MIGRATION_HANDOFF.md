@@ -633,3 +633,29 @@ Future XLSX work should build on this validation layer before adding edit, repai
 ## 16. KR-5B wording hotfix handoff update
 
 KR-5B introduced XLSX bundle validation hardening. A follow-up hotfix removed a forbidden product-claim phrase from XLSX documentation because the legacy KR-2F scanner treats that phrase as unsupported even when it appears in a negative sentence. Future documentation should avoid using blocked positive-claim tokens verbatim; use wording such as `complete Excel feature coverage` when explaining non-goals.
+
+## 17. KR-6A source-grounded Slides continuation handoff update
+
+KR-6A starts the source-grounded Slides continuation after KR-5B. It does not try to solve every presentation rendering problem at once. The phase adds a deterministic Slides grounding bundle that validates slide-level citations, source evidence mapping, artifact manifest completeness, and fail-closed quality reporting.
+
+Implementation surface:
+
+```text
+backend/app/services/slides_service/source_grounded_continuation.py
+scripts/kw_slides_source_grounded_continuation_check.py
+backend/tests/workflows/test_slides_source_grounded_continuation.py
+backend/tests/quality/test_slides_source_grounding_quality.py
+backend/tests/smoke/test_slides_source_grounded_continuation_smoke.py
+```
+
+Expected artifacts:
+
+```text
+slide_plan.json
+citation_manifest.json
+source_evidence_manifest.json
+quality_report.json
+artifact_manifest.json
+```
+
+Non-goals: KR-6A does not claim OCR, arbitrary figure extraction, unsupported table extraction, visual QA completion, or complete presentation feature coverage. It prepares the evidence/citation layer that later Slides render and visual QA work must consume.
