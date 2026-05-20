@@ -567,3 +567,19 @@ Profile 1 and Profile 3 are parallel working profiles. Runtime and test infrastr
 The SQLite repository layer must create the database parent directory immediately before connecting, and the project-resident full runner must create local runtime storage directories before tests. This keeps fresh Profile 3 clones and existing Profile 1 worktrees behaviorally equivalent.
 
 Acceptance for this hotfix remains the normal project rule: targeted repository/API tests, full runner, Docker smoke, clean tree, commit, push, and remote verification.
+
+
+## Profile-neutral runner resource limits
+
+Fresh Ubuntu VM profiles may have low default open-file limits. The project-resident full runner must raise the process-local nofile limit before running large pytest suites. This is profile-neutral infrastructure hardening, not a Profile 1 or Profile 3 special case.
+
+The contract is:
+
+```text
+scripts/kw_full_tests_with_proxy_runner.sh uses KWS_NOFILE_LIMIT;
+default requested nofile limit is 65535;
+the runner prints nofile_limit in logs;
+manual shell ulimit changes must not be required for normal project validation.
+```
+
+If a future profile still fails with `Too many open files`, first inspect the runner log for `nofile_limit`, then raise `KWS_NOFILE_LIMIT` for that run only before changing product code.

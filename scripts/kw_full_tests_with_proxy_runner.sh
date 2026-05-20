@@ -11,6 +11,20 @@ LOG_DIR="${LOG_ROOT}/full-tests-${STAMP}"
 ARCHIVE="${LOG_DIR}.zip"
 LOCAL_NO_PROXY="localhost,127.0.0.1,::1,0.0.0.0,.local"
 
+ensure_open_file_limit() {
+  local requested="${KWS_NOFILE_LIMIT:-65535}"
+  local current
+  current="$(ulimit -n 2>/dev/null || echo 0)"
+  if [[ "${requested}" =~ ^[0-9]+$ && "${current}" =~ ^[0-9]+$ && "${current}" -lt "${requested}" ]]; then
+    ulimit -n "${requested}" 2>/dev/null \
+      || ulimit -n 32768 2>/dev/null \
+      || ulimit -n 16384 2>/dev/null \
+      || true
+  fi
+  printf '[INFO] nofile_limit=%s\n' "$(ulimit -n 2>/dev/null || echo unknown)"
+}
+
+
 mkdir -p "${LOG_DIR}"
 
 archive_logs() {
@@ -86,6 +100,7 @@ printf '[INFO] head=%s\n' "${HEAD}"
 printf '[INFO] origin_head=%s\n' "${ORIGIN_HEAD}"
 printf '[INFO] log_dir=%s\n' "${LOG_DIR}"
 printf '[INFO] frontend e2e uses no-proxy localhost isolation\n'
+ensure_open_file_limit
 
 run_shell_step "00-git-status-before" "cd '${REPO_ROOT}' && git status --short && git branch --show-current && git rev-parse HEAD"
 run_shell_step "01-cleanup-local-env" "cd '${REPO_ROOT}' && rm -f .env.deploy .npmrc .proxy.env .proxy.env.example && git restore frontend/next-env.d.ts 2>/dev/null || true && mkdir -p logs storage/uploads storage/artifacts storage/temp storage/logs"
