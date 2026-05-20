@@ -352,3 +352,23 @@ Profile-specific paths may appear only in local bootstrap scripts or operator in
 ## KR-5A implementation note
 
 KR-5A adds the first concrete XLSX inspect runtime. Future KR-5B work should build validation and artifact-bundle hardening on this runtime rather than reintroducing ad-hoc spreadsheet checks.
+
+## KR-5B implementation note
+
+KR-5B hardens the XLSX inspect workflow artifact bundle. The accepted direction is:
+
+```text
+validate manifest completeness;
+validate size and sha256 entries;
+use explicit artifact_manifest.json self_reference semantics;
+validate formula traceability;
+validate source evidence to table previews;
+validate quality_report.json fail-closed behavior;
+keep the workflow inspect-only and non-destructive.
+```
+
+The machine-checkable guardrail is:
+
+```text
+scripts/kw_xlsx_validation_bundle_check.py
+```

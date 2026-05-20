@@ -420,25 +420,27 @@ def build_xlsx_inspect_artifact_bundle(content: bytes, *, source_filename: str =
                         shared_strings=shared,
                     )
                     artifacts[sheet.preview_artifact] = preview
-    provisional_manifest = {
-        "schema_version": result.schema_version,
-        "workflow_id": "xlsx",
-        "status": result.status,
-        "artifacts": [],
-    }
-    artifacts["artifact_manifest.json"] = _json_bytes(provisional_manifest)
+    artifact_entries = [
+        {
+            "path": name,
+            "size_bytes": len(payload),
+            "sha256": _sha256(payload),
+        }
+        for name, payload in sorted(artifacts.items())
+    ]
+    artifact_entries.append(
+        {
+            "path": "artifact_manifest.json",
+            "size_bytes": None,
+            "sha256": None,
+            "self_reference": True,
+        }
+    )
     artifact_manifest = {
         "schema_version": result.schema_version,
         "workflow_id": "xlsx",
         "status": result.status,
-        "artifacts": [
-            {
-                "path": name,
-                "size_bytes": len(payload),
-                "sha256": _sha256(payload),
-            }
-            for name, payload in sorted(artifacts.items())
-        ],
+        "artifacts": artifact_entries,
     }
     artifacts["artifact_manifest.json"] = _json_bytes(artifact_manifest)
     return XlsxInspectArtifactBundle(result=result, artifacts=artifacts)

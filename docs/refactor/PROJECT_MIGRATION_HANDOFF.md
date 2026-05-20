@@ -599,3 +599,32 @@ manual npx playwright install must not be required for normal project validation
 ```
 
 If a future profile fails with `Executable doesn't exist` under `.cache/ms-playwright`, inspect the full runner log for the `20b-frontend-playwright-browser-install` step before changing product code.
+
+## KR-5B XLSX validation and artifact bundle hardening handoff update
+
+KR-5B builds on KR-5A. It does not add destructive workbook editing and does not claim full Excel parity.
+It adds profile-neutral validation for the XLSX inspect artifact bundle.
+
+The implementation surface is:
+
+```text
+backend/app/services/xlsx_service/validator.py
+scripts/kw_xlsx_validation_bundle_check.py
+backend/tests/quality/test_xlsx_validation_bundle_hardening.py
+backend/tests/smoke/test_xlsx_validation_bundle_check.py
+```
+
+The key product rule is bundle validation, not only workbook parsing:
+
+```text
+required artifacts must exist;
+artifact_manifest.json must list them;
+size and sha256 metadata must match actual artifacts;
+artifact_manifest.json must use explicit self_reference semantics;
+formula inventory must be traceable;
+table previews must be traceable from source_evidence_manifest.json;
+quality_report.json must fail closed;
+inspect workflow remains non-destructive.
+```
+
+Future XLSX work should build on this validation layer before adding edit, repair, chart, pivot, or cross-workflow export features.

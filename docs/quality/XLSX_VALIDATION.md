@@ -44,3 +44,29 @@ destructive_edit_performed remains false for inspect-only workflows.
 ```
 
 If the workbook is malformed, the workflow must return a failed inspection result with explicit errors instead of pretending success.
+
+## KR-5B bundle validation hardening
+
+KR-5B adds a fail-closed validation layer for the XLSX inspect artifact bundle.
+The checker is:
+
+```text
+scripts/kw_xlsx_validation_bundle_check.py
+```
+
+KR-5B validation confirms:
+
+```text
+required artifacts are present;
+artifact_manifest.json lists all required artifacts;
+manifest size and sha256 values match the actual artifacts;
+artifact_manifest.json uses an explicit self_reference entry instead of a fake self-hash;
+source workbook hash is traceable from workbook_manifest.json;
+formula inventory agrees with xlsx_analysis_report.json;
+formula records include sheet name, cell reference, formula text, and worksheet file;
+table previews exist, are non-empty, and are referenced from source_evidence_manifest.json;
+quality_report.json remains ready and non-destructive;
+corrupt or incomplete bundles fail closed.
+```
+
+This is still not full Excel parity. It hardens inspection output so later XLSX workflows can safely consume the artifact bundle.

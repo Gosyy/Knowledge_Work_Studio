@@ -1033,6 +1033,23 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
 
     steps.append(
         GateStep(
+            "KR-5B XLSX validation bundle",
+            (
+                python,
+                "scripts/kw_xlsx_validation_bundle_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "xlsx_validation_bundle"),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
+    steps.append(
+        GateStep(
             "Path portability policy",
             (
                 python,
