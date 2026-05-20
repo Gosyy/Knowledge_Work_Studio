@@ -558,3 +558,12 @@ scripts/bootstrap/profile3_ubuntu2604_terminal_theme.sh
 ```
 
 These scripts are operator bootstrap helpers. They are allowed to contain Profile 3 local paths because they are explicitly local setup entrypoints. They must preserve proxy environment variables and write/archive logs under the active project logs directory or the bootstrap fallback logs directory if clone has not completed yet.
+
+
+## Profile-neutral SQLite repository directory hotfix
+
+Profile 1 and Profile 3 are parallel working profiles. Runtime and test infrastructure must not depend on one profile having pre-created storage or SQLite directories that another fresh clone does not have.
+
+The SQLite repository layer must create the database parent directory immediately before connecting, and the project-resident full runner must create local runtime storage directories before tests. This keeps fresh Profile 3 clones and existing Profile 1 worktrees behaviorally equivalent.
+
+Acceptance for this hotfix remains the normal project rule: targeted repository/API tests, full runner, Docker smoke, clean tree, commit, push, and remote verification.

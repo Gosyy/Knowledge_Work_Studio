@@ -53,6 +53,7 @@ REQUIRED_PHRASES = [
     "Profile 1 local-only paths",
     "Profile 2 local-only paths",
     "After every agreed new phase plan, update docs/refactor/PROJECT_MIGRATION_HANDOFF.md",
+    "Profile-neutral SQLite repository directory hotfix",
     "Profile-neutral operation rule",
     "Profile 1 and Profile 3 are parallel working profiles",
     "The project must not depend on a single main profile",

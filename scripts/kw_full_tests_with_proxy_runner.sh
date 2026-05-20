@@ -88,7 +88,7 @@ printf '[INFO] log_dir=%s\n' "${LOG_DIR}"
 printf '[INFO] frontend e2e uses no-proxy localhost isolation\n'
 
 run_shell_step "00-git-status-before" "cd '${REPO_ROOT}' && git status --short && git branch --show-current && git rev-parse HEAD"
-run_shell_step "01-cleanup-local-env" "cd '${REPO_ROOT}' && rm -f .env.deploy .npmrc .proxy.env .proxy.env.example && git restore frontend/next-env.d.ts 2>/dev/null || true && mkdir -p logs"
+run_shell_step "01-cleanup-local-env" "cd '${REPO_ROOT}' && rm -f .env.deploy .npmrc .proxy.env .proxy.env.example && git restore frontend/next-env.d.ts 2>/dev/null || true && mkdir -p logs storage/uploads storage/artifacts storage/temp storage/logs"
 run_shell_step "02-python-version" "cd '${REPO_ROOT}' && '${PYTHON_BIN}' --version"
 run_shell_step "03-create-venv-if-needed" "cd '${REPO_ROOT}' && if [ ! -d .venv ]; then '${PYTHON_BIN}' -m venv .venv; fi"
 run_shell_step "04-upgrade-pip" "cd '${REPO_ROOT}' && source .venv/bin/activate && python -m pip install --upgrade pip setuptools wheel"

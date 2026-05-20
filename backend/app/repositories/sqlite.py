@@ -36,6 +36,12 @@ class _SqliteRepositoryBase:
         self._initialize_schema()
 
     def _connect(self) -> sqlite3.Connection:
+        # Keep SQLite profile-neutral and test-runner-safe: repository paths may
+        # point into freshly-created tmp directories or profile-local storage.
+        # Creating the parent immediately before connecting prevents an
+        # environment/bootstrap difference from surfacing as a raw sqlite3
+        # OperationalError.
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(self._db_path)
         connection.row_factory = sqlite3.Row
         return connection
