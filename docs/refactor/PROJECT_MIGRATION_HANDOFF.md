@@ -102,7 +102,7 @@ Before starting the next feature phase, check whether any emergency hotfix or us
 
 ## 3. Development profiles and local-only paths
 
-The project is developed on two user machines. These paths are **local-only operator details** and must not be hardcoded into portable product code, tests, or active product documentation except in explicitly local runner scripts or migration instructions.
+The project is developed across three user profiles. These paths are **local-only operator details** and must not be hardcoded into portable product code, tests, or active product documentation except in explicitly local runner scripts or migration instructions.
 
 ### Profile 1 local-only paths
 
@@ -122,6 +122,18 @@ downloads: /home/editor/Загрузки
 logs: /home/editor/workplace/Knowledge_Work_Studio/logs
 ```
 
+
+### Profile 3 local-only paths
+
+```text
+machine: Ubuntu 26.04 LTS on VMware Workstation 17 Pro / Windows 10 host
+repo: /home/su4ka/workplace/Knowledge_Work_Studio
+downloads: /home/su4ka/Загрузки
+logs: /home/su4ka/workplace/Knowledge_Work_Studio/logs
+setup scripts: scripts/bootstrap/profile3_ubuntu2604_project_bootstrap.sh, scripts/bootstrap/profile3_ubuntu2604_terminal_theme.sh
+rules: same paths and logging rules as Profile 1
+```
+
 Both profiles may have proxy environment variables configured. Runner scripts must inherit, not erase:
 
 ```text
@@ -132,6 +144,15 @@ HTTPS_PROXY
 NO_PROXY
 no_proxy
 ```
+
+
+### Profile-neutral operation rule
+
+Profile 1 and Profile 3 are parallel working profiles. The project must not depend on a single main profile.
+
+The assistant may continue development from Profile 1 or Profile 3 depending on where the user is working. Profile-specific absolute paths are allowed in local bootstrap/apply runner scripts and in this migration handoff document, but product code, Dockerfiles, reusable tests, product documentation, and production readiness gates must remain profile-neutral and portable.
+
+When switching profiles, always verify the current remote HEAD, local HEAD, branch, working tree state, logs directory, and active Python virtual environment before preparing or applying the next patch.
 
 ---
 
@@ -499,3 +520,41 @@ quality_report.json
 ```
 
 Before KR-5A can be accepted, `scripts/kw_xlsx_inspect_workflow_check.py --require-ready`, targeted pytest, project-resident full runner, project-resident Docker smoke, log review, clean working tree, commit, push, and remote verification must all pass.
+
+
+## 16. Profile 3 Ubuntu 26.04 LTS bootstrap handoff update
+
+Profile 3 is a new local development profile:
+
+```text
+machine: Ubuntu 26.04 LTS on VMware Workstation 17 Pro / Windows 10 host
+repo: /home/su4ka/workplace/Knowledge_Work_Studio
+downloads: /home/su4ka/Загрузки
+logs: /home/su4ka/workplace/Knowledge_Work_Studio/logs
+path/log rules: same as Profile 1
+```
+
+The project now carries two versioned bootstrap scripts for Profile 3:
+
+```text
+scripts/bootstrap/profile3_ubuntu2604_project_bootstrap.sh
+scripts/bootstrap/profile3_ubuntu2604_terminal_theme.sh
+```
+
+The project bootstrap script updates Ubuntu packages, installs required developer/system/render/Docker packages, prepares GitHub SSH access, clones or updates the repository over SSH, creates `.venv`, installs Python/frontend dependencies, creates runtime storage directories, runs project system dependency checks, and archives its log.
+
+The terminal theme script configures terminal syntax-highlighting tooling and GNOME Terminal dark colors with 50 percent transparency where supported by the GNOME/Wayland compositor.
+
+Future setup changes for Profile 3 must update this handoff section and the versioned bootstrap scripts together.
+
+
+## Profile 3 bootstrap scripts
+
+Profile 3 setup scripts are versioned inside the repository for repeatable setup and audit:
+
+```text
+scripts/bootstrap/profile3_ubuntu2604_project_bootstrap.sh
+scripts/bootstrap/profile3_ubuntu2604_terminal_theme.sh
+```
+
+These scripts are operator bootstrap helpers. They are allowed to contain Profile 3 local paths because they are explicitly local setup entrypoints. They must preserve proxy environment variables and write/archive logs under the active project logs directory or the bootstrap fallback logs directory if clone has not completed yet.

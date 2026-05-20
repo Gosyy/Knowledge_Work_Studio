@@ -13,6 +13,11 @@ HANDOFF_PATH = Path("docs/refactor/PROJECT_MIGRATION_HANDOFF.md")
 ROADMAP_PATH = Path("docs/refactor/KR_PRODUCT_RESET_ROADMAP.md")
 
 REQUIRED_PHRASES = [
+    "profile3_ubuntu2604_terminal_theme.sh",
+    "profile3_ubuntu2604_project_bootstrap.sh",
+    "VMware Workstation 17 Pro",
+    "Ubuntu 26.04 LTS",
+    "Profile 3 local-only paths",
     "Update rule:",
     "Every future patch must review and update this file",
     "especially after the user and assistant agree on a new phase plan",
@@ -48,6 +53,11 @@ REQUIRED_PHRASES = [
     "Profile 1 local-only paths",
     "Profile 2 local-only paths",
     "After every agreed new phase plan, update docs/refactor/PROJECT_MIGRATION_HANDOFF.md",
+    "Profile-neutral operation rule",
+    "Profile 1 and Profile 3 are parallel working profiles",
+    "The project must not depend on a single main profile",
+    "scripts/bootstrap/profile3_ubuntu2604_project_bootstrap.sh",
+    "scripts/bootstrap/profile3_ubuntu2604_terminal_theme.sh",
 ]
 
 ROADMAP_REQUIRED_PHRASES = [
