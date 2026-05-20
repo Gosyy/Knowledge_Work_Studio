@@ -583,3 +583,19 @@ manual shell ulimit changes must not be required for normal project validation.
 ```
 
 If a future profile still fails with `Too many open files`, first inspect the runner log for `nofile_limit`, then raise `KWS_NOFILE_LIMIT` for that run only before changing product code.
+
+
+## Profile-neutral Playwright browser bootstrap
+
+Fresh cloned VM profiles may have npm packages installed but no Playwright browser binary in the user cache. The project-resident full runner must install the Chromium browser required by frontend E2E smoke before running Playwright tests. This is profile-neutral infrastructure hardening, not a Profile 3 special case.
+
+The contract is:
+
+```text
+scripts/kw_full_tests_with_proxy_runner.sh runs npx playwright install chromium after npm ci;
+frontend E2E chooses test:e2e, e2e, or npx playwright test based on package.json scripts;
+the runner must not blindly call a missing npm e2e script after test:e2e fails;
+manual npx playwright install must not be required for normal project validation.
+```
+
+If a future profile fails with `Executable doesn't exist` under `.cache/ms-playwright`, inspect the full runner log for the `20b-frontend-playwright-browser-install` step before changing product code.

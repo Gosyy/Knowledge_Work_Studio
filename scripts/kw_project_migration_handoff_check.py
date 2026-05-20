@@ -55,6 +55,8 @@ REQUIRED_PHRASES = [
     "After every agreed new phase plan, update docs/refactor/PROJECT_MIGRATION_HANDOFF.md",
     "Profile-neutral runner resource limits",
     "KWS_NOFILE_LIMIT",
+    "npx playwright install chromium",
+    "Profile-neutral Playwright browser bootstrap",
     "Profile-neutral SQLite repository directory hotfix",
     "Profile-neutral operation rule",
     "Profile 1 and Profile 3 are parallel working profiles",
