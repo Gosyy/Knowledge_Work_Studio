@@ -1900,6 +1900,24 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
     )
 
+
+    steps.append(
+        GateStep(
+            "KR-6B Slides render visual QA bundle",
+            (
+                python,
+                "scripts/kw_slides_render_visual_qa_bundle_check.py",
+                "--repo-root",
+                str(repo_root),
+                "--output-dir",
+                str(product_checks_dir / "slides_render_visual_qa_bundle"),
+                "--require-ready",
+                "--json",
+            ),
+            repo_root,
+        )
+    )
+
     return steps
 
 

@@ -386,3 +386,29 @@ backend/tests/smoke/test_slides_source_grounded_continuation_smoke.py
 ```
 
 The phase is accepted only when citation coverage, source evidence manifest, artifact manifest, quality report, production readiness gate, full runner, Docker smoke, log review, commit, push, and remote verification pass.
+
+### KR-6B — Slides render/visual QA bundle hardening
+
+Purpose:
+
+```text
+connect the KR-6A source-grounded Slides bundle to deterministic render artifacts, independent render artifacts, geometry metadata, visual QA report, and fail-closed artifact manifest validation.
+```
+
+Acceptance:
+
+```text
+scripts/kw_slides_render_visual_qa_bundle_check.py reports ready;
+render_manifest.json covers primary and independent render artifacts;
+geometry_report.json covers every slide;
+visual_qa_report.json is ready and fail-closed;
+artifact_manifest.json lists render, geometry, visual QA, citation, and source evidence artifacts;
+full runner and Docker smoke pass from project-resident scripts.
+```
+
+Non-goals:
+
+```text
+no claim of broad presentation feature coverage;
+no replacement for later real PPTX render integration and deeper visual comparison.
+```

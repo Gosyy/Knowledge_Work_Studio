@@ -1,3 +1,4 @@
+from backend.app.services.slides_service.render_visual_qa_bundle import ( SLIDES_RENDER_VISUAL_QA_SCHEMA_VERSION, SlidesRenderArtifact, SlidesGeometryRecord, SlidesRenderVisualQABundle, SlidesRenderVisualQuality, build_slides_render_visual_qa_bundle, sample_slides_render_visual_qa_bundle, validate_slides_render_visual_qa_bundle, )
 from backend.app.services.slides_service.approved_plan import (
     ApprovedPlanRenderRequest,
     ApprovedPlanRenderResult,
@@ -88,7 +89,7 @@ from backend.app.services.slides_service.rf2_final_closure import (
 from backend.app.services.slides_service.service import SlidesService, SlidesTransformOutput
 
 __all__ = [
-    "validate_rf2_final_closure_report",
+    "SLIDES_RENDER_VISUAL_QA_SCHEMA_VERSION", "SlidesRenderArtifact", "SlidesGeometryRecord", "SlidesRenderVisualQABundle", "SlidesRenderVisualQuality", "build_slides_render_visual_qa_bundle", "sample_slides_render_visual_qa_bundle", "validate_slides_render_visual_qa_bundle", "validate_rf2_final_closure_report",
     "build_rf2_final_closure_report",
     "RF2FinalClosureReport",
     "validate_slides_runtime_closure_readiness",

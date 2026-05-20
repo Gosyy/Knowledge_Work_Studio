@@ -13,6 +13,9 @@ HANDOFF_PATH = Path("docs/refactor/PROJECT_MIGRATION_HANDOFF.md")
 ROADMAP_PATH = Path("docs/refactor/KR_PRODUCT_RESET_ROADMAP.md")
 
 REQUIRED_PHRASES = [
+    "kw_slides_render_visual_qa_bundle_check.py",
+    "render_visual_qa_bundle.py",
+    "KR-6B",
     "profile3_ubuntu2604_terminal_theme.sh",
     "profile3_ubuntu2604_project_bootstrap.sh",
     "VMware Workstation 17 Pro",

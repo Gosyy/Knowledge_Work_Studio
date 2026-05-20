@@ -53,3 +53,25 @@ artifact_manifest.json
 The quality rule is simple: when source references are supplied, every planned slide must carry a citation and source note, each citation must map to a source evidence item, and the artifact manifest must list the generated bundle. Missing sources or missing citations fail closed.
 
 KR-6A does not claim OCR, figure extraction, table extraction from arbitrary slides, visual QA completion, or complete presentation feature coverage. It is the evidence/citation continuation step that later render and visual QA work must consume.
+
+## KR-6B render and visual QA bundle hardening
+
+KR-6B adds a deterministic render/visual-QA bundle around the KR-6A source-grounded plan.
+It validates that every source-grounded slide has primary and independent render artifacts, geometry metadata, citation-preserving manifests, and fail-closed visual QA reporting.
+
+The KR-6B bundle includes:
+
+```text
+slide_plan.json
+citation_manifest.json
+source_evidence_manifest.json
+render_manifest.json
+geometry_report.json
+visual_qa_report.json
+quality_report.json
+artifact_manifest.json
+rendered_slides/*.png
+independent_rendered_slides/*.png
+```
+
+KR-6B does not claim broad visual understanding or broad presentation feature coverage. It creates a checked bundle contract that later runtime work can connect to real PPTX rendering and deeper visual comparison.

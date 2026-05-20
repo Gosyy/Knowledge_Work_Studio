@@ -659,3 +659,36 @@ artifact_manifest.json
 ```
 
 Non-goals: KR-6A does not claim OCR, arbitrary figure extraction, unsupported table extraction, visual QA completion, or complete presentation feature coverage. It prepares the evidence/citation layer that later Slides render and visual QA work must consume.
+
+## KR-6B Slides render/visual QA bundle handoff update
+
+KR-6B follows KR-6A by hardening the Slides bundle contract with render artifacts, independent render artifacts, geometry metadata, visual QA report, and manifest validation.
+
+Implementation surface:
+
+```text
+backend/app/services/slides_service/render_visual_qa_bundle.py
+scripts/kw_slides_render_visual_qa_bundle_check.py
+backend/tests/workflows/test_slides_render_visual_qa_bundle.py
+backend/tests/quality/test_slides_render_visual_qa_quality.py
+backend/tests/smoke/test_slides_render_visual_qa_bundle_smoke.py
+```
+
+Expected KR-6B artifacts:
+
+```text
+slide_plan.json
+citation_manifest.json
+source_evidence_manifest.json
+render_manifest.json
+geometry_report.json
+visual_qa_report.json
+quality_report.json
+artifact_manifest.json
+rendered_slides/*.png
+independent_rendered_slides/*.png
+```
+
+KR-6B remains a checked bundle-hardening step. It must not be described as broad presentation feature coverage or as a replacement for later real PPTX render integration.
+
+KR-6B repair note: artifact_manifest.json is self-referential, so its own hash and size must be represented by explicit self_reference metadata rather than a fake manifest entry. Render, geometry, citation, source evidence, visual QA, and quality artifacts must still have real size and sha256 records.
