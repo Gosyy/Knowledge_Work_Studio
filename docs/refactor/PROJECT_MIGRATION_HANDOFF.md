@@ -698,3 +698,7 @@ KR-6B repair note: artifact_manifest.json is self-referential, so its own hash a
 After KR-6B was accepted, `backend/app/services/slides_service/__init__.py` remained functional but visually dense because the render/visual QA exports were added in a compressed import/export form. The hygiene follow-up reformats this file into readable multiline imports and adds a smoke regression that prevents the import block from collapsing back into one long line.
 
 This change is intentionally logic-neutral: it must not change the Slides render/visual QA bundle contract, source-grounded Slides contract, production gate semantics, or any runtime behavior. Acceptance still requires targeted checks, full runner, Docker smoke, log review, push, and remote verification.
+
+## 18. Full-runner log isolation hygiene
+
+After the KR-6B formatting hygiene patch, Profile 3 exposed a full-runner logging robustness issue: smoke tests can interfere with repository-local transient log directories. The project-resident full runner now writes step logs to a private temporary work directory and archives the final `full-tests-*.zip` under the repository `logs` directory. This keeps the external artifact contract unchanged while preventing tests from deleting the runner's active per-step logs.

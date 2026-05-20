@@ -7,8 +7,8 @@ EXPECTED_BRANCH="${KWS_BRANCH:-9_Product_Release_Hardening}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 LOG_ROOT="${KWS_LOG_ROOT:-${REPO_ROOT}/logs}"
 STAMP="$(date +%Y%m%d_%H%M%S)"
-LOG_DIR="${LOG_ROOT}/full-tests-${STAMP}"
-ARCHIVE="${LOG_DIR}.zip"
+ARCHIVE="${LOG_ROOT}/full-tests-${STAMP}.zip"
+WORK_LOG_DIR=""
 LOCAL_NO_PROXY="localhost,127.0.0.1,::1,0.0.0.0,.local"
 
 ensure_open_file_limit() {
@@ -24,37 +24,54 @@ ensure_open_file_limit() {
   printf '[INFO] nofile_limit=%s\n' "$(ulimit -n 2>/dev/null || echo unknown)"
 }
 
-
-mkdir -p "${LOG_DIR}"
+prepare_log_dirs() {
+  mkdir -p "${LOG_ROOT}"
+  WORK_LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/kw-full-tests-${STAMP}.XXXXXX")"
+  chmod 700 "${WORK_LOG_DIR}" 2>/dev/null || true
+}
 
 archive_logs() {
-  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/kw_operator_log_archive.py" "${LOG_DIR}" --zip-path "${ARCHIVE}" >/dev/null 2>&1 || return 0
+  if [[ -z "${WORK_LOG_DIR}" || ! -d "${WORK_LOG_DIR}" ]]; then
+    echo "[WARN] work log dir missing before archive"
+    return 0
+  fi
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/kw_operator_log_archive.py" "${WORK_LOG_DIR}" --zip-path "${ARCHIVE}" >/dev/null 2>&1 || return 0
   if [[ -f "${ARCHIVE}" ]]; then
     echo "[INFO] archived logs: ${ARCHIVE}"
-    echo "[INFO] removed source log dir: ${LOG_DIR}"
+    rm -rf "${WORK_LOG_DIR}"
+    echo "[INFO] removed source log dir: ${WORK_LOG_DIR}"
   else
-    echo "[WARN] log archive was not created; source log dir kept: ${LOG_DIR}"
+    echo "[WARN] log archive was not created; temp source log dir kept: ${WORK_LOG_DIR}"
   fi
 }
 
 run_step() {
   local name="$1"
   shift
-  local log_file="${LOG_DIR}/${name}.log"
+  local log_file="${WORK_LOG_DIR}/${name}.log"
+
   echo
   echo "================================================================================"
   echo "[STEP] ${name}"
   printf '%q ' "$@"
   echo
   echo "================================================================================"
+
   set +e
   "$@" >"${log_file}" 2>&1
   local rc=$?
   set -e
-  cat "${log_file}"
+
+  if [[ -f "${log_file}" ]]; then
+    cat "${log_file}"
+  else
+    echo "[FAIL] ${name} log file missing after command: ${log_file}"
+    rc=1
+  fi
+
   if [[ "${rc}" -ne 0 ]]; then
     echo "[FAIL] ${name} rc=${rc}"
-    echo "finished_at=$(date +%Y%m%d_%H%M%S)" >> "${LOG_DIR}/summary.log"
+    echo "finished_at=$(date +%Y%m%d_%H%M%S)" >> "${WORK_LOG_DIR}/summary.log"
     archive_logs
     exit "${rc}"
   fi
@@ -73,6 +90,9 @@ if [[ ! -d "${REPO_ROOT}/.git" ]]; then
 fi
 
 cd "${REPO_ROOT}"
+prepare_log_dirs
+ensure_open_file_limit
+
 BRANCH="$(git branch --show-current 2>/dev/null || true)"
 HEAD="$(git rev-parse HEAD 2>/dev/null || true)"
 ORIGIN_HEAD="$(git rev-parse "origin/${EXPECTED_BRANCH}" 2>/dev/null || true)"
@@ -85,21 +105,26 @@ if [[ "${EXPECTED_BRANCH}" != "" && "${BRANCH}" != "${EXPECTED_BRANCH}" ]]; then
   exit 2
 fi
 
-cat > "${LOG_DIR}/summary.log" <<EOF
+cat > "${WORK_LOG_DIR}/summary.log" <<EOF_SUMMARY
+started_at=${STAMP}
 repo=${REPO_ROOT}
 branch=${BRANCH}
 head=${HEAD}
 origin_head=${ORIGIN_HEAD}
-started_at=${STAMP}
-EOF
+work_log_dir=${WORK_LOG_DIR}
+archive=${ARCHIVE}
+EOF_SUMMARY
 
-printf '[INFO] KW Studio full test runner\n'
-printf '[INFO] repo=%s\n' "${REPO_ROOT}"
-printf '[INFO] branch=%s\n' "${BRANCH}"
-printf '[INFO] head=%s\n' "${HEAD}"
-printf '[INFO] origin_head=%s\n' "${ORIGIN_HEAD}"
-printf '[INFO] log_dir=%s\n' "${LOG_DIR}"
-printf '[INFO] frontend e2e uses no-proxy localhost isolation\n'
+cat <<EOF_CONTEXT
+[INFO] KW Studio full test runner
+[INFO] repo=${REPO_ROOT}
+[INFO] branch=${BRANCH}
+[INFO] head=${HEAD}
+[INFO] origin_head=${ORIGIN_HEAD}
+[INFO] work_log_dir=${WORK_LOG_DIR}
+[INFO] archive=${ARCHIVE}
+[INFO] frontend e2e uses no-proxy localhost isolation
+EOF_CONTEXT
 ensure_open_file_limit
 
 run_shell_step "00-git-status-before" "cd '${REPO_ROOT}' && git status --short && git branch --show-current && git rev-parse HEAD"
@@ -113,14 +138,14 @@ run_shell_step "10-backend-smoke-tests" "cd '${REPO_ROOT}' && source .venv/bin/a
 run_shell_step "11-backend-api-tests" "cd '${REPO_ROOT}' && source .venv/bin/activate && if [ -d backend/tests/api ]; then python -m pytest backend/tests/api -q; else echo '[SKIP] backend/tests/api not found'; fi"
 run_shell_step "12-backend-all-tests" "cd '${REPO_ROOT}' && source .venv/bin/activate && python -m pytest backend/tests -q"
 run_shell_step "20-frontend-npm-ci" "cd '${REPO_ROOT}/frontend' && npm ci"
-run_shell_step "20b-frontend-playwright-browser-install" "cd '${REPO_ROOT}/frontend' && if [ -f package.json ] && grep -q '"@playwright/test"\|"playwright"' package.json; then npx playwright install chromium; else echo '[SKIP] Playwright package not declared'; fi"
+run_shell_step "20b-frontend-playwright-browser-install" "cd '${REPO_ROOT}/frontend' && if [ -f package.json ] && grep -q '\"@playwright/test\"\|\"playwright\"' package.json; then npx playwright install chromium; else echo '[SKIP] Playwright package not declared'; fi"
 run_shell_step "21-frontend-production-build" "cd '${REPO_ROOT}/frontend' && npm run build"
 run_shell_step "22-frontend-e2e-smoke" "cd '${REPO_ROOT}' && source .venv/bin/activate && export NO_PROXY='${LOCAL_NO_PROXY}' no_proxy='${LOCAL_NO_PROXY}' && unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy && if [ -d frontend/tests ] || [ -d frontend/e2e ]; then (cd frontend && if node -e \"const s=require('./package.json').scripts||{}; process.exit(s['test:e2e']?0:1)\"; then npm run test:e2e -- --reporter=line; elif node -e \"const s=require('./package.json').scripts||{}; process.exit(s['e2e']?0:1)\"; then npm run e2e -- --reporter=line; else npx playwright test --reporter=line; fi); else python -m pytest backend/tests/smoke/test_frontend* -q 2>/dev/null || echo '[SKIP] no frontend e2e smoke target found'; fi"
 run_shell_step "30-production-readiness-gate" "cd '${REPO_ROOT}' && source .venv/bin/activate && export NO_PROXY='${LOCAL_NO_PROXY}' no_proxy='${LOCAL_NO_PROXY}' && unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy && python scripts/kw_production_readiness_gate.py --repo-root ."
 run_shell_step "40-docker-compose-check-only" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_fullstack_compose_smoke.py --repo-root . --check-only --timeout 1200"
 run_shell_step "99-git-status-after" "cd '${REPO_ROOT}' && git status --short && git branch --show-current && git rev-parse HEAD"
 
-echo "finished_at=$(date +%Y%m%d_%H%M%S)" >> "${LOG_DIR}/summary.log"
+echo "finished_at=$(date +%Y%m%d_%H%M%S)" >> "${WORK_LOG_DIR}/summary.log"
 archive_logs
 
 echo
