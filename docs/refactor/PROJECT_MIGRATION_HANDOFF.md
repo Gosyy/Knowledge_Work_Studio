@@ -692,3 +692,9 @@ independent_rendered_slides/*.png
 KR-6B remains a checked bundle-hardening step. It must not be described as broad presentation feature coverage or as a replacement for later real PPTX render integration.
 
 KR-6B repair note: artifact_manifest.json is self-referential, so its own hash and size must be represented by explicit self_reference metadata rather than a fake manifest entry. Render, geometry, citation, source evidence, visual QA, and quality artifacts must still have real size and sha256 records.
+
+## KR-6B hygiene follow-up: Slides service export formatting
+
+After KR-6B was accepted, `backend/app/services/slides_service/__init__.py` remained functional but visually dense because the render/visual QA exports were added in a compressed import/export form. The hygiene follow-up reformats this file into readable multiline imports and adds a smoke regression that prevents the import block from collapsing back into one long line.
+
+This change is intentionally logic-neutral: it must not change the Slides render/visual QA bundle contract, source-grounded Slides contract, production gate semantics, or any runtime behavior. Acceptance still requires targeted checks, full runner, Docker smoke, log review, push, and remote verification.
