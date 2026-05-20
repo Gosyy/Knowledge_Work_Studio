@@ -69,4 +69,4 @@ quality_report.json remains ready and non-destructive;
 corrupt or incomplete bundles fail closed.
 ```
 
-This is still not full Excel parity. It hardens inspection output so later XLSX workflows can safely consume the artifact bundle.
+This is still not complete Excel feature coverage. It hardens inspection output so later XLSX workflows can safely consume the artifact bundle.

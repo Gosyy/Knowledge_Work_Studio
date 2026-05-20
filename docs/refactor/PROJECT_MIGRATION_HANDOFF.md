@@ -496,7 +496,7 @@ Initial entry:
 
 ## 15. KR-5A XLSX inspect workflow handoff update
 
-KR-5A starts the first concrete spreadsheet runtime after the KR-4A workflow contract core. The work must remain inspect-only and non-destructive. It should not claim full Excel parity. The required implementation surface is:
+KR-5A starts the first concrete spreadsheet runtime after the KR-4A workflow contract core. The work must remain inspect-only and non-destructive. It should not claim complete Excel feature coverage. The required implementation surface is:
 
 ```text
 backend/app/services/xlsx_service/
@@ -602,7 +602,7 @@ If a future profile fails with `Executable doesn't exist` under `.cache/ms-playw
 
 ## KR-5B XLSX validation and artifact bundle hardening handoff update
 
-KR-5B builds on KR-5A. It does not add destructive workbook editing and does not claim full Excel parity.
+KR-5B builds on KR-5A. It does not add destructive workbook editing and does not claim complete Excel feature coverage.
 It adds profile-neutral validation for the XLSX inspect artifact bundle.
 
 The implementation surface is:
@@ -628,3 +628,8 @@ inspect workflow remains non-destructive.
 ```
 
 Future XLSX work should build on this validation layer before adding edit, repair, chart, pivot, or cross-workflow export features.
+
+
+## 16. KR-5B wording hotfix handoff update
+
+KR-5B introduced XLSX bundle validation hardening. A follow-up hotfix removed a forbidden product-claim phrase from XLSX documentation because the legacy KR-2F scanner treats that phrase as unsupported even when it appears in a negative sentence. Future documentation should avoid using blocked positive-claim tokens verbatim; use wording such as `complete Excel feature coverage` when explaining non-goals.
