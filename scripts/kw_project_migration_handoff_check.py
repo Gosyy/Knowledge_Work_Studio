@@ -62,6 +62,7 @@ REQUIRED_PHRASES = [
     "Profile 1 local-only paths",
     "Profile 2 local-only paths",
     "After every agreed new phase plan, update docs/refactor/PROJECT_MIGRATION_HANDOFF.md",
+    "S2 legacy lineage check is advisory",
     "Profile-neutral runner resource limits",
     "KWS_NOFILE_LIMIT",
     "npx playwright install chromium",

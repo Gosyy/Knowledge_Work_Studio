@@ -702,3 +702,17 @@ This change is intentionally logic-neutral: it must not change the Slides render
 ## 18. Full-runner log isolation hygiene
 
 After the KR-6B formatting hygiene patch, Profile 3 exposed a full-runner logging robustness issue: smoke tests can interfere with repository-local transient log directories. The project-resident full runner now writes step logs to a private temporary work directory and archives the final `full-tests-*.zip` under the repository `logs` directory. This keeps the external artifact contract unchanged while preventing tests from deleting the runner's active per-step logs.
+
+## 16. Profile-neutral S2 lineage diagnostics hardening
+
+The old S2 outline-first frontend workflow checker still references a historical S1 baseline commit. That historical lineage check must not behave like a modern profile-specific or shallow-clone blocker on the product-reset branch.
+
+Current policy:
+
+```text
+S2 legacy lineage check is advisory on the product-reset branch when the old baseline object is unavailable or no longer a direct ancestor.
+S2 must still validate current product files, plan-first replacement checks, safe task events, render modes, and offline/frontend workflow contracts.
+S2 must emit machine-readable JSON diagnostics on every failure path.
+```
+
+This rule prevents old stage-history Git assumptions from hiding real product failures during Profile 1 / Profile 3 switching.
