@@ -760,3 +760,26 @@ Acceptance for KR-6C-style work still follows the normal project rule: targeted 
 The first KR-6C real-user Slides prompt planning patch correctly removed prompt echo, placeholder leakage, and the internal deterministic image source label from public PPTX text, but it accidentally removed generated media image specs from the new user-prompt plan path. Legacy RF2.1 inventory smoke still requires at least one generated media asset to prove the baseline local PPTX runtime surface remains present.
 
 The repair keeps KR-6C user-facing quality guardrails while restoring local deterministic image specs with no public internal source label. Future Slides prompt-quality work must preserve both contracts: no placeholder/internal-label leakage in the PPTX, and no accidental retirement of the baseline media generation surface unless the RF2 legacy gate is formally retired with replacement coverage.
+
+## Senior engineering patch-discipline correction
+
+2026-05-21 / process hardening / user correction after KR-6C repair churn / mandatory future-assistant rule.
+
+The user explicitly corrected the engineering process after a sequence of too-narrow and brittle KR-6C repair attempts. This correction is part of the migration handoff and must be treated as a mandatory operating rule for all future patches.
+
+Before proposing or applying any future patch, the assistant must work at senior-engineer level and must not rely on shallow targeted edits. The required process is:
+
+```text
+1. Analyze the actual failing logs, artifacts, API responses, and repository state before deciding on a fix.
+2. Audit all directly related files, call sites, compatibility tests, smoke tests, readiness gates, product documentation, and historical workflow contracts affected by the problem.
+3. Map compatibility risks before changing shared services. For example, a Slides planner change must be checked against real-user prompt generation, source-aware generation, RF2/RF2.1 media baseline, render/visual QA, artifact manifests, and API schema tests.
+4. Prefer small but complete repairs over brittle hotfixes. Do not use fragile text-anchor patchers for non-trivial code changes unless the patcher first proves the exact expected pre-state and exits before modifying anything on mismatch.
+5. Check syntax and importability of changed code locally before giving the patch to the user. Python changes need py_compile/import checks; shell changes need bash -n; frontend changes need the relevant npm/type/build checks.
+6. Run the relevant targeted tests/checkers on the locally checked-out project version before delivering the patch. Do not claim a patch is ready merely because it is conceptually plausible.
+7. Do not introduce temporary workarounds, hidden behavior changes, or unreliable route guards that bypass product contracts. If a compatibility path is needed, document the routing rule and cover both old and new behavior with tests.
+8. If a runner fails after partially modifying the tree, the next action must first cleanly classify and repair that partial state before applying another change.
+9. A patch that fixes a user-visible quality defect must include explicit regression checks for the user-visible failure mode, not only backend internals.
+10. Full runner and Docker smoke remain mandatory before LOCAL ACCEPT; push and remote verification remain mandatory before REMOTE ACCEPT / CLOSED.
+```
+
+This correction raises the quality bar. It is not a waiver for faster patching and must not be bypassed when the user asks for speed.
