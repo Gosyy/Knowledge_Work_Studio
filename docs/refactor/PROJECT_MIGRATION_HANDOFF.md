@@ -783,3 +783,16 @@ Before proposing or applying any future patch, the assistant must work at senior
 ```
 
 This correction raises the quality bar. It is not a waiver for faster patching and must not be bypassed when the user asks for speed.
+
+## KR-6C source-mode Slides routing repair
+
+KR-6C real-user prompt planning must not globally replace legacy/source-aware Slides planning. The accepted routing contract is source-mode-aware:
+
+```text
+prompt_only + explicit real-user presentation/deck generation intent -> KR-6C user prompt planner
+prompt_only + short/source-like outline text -> legacy outline-first planner
+uploaded_source / stored_source -> legacy source-preserving outline-first planner
+direct internal calls with source_refs or non-default templates -> legacy baseline planner
+```
+
+This keeps the real-user quality guardrails from KR-6C while preserving K2 source-aware API behavior, RF2/RF2.1 media baseline smoke, source grounding metadata, and artifact manifest/render QA contracts. Future Slides repairs must audit all of these contracts together before changing routing.

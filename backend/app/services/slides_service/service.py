@@ -7,7 +7,13 @@ from backend.app.services.slides_service.approved_plan_lifecycle import Approved
 from backend.app.services.slides_service.saved_plan_retry import SavedPlanRetryRequest, SavedPlanRetryResult, retry_saved_plan_with_lifecycle
 from backend.app.services.slides_service.generator import generate_pptx_from_plan
 from backend.app.services.slides_service.image_pipeline import DeterministicPatternImageProvider, SlideImageProvider, SlideImageRegistry
-from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem
+from backend.app.services.slides_service.outline import (
+    PlannedSlide,
+    PresentationPlan,
+    SlideOutlineItem,
+    build_presentation_plan,
+    plan_to_outline,
+)
 from backend.app.services.slides_service.user_prompt_planning import build_user_prompt_presentation_plan, user_plan_to_outline
 from backend.app.services.slides_service.source_grounding import build_source_grounded_plan
 from backend.app.services.slides_service.render_mode_runtime import (
@@ -25,6 +31,65 @@ from backend.app.services.slides_service.provenance_manifest_runtime import (
     emit_generation_provenance_manifest,
     emit_retry_provenance_manifest,
 )
+
+
+_REAL_USER_ACTION_FRAGMENTS = (
+    "сгенериру",
+    "создай",
+    "подготов",
+    "generate",
+    "create",
+    "prepare",
+)
+_REAL_USER_PRESENTATION_FRAGMENTS = (
+    "презентац",
+    "слайд",
+    "presentation",
+    "deck",
+    "slides",
+)
+_REAL_USER_CONTEXT_FRAGMENTS = (
+    "тема",
+    "стиль",
+    "на тему",
+    "about",
+    "style",
+)
+
+
+def _should_use_user_prompt_planner(
+    *,
+    source_text: str,
+    source_mode: str,
+    source_refs: tuple[dict[str, str], ...],
+    template_id: str,
+) -> bool:
+    """Choose only the real-user prompt planner when source contracts allow it.
+
+    Legacy source-aware tests and RF2/RF2.1 smoke rely on the outline-first
+    planner preserving source fragments. The KR-6C planner is reserved for
+    explicit user requests to create a presentation/deck from a natural-language
+    prompt, where prompt echo and placeholder leakage must be blocked.
+    """
+
+    if source_mode in {"uploaded_source", "stored_source"}:
+        return False
+    if source_refs:
+        return False
+    if template_id != "default_light":
+        return False
+    return _looks_like_real_user_presentation_prompt(source_text)
+
+
+def _looks_like_real_user_presentation_prompt(source_text: str) -> bool:
+    lowered = " ".join(source_text.lower().split())
+    if not lowered:
+        return False
+    has_action = any(fragment in lowered for fragment in _REAL_USER_ACTION_FRAGMENTS)
+    has_presentation = any(fragment in lowered for fragment in _REAL_USER_PRESENTATION_FRAGMENTS)
+    has_context = any(fragment in lowered for fragment in _REAL_USER_CONTEXT_FRAGMENTS)
+    has_slide_count = any(char.isdigit() for char in lowered) and ("слайд" in lowered or "slide" in lowered)
+    return has_action and has_presentation and (has_context or has_slide_count)
 
 
 @dataclass(frozen=True)
@@ -59,16 +124,42 @@ class SlidesService:
         task_id: str | None = None,
         owner_user_id: str = "user_local_default",
         source_refs: tuple[dict[str, str], ...] = (),
+        source_mode: str = "auto",
     ) -> SlidesTransformOutput:
-        planning = build_user_prompt_presentation_plan(
-            source_text,
-            min_slides=5,
-            max_slides=10,
-            llm_text_service=self.llm_text_service,
-            task_id=task_id,
-        )
+        if _should_use_user_prompt_planner(
+            source_text=source_text,
+            source_mode=source_mode,
+            source_refs=source_refs,
+            template_id=template_id,
+        ):
+            planning = build_user_prompt_presentation_plan(
+                source_text,
+                min_slides=5,
+                max_slides=10,
+                llm_text_service=self.llm_text_service,
+                task_id=task_id,
+            )
+            plan = planning.plan
+            outline_builder = user_plan_to_outline
+            planning_metadata = {
+                **planning.metadata,
+                "source_mode": source_mode,
+                "planner_contract": "real_user_prompt",
+            }
+        else:
+            plan = build_presentation_plan(source_text, min_slides=5, max_slides=10)
+            outline_builder = plan_to_outline
+            planning_metadata = {
+                "planning_mode": "legacy_outline_first",
+                "llm_planning_used": False,
+                "source_mode": source_mode,
+                "planner_contract": "legacy_source_aware",
+                "requested_slide_count": plan.target_slide_count,
+                "actual_slide_count": len(plan.slides),
+            }
+
         grounding = build_source_grounded_plan(
-            planning.plan,
+            plan,
             source_text=source_text,
             source_refs=source_refs,
         )
@@ -78,7 +169,7 @@ class SlidesService:
             task_id=task_id,
             owner_user_id=owner_user_id,
         )
-        outline = user_plan_to_outline(enriched_plan)
+        outline = outline_builder(enriched_plan)
         slide_count = len(outline)
         artifact_content = generate_pptx_from_plan(enriched_plan, template_id=template_id)
         summary_text = (
@@ -95,7 +186,7 @@ class SlidesService:
             template_id=template_id,
             generated_media_file_ids=stored_file_ids,
             source_grounding_metadata=grounding.as_metadata(),
-            planning_metadata=planning.metadata,
+            planning_metadata=planning_metadata,
         )
 
 

@@ -75,6 +75,7 @@ class TaskQueueService:
                 job.task_id,
                 content=resolved_input.content,
                 source_refs=resolved_input.as_grounding_refs(),
+                source_mode=resolved_input.source_mode,
             )
 
             if executed_task.status is not TaskStatus.SUCCEEDED:

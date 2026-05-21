@@ -14,6 +14,7 @@ class SlidesGenerateRequest:
     task_id: str | None = None
     owner_user_id: str = "user_local_default"
     source_refs: tuple[dict[str, str], ...] = ()
+    source_mode: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ class SlidesServiceEntrypoint:
             task_id=request.task_id,
             owner_user_id=request.owner_user_id,
             source_refs=request.source_refs,
+            source_mode=request.source_mode,
         )
         return SlidesGenerateResult(
             slide_count=output.slide_count,
