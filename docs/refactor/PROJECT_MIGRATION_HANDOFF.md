@@ -829,3 +829,28 @@ scripts/deploy/kw_postgres_volume_guardrail.py
 The helper is intentionally cross-platform: it uses Python subprocess calls and Docker Compose labels instead of shell pipelines, xargs, Linux-only assumptions, or profile-specific paths. It requires `--confirm-reset-postgres-volume` before removing the Postgres metadata volume and must never print `.env.deploy`, Authorization Key, access tokens, GigaChat secrets, or `POSTGRES_PASSWORD`.
 
 Future deploy/start/restart runners that regenerate deploy credentials must call this rule out explicitly. A future hardening patch should prefer preserving the previous `POSTGRES_PASSWORD` when safely available, and use volume reset only when the operator intentionally accepts metadata reset for a test/local deploy.
+
+## Global local-state-aware patch planning rule
+
+This rule is global, cross-platform, and profile-neutral. It applies before pull, before dependency checks, before deploy/start instructions, and before every patch runner.
+
+Before changing files or choosing tests, the assistant must audit and record the actual local profile state, not an assumed clean clone. The minimum local-state audit is:
+
+```text
+current branch and local HEAD before fetch or pull
+working tree status and dirty scope
+generated files that may be modified by builds
+presence or absence of expected project files
+presence or absence of local-only env/deploy files
+active containers, compose projects, volumes, ports, and runtime health when deploy behavior is relevant
+recent logs or user-provided command output that proves what has actually been run
+local Python, Node, Docker, render-stack, and Playwright state when dependencies or tests are relevant
+```
+
+Patch selection, test selection, and repair strategy must be based on that audited state. Future runners must not assume that a profile has the same files, env files, containers, volumes, caches, virtual environment, `node_modules`, or generated artifacts as another profile.
+
+Before producing or applying a patch, the assistant must audit the related implementation surface and contracts for the specific problem. This includes directly related source files, entrypoints, repositories, services, tests, smoke checks, production gates, documentation, and previously uploaded logs or artifacts. Patches must be checked against the current file contents and must not rely on brittle text anchors when a safer structural update is possible.
+
+Every patch must be reviewed for correctness, contract fit, syntax, importability, and wording quality before it is handed to the user. Documentation, comments, CLI help, operator messages, and user-facing text must be checked for spelling mistakes, accidental profile-specific wording, stale claims, and terminology drift. Incorrect spellings of key terms must not be introduced into project files; use `offline` and `senior engineer`.
+
+If the actual local state does not match the expected base, the assistant must stop, explain the mismatch, and either prepare a state-repair runner or ask for the missing evidence. Do not continue by assuming the filesystem, runtime, or dependency state.
