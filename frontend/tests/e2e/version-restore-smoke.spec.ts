@@ -32,7 +32,7 @@ function presentationSummary() {
           version_number: 3,
           file_id: "sf_restore_v1",
           parent_version_id: "presver_restore_v2",
-          change_summary: "Restore to v1",
+          change_summary: "Restore to v1: Operator requested rollback after review.",
           created_at: "2026-04-25T12:20:00Z",
         }
       : {
@@ -65,9 +65,11 @@ function versions() {
       created_at: "2026-04-25T12:10:00Z",
     },
   ];
+
   if (!restored) {
     return base;
   }
+
   return [
     ...base,
     {
@@ -75,7 +77,7 @@ function versions() {
       version_number: 3,
       file_id: "sf_restore_v1",
       parent_version_id: "presver_restore_v2",
-      change_summary: "Restore to v1",
+      change_summary: "Restore to v1: Operator requested rollback after review.",
       created_at: "2026-04-25T12:20:00Z",
     },
   ];
@@ -84,7 +86,6 @@ function versions() {
 test.beforeEach(async ({ page }) => {
   restored = false;
   restorePayload = null;
-
   await page.route("http://localhost:8000/**", async (route) => {
     const url = new URL(route.request().url());
     const method = route.request().method();
@@ -117,8 +118,11 @@ test.beforeEach(async ({ page }) => {
           parent_version_id: "presver_restore_v2",
           current_file_id: "sf_restore_v1",
           previous_file_id: "sf_restore_v2",
-          change_summary: "Restore to v1",
+          change_summary: "Restore to v1: Operator requested rollback after review.",
           created_at: "2026-04-25T12:20:00Z",
+          restored_by_user_id: "user_local_default",
+          restore_reason: "Operator requested rollback after review.",
+          audit_summary: "user_local_default restored presver_restore_v1 after presver_restore_v2",
         },
       });
       return;
@@ -133,16 +137,16 @@ test.beforeEach(async ({ page }) => {
 
 test("version timeline restores selected historical version with deliberate confirmation", async ({ page }) => {
   await page.goto("/");
-
   await page.getByLabel("Session id").fill("ses_restore");
   await page.getByRole("button", { name: "Load presentations" }).click();
-
   await expect(page.getByRole("heading", { name: "Restore Deck" }).first()).toBeVisible();
 
   await page.getByRole("button", { name: "Load version timeline" }).click();
   await page.getByRole("button", { name: "Select version v1" }).click();
 
   await page.getByLabel("Restore confirmation").fill("RESTORE");
+  await page.getByLabel("Restore target version id").fill("presver_restore_v1");
+  await page.getByLabel("Restore reason").fill("Operator requested rollback after review.");
   await page.getByRole("button", { name: "Restore selected version" }).click();
 
   await expect(page.getByText("Restored v1 as v3")).toBeVisible();
@@ -150,5 +154,7 @@ test("version timeline restores selected historical version with deliberate conf
 
   expect(restorePayload).not.toBeNull();
   expect(restorePayload?.confirmation).toBe("RESTORE");
+  expect(restorePayload?.confirmation_target_version_id).toBe("presver_restore_v1");
+  expect(restorePayload?.restore_reason).toBe("Operator requested rollback after review.");
   expect(Object.prototype.hasOwnProperty.call(restorePayload, "plan")).toBe(false);
 });

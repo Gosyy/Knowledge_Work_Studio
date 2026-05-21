@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.app.services.slides_service.outline import PlannedSlide, PresentationPlan, SlideType, StoryArcStage
 
@@ -139,8 +139,35 @@ class PresentationRestoreRequestSchema(BaseModel):
         ...,
         description="Must be exactly RESTORE to perform a non-destructive version restore.",
     )
+    confirmation_target_version_id: str | None = Field(
+        default=None,
+        description="Optional deliberate confirmation that must match the selected version id.",
+    )
     task_id: str | None = None
-    change_summary: str | None = None
+    change_summary: str | None = Field(default=None, max_length=240)
+    restore_reason: str | None = Field(default=None, max_length=500)
+
+    @field_validator("confirmation_target_version_id", "change_summary", "restore_reason")
+    @classmethod
+    def _normalize_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = " ".join(value.split()).strip()
+        return normalized or None
+
+    @field_validator("change_summary")
+    @classmethod
+    def _validate_change_summary(cls, value: str | None) -> str | None:
+        if value is not None and len(value) < 8:
+            raise ValueError("Restore change summary must be at least 8 characters when provided.")
+        return value
+
+    @field_validator("restore_reason")
+    @classmethod
+    def _validate_restore_reason(cls, value: str | None) -> str | None:
+        if value is not None and len(value) < 8:
+            raise ValueError("Restore reason must be at least 8 characters when provided.")
+        return value
 
 
 class PresentationRestoreResponseSchema(BaseModel):
@@ -154,6 +181,9 @@ class PresentationRestoreResponseSchema(BaseModel):
     previous_file_id: str | None
     change_summary: str | None
     created_at: datetime
+    restored_by_user_id: str
+    restore_reason: str | None
+    audit_summary: str
 
 
 class PresentationRevisionLineageItemSchema(BaseModel):

@@ -198,24 +198,9 @@ export type DeckRevisionResponse = {
   previous_file_id: string | null;
 };
 
-export type PresentationRestoreRequest = {
-  confirmation: "RESTORE" | string;
-  task_id?: string | null;
-  change_summary?: string | null;
-};
+export type PresentationRestoreRequest = { confirmation: "RESTORE" | string; confirmation_target_version_id?: string | null; task_id?: string | null; change_summary?: string | null; restore_reason?: string | null; };
 
-export type PresentationRestoreResponse = {
-  presentation_id: string;
-  restored_version_id: string;
-  restored_version_number: number;
-  target_version_id: string;
-  target_version_number: number;
-  parent_version_id: string | null;
-  current_file_id: string;
-  previous_file_id: string | null;
-  change_summary: string | null;
-  created_at: string;
-};
+export type PresentationRestoreResponse = { presentation_id: string; restored_version_id: string; restored_version_number: number; target_version_id: string; target_version_number: number; parent_version_id: string | null; current_file_id: string; previous_file_id: string | null; change_summary: string | null; created_at: string; restored_by_user_id: string; restore_reason: string | null; audit_summary: string; };
 
 export type DeckSlideRevisionRequest = {
   instruction: string;

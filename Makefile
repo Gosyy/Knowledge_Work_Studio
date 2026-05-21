@@ -2,7 +2,7 @@ PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
 UVICORN ?= $(PYTHON) -m uvicorn
 
-.PHONY: install run test lint create-dirs deploy-preflight operator-smoke postgres-integration deploy-package-validate docker-build docker-up docker-down production-readiness
+.PHONY: install run test lint create-dirs deploy-preflight operator-smoke postgres-integration deploy-package-validate docker-build docker-up docker-down fullstack-compose-smoke-check fullstack-compose-smoke production-readiness
 
 install:
 	$(PIP) install -r requirements.txt
@@ -39,6 +39,12 @@ docker-up:
 
 docker-down:
 	docker compose -f docker-compose.deploy.yml down
+
+fullstack-compose-smoke-check:
+	$(PYTHON) scripts/kw_fullstack_compose_smoke.py --repo-root . --check-only
+
+fullstack-compose-smoke:
+	$(PYTHON) scripts/kw_fullstack_compose_smoke.py --repo-root . --timeout 180
 
 production-readiness:
 	$(PYTHON) scripts/kw_production_readiness_gate.py --repo-root .

@@ -1,0 +1,11 @@
+# KW Studio required Office/render system packages for Ubuntu/Debian.
+# Keep this list portable: no profile-specific paths and no local mirror URLs.
+# Operators in offline/intranet environments should install these from an approved
+# internal APT mirror or prebuilt package cache.
+libreoffice-impress
+libreoffice-calc
+libreoffice-writer
+poppler-utils
+fontconfig
+fonts-dejavu-core
+fonts-liberation

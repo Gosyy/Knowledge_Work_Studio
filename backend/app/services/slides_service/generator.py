@@ -14,6 +14,7 @@ from backend.app.services.slides_service.source_grounding import render_slide_ci
 P_NS = "http://schemas.openxmlformats.org/presentationml/2006/main"
 A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
 R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+DETERMINISTIC_ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 
 
 @dataclass(frozen=True)
@@ -33,31 +34,42 @@ def generate_pptx_from_plan(plan: PresentationPlan, *, template_id: str = "defau
     buffer = io.BytesIO()
     media_counter = 1
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as pptx:
-        pptx.writestr("[Content_Types].xml", _content_types_xml(len(plan.slides), media_extensions=media_extensions))
-        pptx.writestr("_rels/.rels", _root_relationships_xml())
-        pptx.writestr("docProps/core.xml", _core_properties_xml(plan.deck_title))
-        pptx.writestr("docProps/app.xml", _app_properties_xml(len(plan.slides)))
-        pptx.writestr("ppt/presentation.xml", _presentation_xml(len(plan.slides)))
-        pptx.writestr("ppt/_rels/presentation.xml.rels", _presentation_relationships_xml(len(plan.slides)))
-        pptx.writestr("ppt/theme/theme1.xml", _theme_xml(template))
-        pptx.writestr("ppt/slideMasters/slideMaster1.xml", _slide_master_xml(template))
-        pptx.writestr("ppt/slideMasters/_rels/slideMaster1.xml.rels", _slide_master_relationships_xml())
-        pptx.writestr("ppt/slideLayouts/slideLayout1.xml", _slide_layout_xml())
-        pptx.writestr("ppt/slideLayouts/_rels/slideLayout1.xml.rels", _slide_layout_relationships_xml())
+        _write_pptx_part(pptx, "[Content_Types].xml", _content_types_xml(len(plan.slides), media_extensions=media_extensions))
+        _write_pptx_part(pptx, "_rels/.rels", _root_relationships_xml())
+        _write_pptx_part(pptx, "docProps/core.xml", _core_properties_xml(plan.deck_title))
+        _write_pptx_part(pptx, "docProps/app.xml", _app_properties_xml(len(plan.slides)))
+        _write_pptx_part(pptx, "ppt/presentation.xml", _presentation_xml(len(plan.slides)))
+        _write_pptx_part(pptx, "ppt/_rels/presentation.xml.rels", _presentation_relationships_xml(len(plan.slides)))
+        _write_pptx_part(pptx, "ppt/theme/theme1.xml", _theme_xml(template))
+        _write_pptx_part(pptx, "ppt/slideMasters/slideMaster1.xml", _slide_master_xml(template))
+        _write_pptx_part(pptx, "ppt/slideMasters/_rels/slideMaster1.xml.rels", _slide_master_relationships_xml())
+        _write_pptx_part(pptx, "ppt/slideLayouts/slideLayout1.xml", _slide_layout_xml())
+        _write_pptx_part(pptx, "ppt/slideLayouts/_rels/slideLayout1.xml.rels", _slide_layout_relationships_xml())
         for index, slide in enumerate(plan.slides, start=1):
             resolved_layout = resolve_layout_for_slide(slide, template_id=template.template_id)
             prepared_media, media_counter = _prepare_slide_media(slide=slide, resolved_layout=resolved_layout, media_counter=media_counter)
             for item in prepared_media:
-                pptx.writestr(item.media_path, item.asset.data)
-            pptx.writestr(
+                _write_pptx_part(pptx, item.media_path, item.asset.data)
+            _write_pptx_part(
+                pptx,
                 f"ppt/slides/slide{index}.xml",
                 _slide_xml(slide, index=index, resolved_layout=resolved_layout, prepared_media=prepared_media),
             )
-            pptx.writestr(
+            _write_pptx_part(
+                pptx,
                 f"ppt/slides/_rels/slide{index}.xml.rels",
                 _slide_relationships_xml(prepared_media),
             )
     return buffer.getvalue()
+
+
+def _write_pptx_part(pptx: zipfile.ZipFile, name: str, content: str | bytes) -> None:
+    info = zipfile.ZipInfo(filename=name, date_time=DETERMINISTIC_ZIP_TIMESTAMP)
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.external_attr = 0o600 << 16
+    if isinstance(content, str):
+        content = content.encode("utf-8")
+    pptx.writestr(info, content)
 
 
 def generate_pptx_from_outline(outline: tuple[SlideOutlineItem, ...]) -> bytes:

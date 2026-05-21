@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from skills.docx import DocxEditPlan, DocxRewritePlan, apply_docx_edit_plan, apply_docx_rewrite_plan
 
 from backend.app.services.docx_service.builder import build_docx_package
+from backend.app.services.docx_service.ingestion import DocxIngestionOutput, ingest_docx_bytes
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,9 @@ class DocxTransformOutput:
 @dataclass
 class DocxService:
     """Service-layer wrapper around reusable DOCX skill logic and deterministic DOCX packaging."""
+
+    def ingest_docx(self, content: bytes, *, source_filename: str = "document.docx") -> DocxIngestionOutput:
+        return ingest_docx_bytes(content, source_filename=source_filename)
 
     def apply_edit(self, document_text: str, *, target: str, replacement: str) -> str:
         plan = DocxEditPlan(operation="replace", target=target, replacement=replacement)

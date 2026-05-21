@@ -41,3 +41,6 @@ kw_studio_ideal_structure*.zip
 # Playwright
 playwright-report/
 test-results/
+
+# RF1 offline bootstrap operator bundles
+offline_bootstrap/

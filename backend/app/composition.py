@@ -253,6 +253,8 @@ def build_official_execution_coordinator(
         slides_service=SlidesServiceEntrypoint(
             service=SlidesService(
                 image_registry=SlideImageRegistry(storage=storage, stored_files=source_repositories.stored_files),
+                plan_snapshot_service=container.presentation_plan_snapshot_service,
+                artifact_service=container.artifact_service,
             )
         ),
     )

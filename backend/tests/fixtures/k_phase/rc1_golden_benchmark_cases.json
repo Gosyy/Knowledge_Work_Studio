@@ -1,0 +1,107 @@
+[
+  {
+    "case_id": "k0_exec_memo_to_board_deck",
+    "title": "Source memo to executive deck",
+    "source_kind": "memo",
+    "target_deck_type": "executive_decision_deck",
+    "target_slide_count": 7,
+    "audience": "board_and_executive_operators",
+    "deck_goal": "Convert the operator memo into a source-grounded executive decision deck with clear risks, recommendation, and next actions.",
+    "source_refs": [
+      {
+        "kind": "memo",
+        "source_id": "rc1_exec_memo_001",
+        "title": "RC1 Executive Memo",
+        "role": "primary_source",
+        "locator": "fixtures/rc1_exec_memo.md",
+        "source_file_id": "fixture_rc1_exec_memo_001",
+        "derived_content_id": "fixture_rc1_exec_memo_text"
+      }
+    ],
+    "source_text": "The executive memo asks whether KW Studio should enter a release-candidate hardening track. The current K-phase closure shows that K0 through K6 are accepted and that the route is ready for a release candidate. The business objective is to convert internal documents into verifiable downloadable decks while remaining offline and intranet-safe. The primary risk is overclaiming Kimi-level quality before real benchmark review. The recommended decision is to start RC1 with golden benchmark execution, preserve no-cloud defaults, and measure failures before adding more runtime features. The next actions are to run five benchmark cases, collect artifacts, review visual QA and provenance, and feed focused renderer and provenance fixes into later RC patches."
+  },
+  {
+    "case_id": "k0_arch_doc_to_architecture_deck",
+    "title": "Technical document to architecture deck",
+    "source_kind": "technical_document",
+    "target_deck_type": "architecture_review_deck",
+    "target_slide_count": 8,
+    "audience": "senior_engineering_review",
+    "deck_goal": "Turn the architecture note into a structured architecture review deck with topology, responsibilities, risks, and operator gates.",
+    "source_refs": [
+      {
+        "kind": "technical_document",
+        "source_id": "rc1_arch_doc_001",
+        "title": "RC1 Architecture Note",
+        "role": "primary_source",
+        "locator": "fixtures/rc1_arch_doc.md",
+        "source_file_id": "fixture_rc1_arch_doc_001",
+        "derived_content_id": "fixture_rc1_arch_doc_text"
+      }
+    ],
+    "source_text": "The KW Studio architecture uses three offline-oriented server roles. Server 1 runs the application backend, frontend, Postgres, workflow services, artifact storage, and operator-facing runtime. Server 2 is an optional heavy runtime node for LiteLLM-compatible gateway experiments, embeddings, OCR, reranking, and CPU-heavy modules. Server 3 runs local GigaChat and exposes it only over an internal endpoint. The default production path is direct local GigaChat, not cloud fallback. Runtime Foundation closed deployment hardening, schema preflight, diagnostics, backup, and dependency controls. K-phase added planning, editable approval, render quality, visual QA, source-to-slide provenance, and end-to-end workflow gates. The architecture review must highlight boundaries, failure modes, and release-readiness checks."
+  },
+  {
+    "case_id": "k0_project_log_to_status_deck",
+    "title": "Project log to status deck",
+    "source_kind": "project_log",
+    "target_deck_type": "status_update_deck",
+    "target_slide_count": 6,
+    "audience": "operator_status_review",
+    "deck_goal": "Summarize the project log into a status deck with completed milestones, current readiness, risks, and next actions.",
+    "source_refs": [
+      {
+        "kind": "project_log",
+        "source_id": "rc1_project_log_001",
+        "title": "RC1 Project Log",
+        "role": "primary_source",
+        "locator": "fixtures/rc1_project_log.md",
+        "source_file_id": "fixture_rc1_project_log_001",
+        "derived_content_id": "fixture_rc1_project_log_text"
+      }
+    ],
+    "source_text": "The project log records a controlled sequence of accepted checkpoints. Runtime Foundation closed first. K0 defined the Kimi-level rubric and golden benchmark without claiming product parity. K1 added local GigaChat-first planning with deterministic fallback. K2 added editable plan approval. K3 added renderer-quality controls. K4 added deterministic Visual QA over PPTX OOXML. K5 added source-to-slide provenance and bounded evidence fragments. K6 connected the stages into an end-to-end workflow. K-phase closure accepted the release-readiness checkpoint. Current risks are benchmark realism, fixture coverage, visual quality depth, and provenance review ergonomics. The next action is RC1 benchmark execution."
+  },
+  {
+    "case_id": "k0_comparison_table_to_decision_deck",
+    "title": "Comparison table to decision deck",
+    "source_kind": "comparison_table",
+    "target_deck_type": "decision_deck",
+    "target_slide_count": 6,
+    "audience": "technical_product_decision_board",
+    "deck_goal": "Convert the comparison table into a decision deck with tradeoffs, recommendation, and constraints.",
+    "source_refs": [
+      {
+        "kind": "comparison_table",
+        "source_id": "rc1_comparison_table_001",
+        "title": "RC1 Decision Comparison Table",
+        "role": "primary_source",
+        "locator": "fixtures/rc1_comparison_table.csv",
+        "source_file_id": "fixture_rc1_comparison_table_001",
+        "derived_content_id": "fixture_rc1_comparison_table_text"
+      }
+    ],
+    "source_text": "Option,Strength,Weakness,Recommendation. Direct local GigaChat,Best offline default and lowest data exposure,Requires stable internal endpoint,Use as production default. LiteLLM gateway,Good provider abstraction and central routing,Adds one more runtime hop and operational surface,Keep optional on Server 2. Ollama fallback,Useful for development and experiments,Not target production quality,Keep fallback only. Cloud LLM,High capability and convenience,Violates offline-first default and data locality,Do not use for default production runtime. Manual slide creation,Maximum control,Slow and inconsistent provenance,Use only for final editorial polish. The decision is to keep direct local GigaChat as default and use RC1 to measure workflow quality before expanding runtime scope."
+  },
+  {
+    "case_id": "k0_long_docx_pdf_to_structured_presentation",
+    "title": "Long DOCX/PDF to structured presentation",
+    "source_kind": "long_docx_pdf",
+    "target_deck_type": "structured_explainer_deck",
+    "target_slide_count": 10,
+    "audience": "knowledge_work_operators",
+    "deck_goal": "Create a structured explainer deck from a long source with sections, evidence, quality gates, and offline reproducibility notes.",
+    "source_refs": [
+      {
+        "kind": "long_docx_pdf",
+        "source_id": "rc1_long_doc_001",
+        "title": "RC1 Long Source Document",
+        "role": "primary_source",
+        "locator": "fixtures/rc1_long_doc.pdf#text",
+        "source_file_id": "fixture_rc1_long_doc_001",
+        "derived_content_id": "fixture_rc1_long_doc_text"
+      }
+    ],
+    "source_text": "Section one defines the product goal: KW Studio turns documents, data, slides, Python analysis, and browser-assisted workflows into verifiable artifacts. Section two defines offline constraints: default production execution must work inside an intranet and avoid hidden public internet dependencies. Section three defines the LLM topology: Server 3 hosts local GigaChat, Server 1 hosts KW Studio, and Server 2 is optional for gateway and heavy runtime modules. Section four summarizes Runtime Foundation: schema preflight, artifact history, diagnostics, backup, environment validation, and deployment checks. Section five summarizes K-phase: rubric, planning, editing, renderer quality, visual QA, provenance, end-to-end workflow, and release readiness. Section six lists benchmark requirements: each deck must preserve source faithfulness, visual hierarchy, density control, provenance, and offline reproducibility. Section seven lists release risks: fixture realism, visual regression coverage, template depth, table handling, and operator UX. Section eight proposes RC1: run five golden cases, collect PPTX and manifest artifacts, compute conservative automated proxy metrics, and require human review before any Kimi-level claim."
+  }
+]

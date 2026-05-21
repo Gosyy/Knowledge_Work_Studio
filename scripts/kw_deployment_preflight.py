@@ -14,7 +14,7 @@ REQUIRED_PATHS = (
     "Makefile",
     "requirements.txt",
     "backend/app/main.py",
-    "backend/app/deployment.py",
+    "backend/app/deployment.py", "scripts/kw_env_validate.py",
     "backend/app/api/routes/health.py",
     "backend/app/api/routes/presentations.py",
     "backend/app/api/routes/revisions.py",
@@ -174,6 +174,23 @@ def main() -> int:
             if build_exit != 0:
                 return build_exit
 
+    env_validate_args = [
+        sys.executable,
+        "scripts/kw_env_validate.py",
+        "--repo-root",
+        str(repo_root),
+    ]
+    if not (repo_root / ".env.deploy").exists():
+        env_validate_args.extend(
+            [
+                "--env-file",
+                str(repo_root / ".env.deploy.example"),
+                "--allow-placeholders",
+            ]
+        )
+    env_validate_exit = run_command(env_validate_args, cwd=repo_root, label="Environment validation")
+    if env_validate_exit != 0:
+        return env_validate_exit
     print("\n[PASS] deployment preflight completed")
     return 0
 

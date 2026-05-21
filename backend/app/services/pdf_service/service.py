@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from skills.pdf import extract_pdf_text, summarize_pdf_text
+from skills.pdf import summarize_pdf_text
+
+from backend.app.services.pdf_service.ingestion import (
+    PdfImageOnlyError,
+    PdfIngestionError,
+    PdfIngestionOutput,
+    ingest_pdf_content,
+)
 
 
 @dataclass(frozen=True)
@@ -21,19 +28,31 @@ class PdfService:
     metadata matches the actual bytes.
     """
 
+    def ingest_pdf(
+        self,
+        content: str | bytes,
+        *,
+        source_filename: str = "document.pdf",
+        max_sentences: int = 2,
+    ) -> PdfIngestionOutput:
+        return ingest_pdf_content(
+            content,
+            source_filename=source_filename,
+            max_sentences=max_sentences,
+        )
+
     def summarize(self, text: str, *, max_sentences: int = 2) -> str:
         return summarize_pdf_text(text, max_sentences=max_sentences)
 
     def transform_pdf(self, content: str | bytes, *, max_sentences: int = 2) -> PdfTransformOutput:
-        extraction = extract_pdf_text(content)
-        summary = summarize_pdf_text(extraction.extracted_text, max_sentences=max_sentences)
+        ingestion = self.ingest_pdf(content, max_sentences=max_sentences)
         artifact_content = self._render_text_summary_report(
-            extracted_text=extraction.extracted_text,
-            summary=summary,
+            extracted_text=ingestion.extracted_text,
+            summary=ingestion.summary,
         )
         return PdfTransformOutput(
-            extracted_text=extraction.extracted_text,
-            summary=summary,
+            extracted_text=ingestion.extracted_text,
+            summary=ingestion.summary,
             artifact_content=artifact_content,
         )
 

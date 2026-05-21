@@ -196,7 +196,7 @@ class PostgresSessionRepository(_PostgresRepositoryBase):
             cursor.execute(
                 "ALTER TABLE sessions ADD COLUMN IF NOT EXISTS owner_user_id TEXT NOT NULL DEFAULT 'user_local_default'"
             )
-        connection.commit()
+            connection.commit()
 
     def create(self, session: Session) -> Session:
         with self._lock, self._connect() as connection, connection.cursor() as cursor:

@@ -37,6 +37,14 @@ class Settings(BaseSettings):
     migration_baseline_path: str = "./scripts/migrations/0001_repository_baseline.sql"
 
     llm_provider: str = "gigachat"
+    llm_transport_mode: str = "direct_gigachat"
+    litellm_gateway_url: str = ""
+    litellm_gateway_model: str = ""
+    litellm_gateway_api_key: str = ""
+    litellm_gateway_timeout_seconds: float = 30.0
+    litellm_gateway_verify_ssl: bool = True
+    ollama_api_base_url: str = ""
+    ollama_model: str = ""
     gigachat_api_base_url: str = ""
     gigachat_auth_url: str = ""
     gigachat_scope: str = "GIGACHAT_API_PERS"

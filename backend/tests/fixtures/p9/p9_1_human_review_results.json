@@ -1,0 +1,483 @@
+{
+  "cases": [
+    {
+      "artifact_checksum_sha256": "sha256:34234c09c8f693fe9bcb45ce3930896c2e844437df228d57de534a20148ecdb6",
+      "artifact_paths": [
+        "k0_exec_memo_to_board_deck/rc1-k0_exec_memo_to_board_deck.pptx",
+        "k0_exec_memo_to_board_deck/manifest.json",
+        "k0_exec_memo_to_board_deck/safe_metadata.json"
+      ],
+      "case_id": "k0_exec_memo_to_board_deck",
+      "decision": "request_rework",
+      "decision_reason": "Deck is source-grounded and readable, but it is not yet product-quality for an executive/board decision deck. It uses generic K1/fallback slide labels, includes a weak two-column trade-off slide, a thin evidence table, and ends with a generic filler slide instead of a concrete executive recommendation or action plan.",
+      "follow_up_backlog": [
+        {
+          "area": "planning/storyline",
+          "priority": "P1",
+          "summary": "Replace generic fallback labels with audience-specific executive deck headlines."
+        },
+        {
+          "area": "renderer/layout",
+          "priority": "P1",
+          "summary": "Convert trade-off/evidence slides into meaningful recommendation/risk/action layouts."
+        },
+        {
+          "area": "planning",
+          "priority": "P1",
+          "summary": "Prevent generic “Additional source-grounded planning point” filler slides."
+        }
+      ],
+      "offline_reproducibility_notes": "Artifacts and metadata show offline-safe deterministic fallback execution; no public network dependency is required.",
+      "operator_editability_notes": "An operator could edit the deck, but would need to rewrite titles, remove generic labels, replace the filler slide, and rebuild the decision/recommendation structure.",
+      "provenance_coverage_status": "complete",
+      "provenance_notes": "Every slide has a source footer and manifest coverage is complete, but footers are too small for practical review and evidence fragments are not yet useful enough for fast executive validation.",
+      "review_status": "completed",
+      "reviewed_at": "2026-05-05T16:55:00+00:00",
+      "reviewer_id": "chatgpt_artifact_review_assistant",
+      "scores": {
+        "density_and_readability": 4,
+        "offline_reproducibility": 5,
+        "operator_editability": 3,
+        "provenance_usefulness": 3,
+        "source_faithfulness": 4,
+        "storyline_quality": 3,
+        "table_chart_decision_quality": 2,
+        "visual_hierarchy": 3,
+        "visual_qa_result_interpretation": 3
+      },
+      "slide_level_findings": [
+        {
+          "finding": "Title starts with implementation label “K1 Plan” rather than an executive deck headline.",
+          "severity": "warning",
+          "slide": 1
+        },
+        {
+          "finding": "Decision trade-off layout splits one source sentence into Current/Target columns; this does not produce a meaningful business trade-off.",
+          "severity": "warning",
+          "slide": 4
+        },
+        {
+          "finding": "Evidence table is readable but shallow; rows contain truncated fragments and “review” placeholders rather than decision evidence.",
+          "severity": "warning",
+          "slide": 5
+        },
+        {
+          "finding": "Generic “Additional source-grounded planning point 7” filler slide should be replaced with a real next-actions or decision slide.",
+          "severity": "blocker",
+          "slide": 7
+        }
+      ],
+      "source_faithfulness_notes": "Facts are mostly preserved: release-candidate hardening, no-cloud defaults, benchmark review, visual QA/provenance and focused fixes are present. The main issue is omission of stronger recommendation structure, not unsupported invention.",
+      "title": "Source memo to executive deck",
+      "visual_qa_score": 100,
+      "visual_qa_status": "passed",
+      "visual_quality_notes": "Clean and sparse, but visual hierarchy is generic. Several titles are long/truncated, evidence table is underdeveloped, and the deck lacks executive-level synthesis."
+    },
+    {
+      "artifact_checksum_sha256": "sha256:ffa43a139ab95521ab7d7648082a3075f5e3e408e3428dca4b20dd90cafa95de",
+      "artifact_paths": [
+        "k0_arch_doc_to_architecture_deck/rc1-k0_arch_doc_to_architecture_deck.pptx",
+        "k0_arch_doc_to_architecture_deck/manifest.json",
+        "k0_arch_doc_to_architecture_deck/safe_metadata.json"
+      ],
+      "case_id": "k0_arch_doc_to_architecture_deck",
+      "decision": "request_rework",
+      "decision_reason": "Deck captures the architecture source accurately enough, but it does not yet read like a senior architecture review deck. It lacks a topology view, responsibility map, explicit failure modes, and operator gates; several slides are one-sentence fragment expansions rather than architecture-review synthesis.",
+      "follow_up_backlog": [
+        {
+          "area": "renderer/templates",
+          "priority": "P1",
+          "summary": "Add architecture/topology layout support for Server 1/2/3 responsibilities."
+        },
+        {
+          "area": "planning/storyline",
+          "priority": "P1",
+          "summary": "Generate architecture-review sections: topology, boundaries, failure modes, operator gates."
+        },
+        {
+          "area": "provenance",
+          "priority": "P2",
+          "summary": "Make architecture claim citations more visible and grouped by topology component."
+        }
+      ],
+      "offline_reproducibility_notes": "Offline/intranet route and no hidden network dependency are preserved in metadata and manifest.",
+      "operator_editability_notes": "Editable baseline, but a reviewer would need to add topology diagram/table, ownership boundaries, failure modes and readiness checklist manually.",
+      "provenance_coverage_status": "complete",
+      "provenance_notes": "Coverage is complete and source footers are present. For architecture review, evidence should connect each topology claim to specific source fragments more prominently.",
+      "review_status": "completed",
+      "reviewed_at": "2026-05-05T16:55:00+00:00",
+      "reviewer_id": "chatgpt_artifact_review_assistant",
+      "scores": {
+        "density_and_readability": 4,
+        "offline_reproducibility": 5,
+        "operator_editability": 3,
+        "provenance_usefulness": 3,
+        "source_faithfulness": 4,
+        "storyline_quality": 3,
+        "table_chart_decision_quality": 2,
+        "visual_hierarchy": 3,
+        "visual_qa_result_interpretation": 3
+      },
+      "slide_level_findings": [
+        {
+          "finding": "Title is truncated and starts with “K1 Plan”; this weakens architecture-review framing.",
+          "severity": "warning",
+          "slide": 1
+        },
+        {
+          "finding": "Current/Target split is arbitrary; Server 3 endpoint fact should be presented as topology/responsibility, not as a trade-off.",
+          "severity": "warning",
+          "slide": 4
+        },
+        {
+          "finding": "Structured data summary is too generic and contains placeholder review cells.",
+          "severity": "warning",
+          "slide": 5
+        },
+        {
+          "finding": "Appendix evidence slide mentions boundaries/failure modes but does not actually list them.",
+          "severity": "warning",
+          "slide": 8
+        }
+      ],
+      "source_faithfulness_notes": "Three-server topology, local GigaChat, optional Server 2, RF closure, K-phase capabilities and review boundaries are represented. Missing depth: boundaries, failure modes and release-readiness checks are named but not developed.",
+      "title": "Technical document to architecture deck",
+      "visual_qa_score": 100,
+      "visual_qa_status": "passed",
+      "visual_quality_notes": "Slides are visually clean and readable, but architecture artifacts need diagrams or structured topology tables. Current deck is mostly bullets and thin tables."
+    },
+    {
+      "artifact_checksum_sha256": "sha256:66a2d327c7ddc806c9953de858bb9c546a56b5a42593dfea551d72d8122a7828",
+      "artifact_paths": [
+        "k0_project_log_to_status_deck/rc1-k0_project_log_to_status_deck.pptx",
+        "k0_project_log_to_status_deck/manifest.json",
+        "k0_project_log_to_status_deck/safe_metadata.json"
+      ],
+      "case_id": "k0_project_log_to_status_deck",
+      "decision": "request_rework",
+      "decision_reason": "The deck is readable, but it fails the status-deck goal because it stops around K3 and omits key source content: K4, K5, K6, K-phase closure, current risks, and next action RC1. It is therefore incomplete as a project status review.",
+      "follow_up_backlog": [
+        {
+          "area": "planning/source coverage",
+          "priority": "P0",
+          "summary": "Ensure status decks cover all major source milestones, especially K4-K6, closure, risks and next actions."
+        },
+        {
+          "area": "renderer/templates",
+          "priority": "P1",
+          "summary": "Add status-deck layouts: milestone timeline, readiness summary, risk table, next actions."
+        },
+        {
+          "area": "quality gate",
+          "priority": "P1",
+          "summary": "Add semantic coverage check for omitted later-source sections despite complete provenance coverage."
+        }
+      ],
+      "offline_reproducibility_notes": "Offline deterministic generation evidence is strong and network-free.",
+      "operator_editability_notes": "An operator can edit it, but would need to add several missing milestone/risk slides and change the storyline from fragment sequence to status synthesis.",
+      "provenance_coverage_status": "complete",
+      "provenance_notes": "Footers and manifest show complete technical coverage, but human review finds semantic coverage incomplete for the status-deck purpose.",
+      "review_status": "completed",
+      "reviewed_at": "2026-05-05T16:55:00+00:00",
+      "reviewer_id": "chatgpt_artifact_review_assistant",
+      "scores": {
+        "density_and_readability": 5,
+        "offline_reproducibility": 5,
+        "operator_editability": 3,
+        "provenance_usefulness": 3,
+        "source_faithfulness": 2,
+        "storyline_quality": 2,
+        "table_chart_decision_quality": 2,
+        "visual_hierarchy": 3,
+        "visual_qa_result_interpretation": 3
+      },
+      "slide_level_findings": [
+        {
+          "finding": "Intro states controlled sequence but does not summarize final readiness or risks.",
+          "severity": "warning",
+          "slide": 1
+        },
+        {
+          "finding": "Trade-off slide has “No secondary comparison point,” indicating weak layout selection for status narrative.",
+          "severity": "warning",
+          "slide": 4
+        },
+        {
+          "finding": "Only K2 approval is covered; no status synthesis or milestone grouping.",
+          "severity": "warning",
+          "slide": 5
+        },
+        {
+          "finding": "Deck ends at K3 and omits K4/K5/K6, K-phase closure, risks and next action from the source.",
+          "severity": "blocker",
+          "slide": 6
+        }
+      ],
+      "source_faithfulness_notes": "The facts included are not false, but coverage is materially incomplete for the source log. Missing later milestones and risks make the deck unsuitable for status review without rework.",
+      "title": "Project log to status deck",
+      "visual_qa_score": 100,
+      "visual_qa_status": "passed",
+      "visual_quality_notes": "Very readable due to low density, but too sparse and lacks status-deck elements such as timeline, milestone table, risk register, and next actions."
+    },
+    {
+      "artifact_checksum_sha256": "sha256:6e8dd5e7994c07a8f25ef0c90f1c6f009715c11a7a141bc3dd9b012c262c5fa7",
+      "artifact_paths": [
+        "k0_comparison_table_to_decision_deck/rc1-k0_comparison_table_to_decision_deck.pptx",
+        "k0_comparison_table_to_decision_deck/manifest.json",
+        "k0_comparison_table_to_decision_deck/safe_metadata.json"
+      ],
+      "case_id": "k0_comparison_table_to_decision_deck",
+      "decision": "request_rework",
+      "decision_reason": "This is the weakest deck. The CSV/table source is treated as comma-separated text rather than a structured decision matrix. The deck does not synthesize options, trade-offs, recommendation, or constraints into a decision deck.",
+      "follow_up_backlog": [
+        {
+          "area": "data/table ingestion",
+          "priority": "P0",
+          "summary": "Parse comparison-table sources into rows/columns before planning/rendering."
+        },
+        {
+          "area": "renderer/templates",
+          "priority": "P0",
+          "summary": "Add decision-matrix layout preserving Option/Strength/Weakness/Recommendation columns."
+        },
+        {
+          "area": "planning/storyline",
+          "priority": "P1",
+          "summary": "Generate explicit recommendation, trade-off summary, and decision constraints from comparison tables."
+        },
+        {
+          "area": "visual QA",
+          "priority": "P1",
+          "summary": "Flag raw CSV-like title/body rendering as a quality issue."
+        }
+      ],
+      "offline_reproducibility_notes": "Offline reproducibility evidence is strong; generation is deterministic and no cloud route is required.",
+      "operator_editability_notes": "Operator would need to rebuild the deck manually into an option matrix, scoring/risk view, recommendation slide and constraints slide.",
+      "provenance_coverage_status": "complete",
+      "provenance_notes": "Coverage is technically complete, but evidence usefulness is low because fragments mirror comma text rather than structured rows/columns.",
+      "review_status": "completed",
+      "reviewed_at": "2026-05-05T16:55:00+00:00",
+      "reviewer_id": "chatgpt_artifact_review_assistant",
+      "scores": {
+        "density_and_readability": 3,
+        "offline_reproducibility": 5,
+        "operator_editability": 2,
+        "provenance_usefulness": 2,
+        "source_faithfulness": 3,
+        "storyline_quality": 2,
+        "table_chart_decision_quality": 1,
+        "visual_hierarchy": 2,
+        "visual_qa_result_interpretation": 2
+      },
+      "slide_level_findings": [
+        {
+          "finding": "Title/body show raw CSV header text; this should become a decision-deck title and option matrix.",
+          "severity": "blocker",
+          "slide": 1
+        },
+        {
+          "finding": "Direct local GigaChat row is represented as comma text instead of structured columns Strength/Weakness/Recommendation.",
+          "severity": "warning",
+          "slide": 2
+        },
+        {
+          "finding": "Structured data table is generic and does not preserve the comparison table columns.",
+          "severity": "blocker",
+          "slide": 3
+        },
+        {
+          "finding": "Ollama fallback row is split into arbitrary Current/Target columns.",
+          "severity": "warning",
+          "slide": 4
+        },
+        {
+          "finding": "Manual slide creation row is presented as fragmented bullet text; no final recommendation summary.",
+          "severity": "warning",
+          "slide": 6
+        }
+      ],
+      "source_faithfulness_notes": "Source options are mostly present, but table semantics are degraded: columns and recommendations are not preserved as a real comparison/decision matrix.",
+      "title": "Comparison table to decision deck",
+      "visual_qa_score": 100,
+      "visual_qa_status": "passed",
+      "visual_quality_notes": "Several titles overflow/truncate. Tables are too generic and do not match the input table. This needs a dedicated comparison-table renderer path."
+    },
+    {
+      "artifact_checksum_sha256": "sha256:688ec430d26d1ee1a31001556b61977bbab8c11a1a3bcdbf2ffaf24fdf9df9c2",
+      "artifact_paths": [
+        "k0_long_docx_pdf_to_structured_presentation/rc1-k0_long_docx_pdf_to_structured_presentation.pptx",
+        "k0_long_docx_pdf_to_structured_presentation/manifest.json",
+        "k0_long_docx_pdf_to_structured_presentation/safe_metadata.json"
+      ],
+      "case_id": "k0_long_docx_pdf_to_structured_presentation",
+      "decision": "request_rework",
+      "decision_reason": "Deck follows the source section order and is readable, but remains too mechanical for a structured explainer. It contains generic filler slides 9 and 10, weak synthesis, and limited visual variety for a long DOCX/PDF transformation.",
+      "follow_up_backlog": [
+        {
+          "area": "planning",
+          "priority": "P0",
+          "summary": "Prevent generic filler slides when target_slide_count exceeds meaningful extracted sections."
+        },
+        {
+          "area": "renderer/templates",
+          "priority": "P1",
+          "summary": "Add long-document explainer layouts: section map, risk table, topology summary, benchmark plan."
+        },
+        {
+          "area": "provenance",
+          "priority": "P1",
+          "summary": "Avoid linking filler/generic slides to repeated fragments; require meaningful source-derived claim per slide."
+        }
+      ],
+      "offline_reproducibility_notes": "Offline/intranet reproducibility evidence is strong with deterministic fallback and no public dependency.",
+      "operator_editability_notes": "Editable baseline, but substantial editorial work is needed to replace filler slides and create a true structured explainer.",
+      "provenance_coverage_status": "complete",
+      "provenance_notes": "Citations and manifest coverage are complete, but fragment reuse for filler slides reduces evidence usefulness.",
+      "review_status": "completed",
+      "reviewed_at": "2026-05-05T16:55:00+00:00",
+      "reviewer_id": "chatgpt_artifact_review_assistant",
+      "scores": {
+        "density_and_readability": 4,
+        "offline_reproducibility": 5,
+        "operator_editability": 3,
+        "provenance_usefulness": 3,
+        "source_faithfulness": 3,
+        "storyline_quality": 3,
+        "table_chart_decision_quality": 2,
+        "visual_hierarchy": 3,
+        "visual_qa_result_interpretation": 3
+      },
+      "slide_level_findings": [
+        {
+          "finding": "Title is truncated and starts with “K1 Plan”; it should frame the explainer deck.",
+          "severity": "warning",
+          "slide": 1
+        },
+        {
+          "finding": "Runtime Foundation summary is split into arbitrary Current/Target columns.",
+          "severity": "warning",
+          "slide": 4
+        },
+        {
+          "finding": "RC1 proposal table is generic and does not clearly separate actions, artifacts, metrics and review requirement.",
+          "severity": "warning",
+          "slide": 8
+        },
+        {
+          "finding": "Generic “Additional source-grounded planning point 9” filler slide.",
+          "severity": "blocker",
+          "slide": 9
+        },
+        {
+          "finding": "Generic “Additional source-grounded planning point 10” filler slide.",
+          "severity": "blocker",
+          "slide": 10
+        }
+      ],
+      "source_faithfulness_notes": "The deck covers the source sections in order and preserves key facts, but the last two slides are generic filler rather than meaningful source-derived structure.",
+      "title": "Long DOCX/PDF to structured presentation",
+      "visual_qa_score": 100,
+      "visual_qa_status": "passed",
+      "visual_quality_notes": "Readable and sparse, but too repetitive. Long-form input needs section dividers, synthesis diagrams, risk table and benchmark/action summary instead of repeated bullet slides."
+    }
+  ],
+  "checkpoint": "P9-1",
+  "human_review_results_completed": true,
+  "human_review_summary": {
+    "case_count": 5,
+    "completed_case_count": 5,
+    "decision_counts": {
+      "approve": 0,
+      "reject": 0,
+      "request_rework": 5
+    },
+    "kimi_level_claimed": false,
+    "lowest_scoring_dimensions": [
+      "table_chart_decision_quality",
+      "storyline_quality",
+      "visual_hierarchy",
+      "provenance_usefulness"
+    ],
+    "top_follow_up_themes": [
+      "Prevent generic filler slides and raw fallback labels.",
+      "Improve comparison-table parsing and decision-matrix rendering.",
+      "Strengthen semantic source coverage beyond technical provenance coverage.",
+      "Replace arbitrary Current/Target layouts with case-appropriate templates.",
+      "Make citations/evidence more useful for operator review."
+    ],
+    "whole_project_kimi_level_supported": false
+  },
+  "kimi_level_claimed": false,
+  "phase": "P9 Product Release Hardening",
+  "phase_branch": "9_Product_Release_Hardening",
+  "review_dimensions": [
+    {
+      "blocking_threshold": 2,
+      "dimension_id": "storyline_quality",
+      "max_score": 5,
+      "operator_prompt": "Does the deck tell a clear story with a useful beginning, analysis, and close?"
+    },
+    {
+      "blocking_threshold": 2,
+      "dimension_id": "source_faithfulness",
+      "max_score": 5,
+      "operator_prompt": "Does the deck preserve the supplied source facts without inventing unsupported claims?"
+    },
+    {
+      "blocking_threshold": 2,
+      "dimension_id": "visual_hierarchy",
+      "max_score": 5,
+      "operator_prompt": "Are titles, subtitles, bullets, tables, and charts visually scannable?"
+    },
+    {
+      "blocking_threshold": 2,
+      "dimension_id": "density_and_readability",
+      "max_score": 5,
+      "operator_prompt": "Is each slide readable without excessive crowding or text overflow?"
+    },
+    {
+      "blocking_threshold": 2,
+      "dimension_id": "table_chart_decision_quality",
+      "max_score": 5,
+      "operator_prompt": "Are tables/charts useful and appropriate for the benchmark case?"
+    },
+    {
+      "blocking_threshold": 2,
+      "dimension_id": "provenance_usefulness",
+      "max_score": 5,
+      "operator_prompt": "Are citations/evidence links useful for checking the slide against the source?"
+    },
+    {
+      "blocking_threshold": 2,
+      "dimension_id": "visual_qa_result_interpretation",
+      "max_score": 5,
+      "operator_prompt": "Do visual QA findings match what a reviewer sees in the rendered deck?"
+    },
+    {
+      "blocking_threshold": 2,
+      "dimension_id": "operator_editability",
+      "max_score": 5,
+      "operator_prompt": "Could an operator reasonably edit or approve the deck from the generated plan/artifact?"
+    },
+    {
+      "blocking_threshold": 2,
+      "dimension_id": "offline_reproducibility",
+      "max_score": 5,
+      "operator_prompt": "Does the evidence preserve offline/intranet reproducibility without hidden public dependencies?"
+    }
+  ],
+  "review_instructions": [
+    "Open each RC1 PPTX artifact under rc1-golden-benchmark-artifacts/<case_id>/",
+    "Compare the PPTX with manifest.json and safe_metadata.json for the same case.",
+    "Fill reviewer_id, reviewed_at, decision, scores, slide_level_findings, and follow_up_backlog for every case.",
+    "Allowed decisions: approve, request_rework, reject.",
+    "Do not mark human_review_results_completed=true until all five cases are reviewed."
+  ],
+  "reviewed_at": "2026-05-05T16:55:00+00:00",
+  "reviewer_id": "chatgpt_artifact_review_assistant",
+  "schema_version": "p9.1.golden_benchmark_human_review_results.v1",
+  "source_baseline_branch": "8_K_Phase",
+  "source_baseline_commit": "a2f1aa90fbc56531de85a953447f61a52a63efb7",
+  "status": "completed_human_review",
+  "whole_project_kimi_level_supported": false
+}

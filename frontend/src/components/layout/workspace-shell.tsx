@@ -1,9 +1,11 @@
 import type { CSSProperties } from "react";
+
 import { ArtifactsPanel } from "@/components/artifacts/artifacts-panel";
 import { ChatPanel } from "@/components/chat/chat-panel";
-import { UploadPanel } from "@/components/upload/upload-panel";
-import { TaskStatusPanel } from "@/components/task-status/task-status-panel";
 import { PresentationRegistryPanel } from "@/components/presentations/presentation-registry-panel";
+import { SlidesPlanEditorPanel } from "@/components/presentations/slides-plan-editor-panel";
+import { TaskStatusPanel } from "@/components/task-status/task-status-panel";
+import { UploadPanel } from "@/components/upload/upload-panel";
 
 const panelStyle: CSSProperties = {
   background: "#ffffff",
@@ -35,23 +37,32 @@ export function WorkspaceShell() {
     <main style={containerStyle}>
       <h1>KW Studio Workspace</h1>
       <p>Bootstrap workspace shell for chat-driven knowledge workflows.</p>
-      <section style={gridStyle} aria-label="workspace-panels">
-        <div style={panelStyle}>
+
+      <div style={gridStyle}>
+        <section style={panelStyle}>
           <ChatPanel />
-        </div>
-        <div style={panelStyle}>
+        </section>
+
+        <section style={panelStyle}>
           <UploadPanel />
-        </div>
-        <div style={panelStyle}>
+        </section>
+
+        <section style={panelStyle}>
           <TaskStatusPanel />
-        </div>
-        <div style={panelStyle}>
+        </section>
+
+        <section style={panelStyle}>
           <ArtifactsPanel />
-        </div>
-        <div style={widePanelStyle}>
+        </section>
+
+        <section style={widePanelStyle}>
           <PresentationRegistryPanel />
-        </div>
-      </section>
+        </section>
+
+        <section style={widePanelStyle}>
+          <SlidesPlanEditorPanel />
+        </section>
+      </div>
     </main>
   );
 }

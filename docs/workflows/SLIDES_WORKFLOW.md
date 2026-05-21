@@ -1,0 +1,77 @@
+# Slides Workflow
+
+The Slides workflow creates source-grounded, editable PowerPoint decks.
+
+## Goals
+
+- Start from prompt, uploaded documents, spreadsheets, browser evidence, or templates.
+- Produce an outline before full deck generation.
+- Generate native PPTX artifacts.
+- Render PPTX independently and validate the render output.
+- Produce citations, source evidence, and a review packet over the actual deck.
+
+## Expected artifacts
+
+- `deck.pptx`.
+- Rendered preview images.
+- Independent render images.
+- `geometry_report.json`.
+- `visual_qa_report.json`.
+- `citation_manifest.json`.
+- `source_evidence_manifest.json`.
+- `review_packet.json`.
+
+## Quality checks
+
+- PPTX exists and is valid OOXML.
+- Slide count matches the plan.
+- Independent render produces the expected number of images.
+- Empty slides, tiny text, and text overflow are reported.
+- Major claims have source evidence when generated from source material.
+
+## Modes
+
+- **Adaptive mode**: the renderer chooses layout and visual structure.
+- **Template mode**: the renderer follows a selected or uploaded PPTX template.
+
+Both modes must produce downloadable PPTX and validation artifacts.
+
+## KR-6A source-grounded continuation
+
+KR-6A adds a deterministic source-grounded Slides continuation layer. It builds on the existing plan-first Slides workflow and `build_source_grounded_plan` runtime by producing a machine-checkable source grounding bundle before later render/visual QA phases.
+
+KR-6A required bundle outputs are:
+
+```text
+slide_plan.json
+citation_manifest.json
+source_evidence_manifest.json
+quality_report.json
+artifact_manifest.json
+```
+
+The quality rule is simple: when source references are supplied, every planned slide must carry a citation and source note, each citation must map to a source evidence item, and the artifact manifest must list the generated bundle. Missing sources or missing citations fail closed.
+
+KR-6A does not claim OCR, figure extraction, table extraction from arbitrary slides, visual QA completion, or complete presentation feature coverage. It is the evidence/citation continuation step that later render and visual QA work must consume.
+
+## KR-6B render and visual QA bundle hardening
+
+KR-6B adds a deterministic render/visual-QA bundle around the KR-6A source-grounded plan.
+It validates that every source-grounded slide has primary and independent render artifacts, geometry metadata, citation-preserving manifests, and fail-closed visual QA reporting.
+
+The KR-6B bundle includes:
+
+```text
+slide_plan.json
+citation_manifest.json
+source_evidence_manifest.json
+render_manifest.json
+geometry_report.json
+visual_qa_report.json
+quality_report.json
+artifact_manifest.json
+rendered_slides/*.png
+independent_rendered_slides/*.png
+```
+
+KR-6B does not claim broad visual understanding or broad presentation feature coverage. It creates a checked bundle contract that later runtime work can connect to real PPTX rendering and deeper visual comparison.

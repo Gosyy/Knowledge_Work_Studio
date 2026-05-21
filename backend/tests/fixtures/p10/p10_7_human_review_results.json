@@ -1,0 +1,655 @@
+{
+  "approval_state_changed": false,
+  "golden_decks_auto_approved": false,
+  "human_re_review_completed": true,
+  "kimi_level_claimed": false,
+  "owner_acceptance_basis": "Project owner explicitly accepted the AI-assisted P10-6 review recommendation in chat and requested continuation based on it.",
+  "owner_acceptance_recorded": true,
+  "owner_acceptance_required_for_human_review": false,
+  "release_approval_granted": false,
+  "release_decision_remains": "defer_pending_human_re_review",
+  "review_worksheets": [
+    {
+      "allowed_decisions": [
+        "approve",
+        "request_rework",
+        "reject"
+      ],
+      "case_id": "k0_exec_memo_to_board_deck",
+      "comparison_card_digest": "sha256:3187731f2985a14c131f41c345a061dab82bb7cc52690cc97e812dedb4936e3d",
+      "decision": "approve",
+      "follow_up_backlog": [],
+      "operator_instruction": "Open the regenerated post-P9 artifact triplet and fill reviewer_id, reviewed_at, decision, scores, slide_level_findings, and follow_up_backlog before any approval-state change.",
+      "original_blocker_finding_count": 1,
+      "original_p9_1b_decision": "request_rework",
+      "original_warning_finding_count": 3,
+      "owner_acceptance_basis": "Project owner accepted the AI-assisted review recommendation for this case.",
+      "owner_acceptance_recorded": true,
+      "post_p9_provenance_coverage_status": "complete",
+      "post_p9_review_state": "pending_human_review",
+      "post_p9_visual_qa_status": "passed",
+      "required_review_fields": [
+        "reviewer_id",
+        "reviewed_at",
+        "decision",
+        "scores",
+        "slide_level_findings",
+        "follow_up_backlog"
+      ],
+      "requires_human_re_review": true,
+      "review_basis": "P10-6 packet analysis: PPTX text extraction, rendered slide contact sheets, manifest/safe_metadata, and P10-3 comparison cards.",
+      "review_dimensions": [
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "storyline_quality",
+          "max_score": 5,
+          "operator_prompt": "Does the deck tell a clear story with a useful beginning, analysis, and close?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "source_faithfulness",
+          "max_score": 5,
+          "operator_prompt": "Does the deck preserve the supplied source facts without inventing unsupported claims?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_hierarchy",
+          "max_score": 5,
+          "operator_prompt": "Are titles, subtitles, bullets, tables, and charts visually scannable?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "density_and_readability",
+          "max_score": 5,
+          "operator_prompt": "Is each slide readable without excessive crowding or text overflow?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "table_chart_decision_quality",
+          "max_score": 5,
+          "operator_prompt": "Are tables/charts useful and appropriate for the benchmark case?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "provenance_usefulness",
+          "max_score": 5,
+          "operator_prompt": "Are citations/evidence links useful for checking the slide against the source?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_qa_result_interpretation",
+          "max_score": 5,
+          "operator_prompt": "Do visual QA findings match what a reviewer sees in the rendered deck?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "operator_editability",
+          "max_score": 5,
+          "operator_prompt": "Could an operator reasonably edit or approve the deck from the generated plan/artifact?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "offline_reproducibility",
+          "max_score": 5,
+          "operator_prompt": "Does the evidence preserve offline/intranet reproducibility without hidden public dependencies?"
+        }
+      ],
+      "review_status": "completed_ai_assisted_recommendation",
+      "reviewed_at": "2026-05-08T16:10:00+02:00",
+      "reviewer_id": "project_owner_accepted_ai_assisted_review",
+      "scores": {
+        "density_and_readability": 4,
+        "offline_reproducibility": 5,
+        "operator_editability": 4,
+        "provenance_usefulness": 4,
+        "source_faithfulness": 4,
+        "storyline_quality": 4,
+        "table_chart_decision_quality": 3,
+        "visual_hierarchy": 4,
+        "visual_qa_result_interpretation": 4
+      },
+      "slide_level_findings": [
+        {
+          "finding": "Business objective slide is visibly truncated after “while remaining”; acceptable as a review artifact but should be completed in a polished production deck.",
+          "severity": "minor",
+          "slide": 2
+        },
+        {
+          "finding": "Readiness slide text is truncated near “and that the”; storyline still remains understandable.",
+          "severity": "minor",
+          "slide": 3
+        },
+        {
+          "finding": "Next-actions slide is source-grounded and not filler, but could be strengthened with concrete owner/timing/action columns.",
+          "severity": "minor",
+          "slide": 7
+        }
+      ],
+      "title": "Source memo to executive deck"
+    },
+    {
+      "allowed_decisions": [
+        "approve",
+        "request_rework",
+        "reject"
+      ],
+      "case_id": "k0_arch_doc_to_architecture_deck",
+      "comparison_card_digest": "sha256:aa0af7d0707e11ec18ac2f4a34420b230a8bfc04fd086a40c3036e2ae24a1e74",
+      "decision": "request_rework",
+      "follow_up_backlog": [
+        {
+          "area": "renderer/layout",
+          "priority": "P0",
+          "summary": "Fix title/body overlap on architecture deck slide 7 and add a visual regression guard for title/body collision."
+        },
+        {
+          "area": "planning/storyline",
+          "priority": "P1",
+          "summary": "Replace repetitive opening/context tail slides with a topology/responsibility map and a boundaries/failure-modes/gates slide."
+        },
+        {
+          "area": "templates",
+          "priority": "P1",
+          "summary": "Add architecture-review layout support for Server 1/2/3 topology, responsibilities, failure modes, and readiness gates."
+        }
+      ],
+      "operator_instruction": "Open the regenerated post-P9 artifact triplet and fill reviewer_id, reviewed_at, decision, scores, slide_level_findings, and follow_up_backlog before any approval-state change.",
+      "original_blocker_finding_count": 0,
+      "original_p9_1b_decision": "request_rework",
+      "original_warning_finding_count": 4,
+      "owner_acceptance_basis": "Project owner accepted the AI-assisted review recommendation for this case.",
+      "owner_acceptance_recorded": true,
+      "post_p9_provenance_coverage_status": "complete",
+      "post_p9_review_state": "pending_human_review",
+      "post_p9_visual_qa_status": "passed",
+      "required_review_fields": [
+        "reviewer_id",
+        "reviewed_at",
+        "decision",
+        "scores",
+        "slide_level_findings",
+        "follow_up_backlog"
+      ],
+      "requires_human_re_review": true,
+      "review_basis": "P10-6 packet analysis: PPTX text extraction, rendered slide contact sheets, manifest/safe_metadata, and P10-3 comparison cards.",
+      "review_dimensions": [
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "storyline_quality",
+          "max_score": 5,
+          "operator_prompt": "Does the deck tell a clear story with a useful beginning, analysis, and close?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "source_faithfulness",
+          "max_score": 5,
+          "operator_prompt": "Does the deck preserve the supplied source facts without inventing unsupported claims?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_hierarchy",
+          "max_score": 5,
+          "operator_prompt": "Are titles, subtitles, bullets, tables, and charts visually scannable?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "density_and_readability",
+          "max_score": 5,
+          "operator_prompt": "Is each slide readable without excessive crowding or text overflow?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "table_chart_decision_quality",
+          "max_score": 5,
+          "operator_prompt": "Are tables/charts useful and appropriate for the benchmark case?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "provenance_usefulness",
+          "max_score": 5,
+          "operator_prompt": "Are citations/evidence links useful for checking the slide against the source?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_qa_result_interpretation",
+          "max_score": 5,
+          "operator_prompt": "Do visual QA findings match what a reviewer sees in the rendered deck?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "operator_editability",
+          "max_score": 5,
+          "operator_prompt": "Could an operator reasonably edit or approve the deck from the generated plan/artifact?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "offline_reproducibility",
+          "max_score": 5,
+          "operator_prompt": "Does the evidence preserve offline/intranet reproducibility without hidden public dependencies?"
+        }
+      ],
+      "review_status": "completed_ai_assisted_recommendation",
+      "reviewed_at": "2026-05-08T16:10:00+02:00",
+      "reviewer_id": "project_owner_accepted_ai_assisted_review",
+      "scores": {
+        "density_and_readability": 3,
+        "offline_reproducibility": 5,
+        "operator_editability": 3,
+        "provenance_usefulness": 4,
+        "source_faithfulness": 4,
+        "storyline_quality": 3,
+        "table_chart_decision_quality": 2,
+        "visual_hierarchy": 2,
+        "visual_qa_result_interpretation": 2
+      },
+      "slide_level_findings": [
+        {
+          "finding": "Server responsibilities are present but still bullet-only; architecture review would benefit from a structured responsibility/topology map.",
+          "severity": "warning",
+          "slide": 2
+        },
+        {
+          "finding": "Visible title/body overlap makes the slide not operator-approvable despite automated visual QA passing.",
+          "severity": "blocker",
+          "slide": 7
+        },
+        {
+          "finding": "Opening slide repeats slide 1 content instead of adding new architecture-review value.",
+          "severity": "warning",
+          "slide": 7
+        },
+        {
+          "finding": "Context slide repeats Server 1 responsibilities and remains thin for failure modes/gates.",
+          "severity": "warning",
+          "slide": 8
+        }
+      ],
+      "title": "Technical document to architecture deck"
+    },
+    {
+      "allowed_decisions": [
+        "approve",
+        "request_rework",
+        "reject"
+      ],
+      "case_id": "k0_project_log_to_status_deck",
+      "comparison_card_digest": "sha256:624cad2b6cab01a3519f7fe4845e60dc1075c252a2be3d397ea6c404fd087fd0",
+      "decision": "approve",
+      "follow_up_backlog": [],
+      "operator_instruction": "Open the regenerated post-P9 artifact triplet and fill reviewer_id, reviewed_at, decision, scores, slide_level_findings, and follow_up_backlog before any approval-state change.",
+      "original_blocker_finding_count": 1,
+      "original_p9_1b_decision": "request_rework",
+      "original_warning_finding_count": 3,
+      "owner_acceptance_basis": "Project owner accepted the AI-assisted review recommendation for this case.",
+      "owner_acceptance_recorded": true,
+      "post_p9_provenance_coverage_status": "complete",
+      "post_p9_review_state": "pending_human_review",
+      "post_p9_visual_qa_status": "needs_operator_review",
+      "required_review_fields": [
+        "reviewer_id",
+        "reviewed_at",
+        "decision",
+        "scores",
+        "slide_level_findings",
+        "follow_up_backlog"
+      ],
+      "requires_human_re_review": true,
+      "review_basis": "P10-6 packet analysis: PPTX text extraction, rendered slide contact sheets, manifest/safe_metadata, and P10-3 comparison cards.",
+      "review_dimensions": [
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "storyline_quality",
+          "max_score": 5,
+          "operator_prompt": "Does the deck tell a clear story with a useful beginning, analysis, and close?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "source_faithfulness",
+          "max_score": 5,
+          "operator_prompt": "Does the deck preserve the supplied source facts without inventing unsupported claims?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_hierarchy",
+          "max_score": 5,
+          "operator_prompt": "Are titles, subtitles, bullets, tables, and charts visually scannable?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "density_and_readability",
+          "max_score": 5,
+          "operator_prompt": "Is each slide readable without excessive crowding or text overflow?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "table_chart_decision_quality",
+          "max_score": 5,
+          "operator_prompt": "Are tables/charts useful and appropriate for the benchmark case?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "provenance_usefulness",
+          "max_score": 5,
+          "operator_prompt": "Are citations/evidence links useful for checking the slide against the source?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_qa_result_interpretation",
+          "max_score": 5,
+          "operator_prompt": "Do visual QA findings match what a reviewer sees in the rendered deck?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "operator_editability",
+          "max_score": 5,
+          "operator_prompt": "Could an operator reasonably edit or approve the deck from the generated plan/artifact?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "offline_reproducibility",
+          "max_score": 5,
+          "operator_prompt": "Does the evidence preserve offline/intranet reproducibility without hidden public dependencies?"
+        }
+      ],
+      "review_status": "completed_ai_assisted_recommendation",
+      "reviewed_at": "2026-05-08T16:10:00+02:00",
+      "reviewer_id": "project_owner_accepted_ai_assisted_review",
+      "scores": {
+        "density_and_readability": 4,
+        "offline_reproducibility": 5,
+        "operator_editability": 4,
+        "provenance_usefulness": 4,
+        "source_faithfulness": 4,
+        "storyline_quality": 4,
+        "table_chart_decision_quality": 3,
+        "visual_hierarchy": 3,
+        "visual_qa_result_interpretation": 5
+      },
+      "slide_level_findings": [
+        {
+          "finding": "K4/K5 coverage is now present, but the table cells are small/truncated and could be more readable.",
+          "severity": "minor",
+          "slide": 3
+        },
+        {
+          "finding": "K6 closure is now covered and materially fixes the old “stops around K3” blocker.",
+          "severity": "minor",
+          "slide": 4
+        },
+        {
+          "finding": "Risks are now included, but a true status deck would be stronger with severity/owner/next-action columns.",
+          "severity": "minor",
+          "slide": 5
+        },
+        {
+          "finding": "Next action is included; could be strengthened with explicit expected output and decision gate.",
+          "severity": "minor",
+          "slide": 6
+        }
+      ],
+      "title": "Project log to status deck"
+    },
+    {
+      "allowed_decisions": [
+        "approve",
+        "request_rework",
+        "reject"
+      ],
+      "case_id": "k0_comparison_table_to_decision_deck",
+      "comparison_card_digest": "sha256:0f2072e542e146e079a71e6b6612b81f3edfa0d49484a5db10b5a8ab92e39584",
+      "decision": "approve",
+      "follow_up_backlog": [],
+      "operator_instruction": "Open the regenerated post-P9 artifact triplet and fill reviewer_id, reviewed_at, decision, scores, slide_level_findings, and follow_up_backlog before any approval-state change.",
+      "original_blocker_finding_count": 2,
+      "original_p9_1b_decision": "request_rework",
+      "original_warning_finding_count": 3,
+      "owner_acceptance_basis": "Project owner accepted the AI-assisted review recommendation for this case.",
+      "owner_acceptance_recorded": true,
+      "post_p9_provenance_coverage_status": "complete",
+      "post_p9_review_state": "pending_human_review",
+      "post_p9_visual_qa_status": "passed",
+      "required_review_fields": [
+        "reviewer_id",
+        "reviewed_at",
+        "decision",
+        "scores",
+        "slide_level_findings",
+        "follow_up_backlog"
+      ],
+      "requires_human_re_review": true,
+      "review_basis": "P10-6 packet analysis: PPTX text extraction, rendered slide contact sheets, manifest/safe_metadata, and P10-3 comparison cards.",
+      "review_dimensions": [
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "storyline_quality",
+          "max_score": 5,
+          "operator_prompt": "Does the deck tell a clear story with a useful beginning, analysis, and close?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "source_faithfulness",
+          "max_score": 5,
+          "operator_prompt": "Does the deck preserve the supplied source facts without inventing unsupported claims?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_hierarchy",
+          "max_score": 5,
+          "operator_prompt": "Are titles, subtitles, bullets, tables, and charts visually scannable?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "density_and_readability",
+          "max_score": 5,
+          "operator_prompt": "Is each slide readable without excessive crowding or text overflow?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "table_chart_decision_quality",
+          "max_score": 5,
+          "operator_prompt": "Are tables/charts useful and appropriate for the benchmark case?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "provenance_usefulness",
+          "max_score": 5,
+          "operator_prompt": "Are citations/evidence links useful for checking the slide against the source?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_qa_result_interpretation",
+          "max_score": 5,
+          "operator_prompt": "Do visual QA findings match what a reviewer sees in the rendered deck?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "operator_editability",
+          "max_score": 5,
+          "operator_prompt": "Could an operator reasonably edit or approve the deck from the generated plan/artifact?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "offline_reproducibility",
+          "max_score": 5,
+          "operator_prompt": "Does the evidence preserve offline/intranet reproducibility without hidden public dependencies?"
+        }
+      ],
+      "review_status": "completed_ai_assisted_recommendation",
+      "reviewed_at": "2026-05-08T16:10:00+02:00",
+      "reviewer_id": "project_owner_accepted_ai_assisted_review",
+      "scores": {
+        "density_and_readability": 4,
+        "offline_reproducibility": 5,
+        "operator_editability": 4,
+        "provenance_usefulness": 4,
+        "source_faithfulness": 4,
+        "storyline_quality": 4,
+        "table_chart_decision_quality": 4,
+        "visual_hierarchy": 4,
+        "visual_qa_result_interpretation": 4
+      },
+      "slide_level_findings": [
+        {
+          "finding": "Deck now opens with an explicit decision and frames offline fit, operational surface, and data locality.",
+          "severity": "minor",
+          "slide": 1
+        },
+        {
+          "finding": "Runtime options matrix is present but could include more complete criteria columns in a production-ready version.",
+          "severity": "minor",
+          "slide": 2
+        },
+        {
+          "finding": "LiteLLM slide uses a useful source-derived table; text is readable enough but compact.",
+          "severity": "minor",
+          "slide": 4
+        },
+        {
+          "finding": "Cloud LLM rejection is explicit and source-faithful; a final overall recommendation summary could still improve closure.",
+          "severity": "minor",
+          "slide": 6
+        }
+      ],
+      "title": "Comparison table to decision deck"
+    },
+    {
+      "allowed_decisions": [
+        "approve",
+        "request_rework",
+        "reject"
+      ],
+      "case_id": "k0_long_docx_pdf_to_structured_presentation",
+      "comparison_card_digest": "sha256:cfc8a94f4496adeaa462496cc44a43e79f47bcd0930c066117fb42c577f2cc56",
+      "decision": "approve",
+      "follow_up_backlog": [],
+      "operator_instruction": "Open the regenerated post-P9 artifact triplet and fill reviewer_id, reviewed_at, decision, scores, slide_level_findings, and follow_up_backlog before any approval-state change.",
+      "original_blocker_finding_count": 2,
+      "original_p9_1b_decision": "request_rework",
+      "original_warning_finding_count": 3,
+      "owner_acceptance_basis": "Project owner accepted the AI-assisted review recommendation for this case.",
+      "owner_acceptance_recorded": true,
+      "post_p9_provenance_coverage_status": "complete",
+      "post_p9_review_state": "pending_human_review",
+      "post_p9_visual_qa_status": "passed",
+      "required_review_fields": [
+        "reviewer_id",
+        "reviewed_at",
+        "decision",
+        "scores",
+        "slide_level_findings",
+        "follow_up_backlog"
+      ],
+      "requires_human_re_review": true,
+      "review_basis": "P10-6 packet analysis: PPTX text extraction, rendered slide contact sheets, manifest/safe_metadata, and P10-3 comparison cards.",
+      "review_dimensions": [
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "storyline_quality",
+          "max_score": 5,
+          "operator_prompt": "Does the deck tell a clear story with a useful beginning, analysis, and close?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "source_faithfulness",
+          "max_score": 5,
+          "operator_prompt": "Does the deck preserve the supplied source facts without inventing unsupported claims?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_hierarchy",
+          "max_score": 5,
+          "operator_prompt": "Are titles, subtitles, bullets, tables, and charts visually scannable?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "density_and_readability",
+          "max_score": 5,
+          "operator_prompt": "Is each slide readable without excessive crowding or text overflow?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "table_chart_decision_quality",
+          "max_score": 5,
+          "operator_prompt": "Are tables/charts useful and appropriate for the benchmark case?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "provenance_usefulness",
+          "max_score": 5,
+          "operator_prompt": "Are citations/evidence links useful for checking the slide against the source?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "visual_qa_result_interpretation",
+          "max_score": 5,
+          "operator_prompt": "Do visual QA findings match what a reviewer sees in the rendered deck?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "operator_editability",
+          "max_score": 5,
+          "operator_prompt": "Could an operator reasonably edit or approve the deck from the generated plan/artifact?"
+        },
+        {
+          "blocking_threshold": 2,
+          "dimension_id": "offline_reproducibility",
+          "max_score": 5,
+          "operator_prompt": "Does the evidence preserve offline/intranet reproducibility without hidden public dependencies?"
+        }
+      ],
+      "review_status": "completed_ai_assisted_recommendation",
+      "reviewed_at": "2026-05-08T16:10:00+02:00",
+      "reviewer_id": "project_owner_accepted_ai_assisted_review",
+      "scores": {
+        "density_and_readability": 4,
+        "offline_reproducibility": 5,
+        "operator_editability": 4,
+        "provenance_usefulness": 4,
+        "source_faithfulness": 4,
+        "storyline_quality": 4,
+        "table_chart_decision_quality": 3,
+        "visual_hierarchy": 4,
+        "visual_qa_result_interpretation": 4
+      },
+      "slide_level_findings": [
+        {
+          "finding": "Long-document storyline follows the source sections and is readable, though the slide body is somewhat truncated.",
+          "severity": "minor",
+          "slide": 1
+        },
+        {
+          "finding": "RC1 proposal is now source-derived and no longer generic filler, but would benefit from a structured action/artifact/metric/review table.",
+          "severity": "minor",
+          "slide": 8
+        },
+        {
+          "finding": "Evidence package slide is meaningful and fixes the old filler-slide problem, but remains sparse.",
+          "severity": "minor",
+          "slide": 9
+        },
+        {
+          "finding": "Claim-guard slide is meaningful and source-derived; it appropriately prevents product-quality overclaiming.",
+          "severity": "minor",
+          "slide": 10
+        }
+      ],
+      "title": "Long DOCX/PDF to structured presentation"
+    }
+  ],
+  "reviewed_at": "2026-05-08T16:10:00+02:00",
+  "reviewer_id": "project_owner_accepted_ai_assisted_review",
+  "schema_version": "p10.7.human_review_results.v1",
+  "server3_offline_intranet_route_verified": false,
+  "source_packet": "p10-6-human-review-packet.zip",
+  "source_recommendation_schema_version": "p10.6.ai_assisted_review_recommendation.v1",
+  "status": "completed_human_review_results",
+  "summary": {
+    "approve_count": 4,
+    "blocking_case_ids": [
+      "k0_arch_doc_to_architecture_deck"
+    ],
+    "reject_count": 0,
+    "request_rework_count": 1
+  },
+  "whole_project_kimi_level_supported": false
+}

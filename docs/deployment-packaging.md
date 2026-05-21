@@ -24,12 +24,16 @@ backend   -> FastAPI API and artifact services
 frontend  -> Next.js standalone runtime
 ```
 
+The backend image copies both `backend/` and `skills/`. Runtime services import reusable skill packages such as `skills.docx`, so the container smoke gate must fail if the skill package is omitted from the image.
+
 Persistent data is stored in named Docker volumes:
 
 ```text
 postgres_data
 kw_storage
 ```
+
+For the backend container, local file storage is explicitly configured as `STORAGE_ROOT=/app/storage`, `UPLOADS_DIR=/app/storage/uploads`, `ARTIFACTS_DIR=/app/storage/artifacts`, and `TEMP_DIR=/app/storage/temp`. These paths must stay aligned with the `kw_storage:/app/storage` Docker volume so the non-root backend process can create upload, artifact, and temp files.
 
 ## First-time setup
 
