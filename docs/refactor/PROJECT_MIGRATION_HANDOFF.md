@@ -716,3 +716,18 @@ S2 must emit machine-readable JSON diagnostics on every failure path.
 ```
 
 This rule prevents old stage-history Git assumptions from hiding real product failures during Profile 1 / Profile 3 switching.
+
+## Profile 3 real-user deploy test: Postgres task creation SQL alignment
+
+During Profile 3 local deploy testing with GigaChat credentials, the operator could create a session through the running Postgres-backed deployment, but `POST /tasks` returned HTTP 500 before any slide generation could start. The root cause was a Postgres task repository SQL placeholder alignment bug: the `status` value was accidentally bound to the `result_json` JSONB placeholder in `PostgresTaskRepository.create`.
+
+The hotfix contract is:
+
+```text
+POST /tasks must work in the real Postgres-backed deploy profile, not only in sqlite/unit tests;
+task status and result_json placeholders must remain separate;
+regression coverage must validate the SQL binding order without requiring a live Postgres instance;
+real-user testing should resume from session/task creation after this repair is locally accepted.
+```
+
+This is a real product/runtime bug found by user-side testing, not an operator mistake.

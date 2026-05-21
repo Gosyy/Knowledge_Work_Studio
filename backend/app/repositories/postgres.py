@@ -250,7 +250,7 @@ class PostgresTaskRepository(_PostgresRepositoryBase):
                 """
                 INSERT INTO tasks
                 (id, session_id, owner_user_id, task_type, status, result_json, error_message, started_at, completed_at, created_at)
-                VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                     session_id = EXCLUDED.session_id,
                     owner_user_id = EXCLUDED.owner_user_id,
