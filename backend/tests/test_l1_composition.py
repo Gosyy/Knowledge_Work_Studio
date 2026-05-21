@@ -18,6 +18,7 @@ from backend.app.services import LLMTextService
 
 def sqlite_settings(tmp_path: Path) -> Settings:
     return Settings(
+        app_env="test",
         metadata_backend="sqlite",
         sqlite_runtime_allowed=True,
         repository_db_path=str(tmp_path / "repositories.sqlite3"),
@@ -63,4 +64,4 @@ def test_l1_composition_root_builds_llm_provider_and_text_service(tmp_path: Path
 
 def test_l1_composition_root_rejects_unsafe_sqlite_runtime() -> None:
     with pytest.raises(ValueError, match="SQLite metadata backend is disabled"):
-        resolve_metadata_backend(Settings(metadata_backend="sqlite", sqlite_runtime_allowed=False))
+        resolve_metadata_backend(Settings(app_env="test", metadata_backend="sqlite", sqlite_runtime_allowed=False))

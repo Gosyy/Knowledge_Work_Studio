@@ -32,6 +32,7 @@ def test_initialize_database_accepts_sqlite_when_explicitly_allowed(tmp_path: Pa
     )
 
     settings = Settings(
+        app_env="test",
         metadata_backend="sqlite",
         sqlite_runtime_allowed=True,
         repository_db_path=str(tmp_path / "repositories.sqlite3"),
@@ -58,3 +59,15 @@ def test_initialize_database_rejects_sqlite_in_production_env_even_if_allowed(tm
 
     with pytest.raises(ValueError, match="only allowed in development/test environments"):
         initialize_database(settings)
+
+def test_sqlite_runtime_success_tests_use_explicit_test_app_env(tmp_path: Path) -> None:
+    settings = Settings(
+        app_env="test",
+        metadata_backend="sqlite",
+        sqlite_runtime_allowed=True,
+        repository_db_path=str(tmp_path / "repositories.sqlite3"),
+    )
+
+    assert settings.app_env == "test"
+    assert settings.metadata_backend == "sqlite"
+    assert settings.sqlite_runtime_allowed is True

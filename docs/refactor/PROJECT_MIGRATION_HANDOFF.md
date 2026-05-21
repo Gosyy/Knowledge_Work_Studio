@@ -900,3 +900,20 @@ Production/offline guardrails remain strict.
 ```
 
 Unit or integration tests that instantiate `Settings()` directly must not accidentally inherit operator production/offline defaults when they are testing development/test factory behavior. Such tests must pass an explicit `app_env="test"` or explicit production-safe private/internal endpoints, depending on the contract being tested. This keeps production guardrails strict while preventing local operator environment from changing unit-test intent.
+
+## Global explicit app environment rule for direct Settings tests
+
+Direct unit, integration, smoke, and API tests that instantiate `Settings(...)` must set `app_env` explicitly when they validate a non-production contract. This rule is global and profile-neutral. Tests must not inherit the operator shell environment implicitly, because full-runner execution may contain production/offline defaults even when the test is validating SQLite, fake LLM, or development/test behavior.
+
+Required policy:
+
+```text
+SQLite success-path tests must pass app_env="test" or app_env="development" explicitly.
+Fake/noop LLM factory tests must pass app_env="test" explicitly.
+Production/offline guardrail tests must pass app_env="production" and production-safe endpoints explicitly.
+Do not weaken production guardrails to satisfy test setup.
+Do not rely on ambient APP_ENV inherited from the shell, CI, local profile, or previous test module.
+When a full-runner failure shows Settings(app_env="production", metadata_backend="sqlite"), audit direct Settings constructors before changing product code.
+```
+
+This rule complements the API test-environment isolation rule: API fixtures may set scoped test defaults, but tests outside that fixture layer must still make their intended runtime mode explicit.

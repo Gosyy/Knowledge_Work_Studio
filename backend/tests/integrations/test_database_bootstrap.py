@@ -18,6 +18,7 @@ def test_initialize_database_applies_baseline_idempotently(tmp_path: Path) -> No
     )
 
     settings = Settings(
+        app_env="test",
         metadata_backend="sqlite",
         sqlite_runtime_allowed=True,
         repository_db_path=str(db_path),
