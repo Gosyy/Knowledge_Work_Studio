@@ -754,3 +754,9 @@ full presentation feature coverage, arbitrary template understanding, and broad 
 ```
 
 Acceptance for KR-6C-style work still follows the normal project rule: targeted API/workflow tests, handoff check, full runner, Docker smoke, clean tree, push, and remote verification before closure.
+
+## KR-6C media baseline smoke repair
+
+The first KR-6C real-user Slides prompt planning patch correctly removed prompt echo, placeholder leakage, and the internal deterministic image source label from public PPTX text, but it accidentally removed generated media image specs from the new user-prompt plan path. Legacy RF2.1 inventory smoke still requires at least one generated media asset to prove the baseline local PPTX runtime surface remains present.
+
+The repair keeps KR-6C user-facing quality guardrails while restoring local deterministic image specs with no public internal source label. Future Slides prompt-quality work must preserve both contracts: no placeholder/internal-label leakage in the PPTX, and no accidental retirement of the baseline media generation surface unless the RF2 legacy gate is formally retired with replacement coverage.

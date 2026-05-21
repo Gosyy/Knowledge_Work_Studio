@@ -5,6 +5,7 @@ import json
 import re
 from typing import Any
 
+from backend.app.services.slides_service.image_pipeline import ImageSpec, VisualIntent
 from backend.app.services.slides_service.outline import (
     PlannedSlide,
     PresentationPlan,
@@ -358,19 +359,76 @@ def _planned_slide(*, index: int, slide_type: SlideType, title: str, bullets: tu
         stage = StoryArcStage.ANALYSIS
     cleaned_title = _clean_public_text(title, fallback=f"Слайд {index}")
     cleaned_bullets = tuple(_clean_public_text(bullet, fallback="Ключевой тезис") for bullet in bullets if bullet.strip())[:5]
+    slide_id = f"user_prompt_{index:03d}"
+    visual_intent = _visual_intent_for_user_slide(slide_type)
+    image_specs = _image_specs_for_user_slide(
+        slide_id=slide_id,
+        visual_intent=visual_intent,
+        title=cleaned_title,
+        bullets=cleaned_bullets,
+    )
     return PlannedSlide(
-        slide_id=f"user_prompt_{index:03d}",
+        slide_id=slide_id,
         slide_type=slide_type,
         story_arc_stage=stage,
         title=cleaned_title,
         bullets=cleaned_bullets,
         speaker_notes="Кратко объяснить тезисы и связать с решением руководителя.",
-        layout_hint="title_and_bullets",
+        layout_hint=_layout_hint_for_user_slide(slide_type),
+        visual_intent=visual_intent,
+        image_specs=image_specs,
         blocks=_structured_blocks_for_slide(
-            slide_id=f"user_prompt_{index:03d}",
+            slide_id=slide_id,
             slide_type=slide_type,
             title=cleaned_title,
             bullets=cleaned_bullets,
+        ),
+    )
+
+
+def _layout_hint_for_user_slide(slide_type: SlideType) -> str:
+    if slide_type is SlideType.TITLE:
+        return "title_with_visual"
+    if slide_type is SlideType.CONTENT:
+        return "content_with_visual"
+    if slide_type is SlideType.COMPARISON:
+        return "two_column_comparison"
+    if slide_type is SlideType.TIMELINE:
+        return "timeline"
+    if slide_type is SlideType.DATA:
+        return "data_summary"
+    if slide_type is SlideType.CONCLUSION:
+        return "conclusion"
+    return "title_and_bullets"
+
+
+def _visual_intent_for_user_slide(slide_type: SlideType) -> VisualIntent:
+    if slide_type is SlideType.TITLE:
+        return VisualIntent.COVER_ILLUSTRATION
+    if slide_type is SlideType.CONTENT:
+        return VisualIntent.PROCESS_VISUAL
+    return VisualIntent.NONE
+
+
+def _image_specs_for_user_slide(
+    *,
+    slide_id: str,
+    visual_intent: VisualIntent,
+    title: str,
+    bullets: tuple[str, ...],
+) -> tuple[ImageSpec, ...]:
+    if visual_intent is VisualIntent.NONE:
+        return ()
+    prompt = ". ".join(part for part in (title, *bullets) if part).strip()
+    return (
+        ImageSpec(
+            spec_id=f"{slide_id}_{visual_intent.value}",
+            intent=visual_intent,
+            prompt=prompt,
+            aspect_ratio="16:9",
+            caption=title,
+            source_label=None,
+            required=False,
         ),
     )
 
