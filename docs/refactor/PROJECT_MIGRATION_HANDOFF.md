@@ -731,3 +731,9 @@ real-user testing should resume from session/task creation after this repair is 
 ```
 
 This is a real product/runtime bug found by user-side testing, not an operator mistake.
+
+## Dependency audit CLI help wording hotfix
+
+Profile 3 full-runner validation on the Postgres task SQL hotfix exposed a small CLI/help regression: `backend/tests/smoke/test_r8_dependency_audit.py::test_r8_dependency_audit_help_mentions_no_network_baseline` requires `scripts/kw_dependency_audit.py --help` to explicitly state that the baseline audit runs without network access. The hotfix restores that operator-facing wording without changing dependency policy, package baselines, runtime logic, or npm audit behavior.
+
+Acceptance for this hotfix follows the normal rule: targeted dependency-audit smoke tests, handoff check, full runner, Docker smoke, clean tree, push, and remote verification.

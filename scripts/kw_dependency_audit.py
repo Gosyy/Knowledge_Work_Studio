@@ -268,7 +268,13 @@ def audit(repo_root: Path, *, require_lock: bool) -> tuple[list[AuditIssue], dic
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate the KW Studio dependency/security baseline without network access.")
+    parser = argparse.ArgumentParser(
+        description="Validate the KW Studio dependency/security baseline without network access.",
+        epilog=(
+            "This audit is intentionally deterministic: it validates the pinned "
+            "frontend dependency baseline without network access."
+        ),
+    )
     parser.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]), help="Repository root path.")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
     parser.add_argument("--no-require-lock", action="store_true", help="Do not fail if frontend/package-lock.json is absent.")
