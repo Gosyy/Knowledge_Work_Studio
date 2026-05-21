@@ -796,3 +796,36 @@ direct internal calls with source_refs or non-default templates -> legacy baseli
 ```
 
 This keeps the real-user quality guardrails from KR-6C while preserving K2 source-aware API behavior, RF2/RF2.1 media baseline smoke, source grounding metadata, and artifact manifest/render QA contracts. Future Slides repairs must audit all of these contracts together before changing routing.
+
+## Global deploy Postgres volume credential-drift guardrail
+
+This rule is global, cross-platform, and profile-neutral. It was first reproduced on Profile 3, but future assistants must not document or implement it as a Profile 3-only workaround.
+
+Failure mode:
+
+```text
+A deploy env file is regenerated with a new POSTGRES_PASSWORD.
+Only Docker containers are removed or recreated.
+The existing Postgres metadata volume is kept.
+Postgres still stores the old database password inside the existing volume.
+The backend reads the new password from the regenerated env file.
+The backend cannot authenticate and becomes unhealthy.
+```
+
+Global rule:
+
+```text
+When a deploy env file is regenerated, runners and operator instructions must not recommend container-only cleanup as sufficient for Postgres-backed deploys.
+They must either preserve the previous POSTGRES_PASSWORD or perform an explicit operator-confirmed Postgres metadata volume reset/migration.
+Storage/artifact volumes must not be deleted as a side effect of fixing metadata password drift.
+```
+
+Project-resident helper:
+
+```text
+scripts/deploy/kw_postgres_volume_guardrail.py
+```
+
+The helper is intentionally cross-platform: it uses Python subprocess calls and Docker Compose labels instead of shell pipelines, xargs, Linux-only assumptions, or profile-specific paths. It requires `--confirm-reset-postgres-volume` before removing the Postgres metadata volume and must never print `.env.deploy`, Authorization Key, access tokens, GigaChat secrets, or `POSTGRES_PASSWORD`.
+
+Future deploy/start/restart runners that regenerate deploy credentials must call this rule out explicitly. A future hardening patch should prefer preserving the previous `POSTGRES_PASSWORD` when safely available, and use volume reset only when the operator intentionally accepts metadata reset for a test/local deploy.
