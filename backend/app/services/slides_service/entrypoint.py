@@ -24,6 +24,7 @@ class SlidesGenerateResult:
     outline: tuple[SlideOutlineItem, ...]
     generated_media_file_ids: tuple[str, ...] = ()
     source_grounding_metadata: dict[str, object] | None = None
+    planning_metadata: dict[str, object] | None = None
 
 
 @dataclass
@@ -46,4 +47,5 @@ class SlidesServiceEntrypoint:
             outline=output.outline,
             generated_media_file_ids=output.generated_media_file_ids,
             source_grounding_metadata=output.source_grounding_metadata,
+            planning_metadata=output.planning_metadata,
         )

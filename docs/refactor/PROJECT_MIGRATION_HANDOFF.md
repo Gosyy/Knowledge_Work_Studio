@@ -737,3 +737,20 @@ This is a real product/runtime bug found by user-side testing, not an operator m
 Profile 3 full-runner validation on the Postgres task SQL hotfix exposed a small CLI/help regression: `backend/tests/smoke/test_r8_dependency_audit.py::test_r8_dependency_audit_help_mentions_no_network_baseline` requires `scripts/kw_dependency_audit.py --help` to explicitly state that the baseline audit runs without network access. The hotfix restores that operator-facing wording without changing dependency policy, package baselines, runtime logic, or npm audit behavior.
 
 Acceptance for this hotfix follows the normal rule: targeted dependency-audit smoke tests, handoff check, full runner, Docker smoke, clean tree, push, and remote verification.
+
+
+## Real-user Slides prompt quality failure and KR-6C direction
+
+Profile 3 real-user testing after the GigaChat Authorization Key deployment proved that the runtime, Postgres task creation, artifact download, and GigaChat probe can pass while the user-facing Slides output is still unacceptable. The uploaded evidence showed a prompt-only deck request for six slides producing five slides, prompt echo, `Additional insight` placeholders, and the internal deterministic image source label in the PPTX.
+
+KR-6C starts the real-user Slides generation MVP hardening path. The immediate contract is deliberately bounded:
+
+```text
+user-requested slide count must be respected when present;
+public PPTX text must not contain prompt echo, placeholder fallback text, or internal deterministic source labels;
+GigaChat/LLM planning may be used when runtime credentials are configured, but its JSON plan must be validated before use;
+invalid or unavailable LLM plans must fall back to a cleaner deterministic user-prompt plan with explicit planning metadata, not to placeholder leakage;
+full presentation feature coverage, arbitrary template understanding, and broad visual design quality remain future work.
+```
+
+Acceptance for KR-6C-style work still follows the normal project rule: targeted API/workflow tests, handoff check, full runner, Docker smoke, clean tree, push, and remote verification before closure.

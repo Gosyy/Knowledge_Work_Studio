@@ -255,8 +255,36 @@ def build_official_execution_coordinator(
                 image_registry=SlideImageRegistry(storage=storage, stored_files=source_repositories.stored_files),
                 plan_snapshot_service=container.presentation_plan_snapshot_service,
                 artifact_service=container.artifact_service,
+                llm_text_service=build_slides_llm_text_service_if_configured(settings),
             )
         ),
+    )
+
+
+
+def build_slides_llm_text_service_if_configured(settings: Settings) -> LLMTextService | None:
+    provider = settings.llm_provider.strip().lower()
+    transport = settings.llm_transport_mode.strip().lower()
+    direct_ready = (
+        provider == "gigachat"
+        and transport in {"", "direct_gigachat"}
+        and bool(settings.gigachat_client_id.strip())
+        and bool(settings.gigachat_client_secret.strip())
+        and bool(settings.gigachat_api_base_url.strip())
+        and bool(settings.gigachat_auth_url.strip())
+    )
+    gateway_ready = (
+        provider == "gigachat"
+        and transport == "litellm_gateway"
+        and bool(settings.litellm_gateway_url.strip())
+        and bool(settings.litellm_gateway_model.strip() or settings.gigachat_model.strip())
+    )
+    fake_ready = provider in {"fake", "noop"}
+    if not (direct_ready or gateway_ready or fake_ready):
+        return None
+    return build_llm_text_service(
+        settings=settings,
+        provider=build_provider_from_settings(settings),
     )
 
 

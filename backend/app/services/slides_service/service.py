@@ -7,7 +7,8 @@ from backend.app.services.slides_service.approved_plan_lifecycle import Approved
 from backend.app.services.slides_service.saved_plan_retry import SavedPlanRetryRequest, SavedPlanRetryResult, retry_saved_plan_with_lifecycle
 from backend.app.services.slides_service.generator import generate_pptx_from_plan
 from backend.app.services.slides_service.image_pipeline import DeterministicPatternImageProvider, SlideImageProvider, SlideImageRegistry
-from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem, build_presentation_plan, plan_to_outline
+from backend.app.services.slides_service.outline import PresentationPlan, PlannedSlide, SlideOutlineItem
+from backend.app.services.slides_service.user_prompt_planning import build_user_prompt_presentation_plan, user_plan_to_outline
 from backend.app.services.slides_service.source_grounding import build_source_grounded_plan
 from backend.app.services.slides_service.render_mode_runtime import (
     RenderModeRuntimeRequest,
@@ -36,6 +37,7 @@ class SlidesTransformOutput:
     template_id: str
     generated_media_file_ids: tuple[str, ...] = ()
     source_grounding_metadata: dict[str, object] | None = None
+    planning_metadata: dict[str, object] | None = None
 
 
 @dataclass
@@ -46,6 +48,7 @@ class SlidesService:
     image_registry: SlideImageRegistry | None = None
     plan_snapshot_service: object | None = None
     artifact_service: object | None = None
+    llm_text_service: object | None = None
 
     def generate_deck(
         self,
@@ -57,9 +60,15 @@ class SlidesService:
         owner_user_id: str = "user_local_default",
         source_refs: tuple[dict[str, str], ...] = (),
     ) -> SlidesTransformOutput:
-        plan = build_presentation_plan(source_text, min_slides=5, max_slides=10)
+        planning = build_user_prompt_presentation_plan(
+            source_text,
+            min_slides=5,
+            max_slides=10,
+            llm_text_service=self.llm_text_service,
+            task_id=task_id,
+        )
         grounding = build_source_grounded_plan(
-            plan,
+            planning.plan,
             source_text=source_text,
             source_refs=source_refs,
         )
@@ -69,7 +78,7 @@ class SlidesService:
             task_id=task_id,
             owner_user_id=owner_user_id,
         )
-        outline = plan_to_outline(enriched_plan)
+        outline = user_plan_to_outline(enriched_plan)
         slide_count = len(outline)
         artifact_content = generate_pptx_from_plan(enriched_plan, template_id=template_id)
         summary_text = (
@@ -86,6 +95,7 @@ class SlidesService:
             template_id=template_id,
             generated_media_file_ids=stored_file_ids,
             source_grounding_metadata=grounding.as_metadata(),
+            planning_metadata=planning.metadata,
         )
 
 

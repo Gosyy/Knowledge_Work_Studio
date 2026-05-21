@@ -150,6 +150,7 @@ class OrchestratorExecutionCoordinator:
                         for file_id in result.generated_media_file_ids
                     ],
                     "source_grounding_metadata": result.source_grounding_metadata,
+                    "planning_metadata": result.planning_metadata,
                 },
             )
 
