@@ -167,8 +167,11 @@ def build_gigachat_runtime_hardening_report(
             errors.append("direct_gigachat requires configured GIGACHAT_CLIENT_ID and GIGACHAT_CLIENT_SECRET")
     if provider == GIGACHAT_PROVIDER and transport == "litellm_gateway" and not settings.litellm_gateway_url.strip():
         errors.append("litellm_gateway transport requires LITELLM_GATEWAY_URL")
+
+    active_runtime_endpoint_names = _active_runtime_endpoint_names(provider, transport)
     if deployment_mode == "offline_intranet":
-        for name, summary in endpoints.items():
+        for name in active_runtime_endpoint_names:
+            summary = endpoints[name]
             if summary["configured"] and not summary["private_or_internal"]:
                 errors.append(f"{name} endpoint must be private/internal for offline_intranet")
     if not timeout_configured:
@@ -178,7 +181,10 @@ def build_gigachat_runtime_hardening_report(
 
     no_litellm_override = not (provider == GIGACHAT_PROVIDER and transport == "litellm_gateway")
     no_ollama_override = provider != "ollama"
-    no_public_runtime = not any(summary["configured"] and not summary["private_or_internal"] for summary in endpoints.values())
+    no_public_runtime = not any(
+        endpoints[name]["configured"] and not endpoints[name]["private_or_internal"]
+        for name in active_runtime_endpoint_names
+    )
     config_ready = direct_mode and timeout_configured and bool(settings.gigachat_api_base_url.strip()) and bool(settings.gigachat_auth_url.strip())
     if require_credentials:
         config_ready = config_ready and credentials_configured
@@ -268,6 +274,16 @@ def run_gigachat_completion_diagnostic(
         },
     )
 
+
+
+def _active_runtime_endpoint_names(provider: str, transport: str) -> tuple[str, ...]:
+    if provider == GIGACHAT_PROVIDER and transport == GIGACHAT_DIRECT_TRANSPORT:
+        return ("gigachat_api", "gigachat_auth")
+    if provider == GIGACHAT_PROVIDER and transport == "litellm_gateway":
+        return ("litellm_gateway",)
+    if provider == "ollama":
+        return ("ollama",)
+    return ()
 
 def endpoint_runtime_summary(value: str, *, allow_placeholders: bool) -> GigaChatEndpointRuntimeSummary:
     stripped = value.strip()

@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from backend.app.core.config import Settings
-from backend.app.integrations.llm import GigaChatProvider, LLMCompletionRequest, build_llm_provider
+from backend.app.integrations.llm import GigaChatProvider, LLMCompletionRequest, LiteLLMCompatibleProvider, build_llm_provider
 from backend.app.integrations.llm.gigachat_runtime import (
     GigaChatRuntimeSelectionError,
     build_gigachat_runtime_hardening_report,
@@ -104,6 +104,45 @@ def test_rf4_default_factory_builds_direct_gigachat_without_litellm_override() -
     assert isinstance(provider, GigaChatProvider)
     assert provider.provider_name == "gigachat"
     assert provider.api_base_url == "http://10.10.10.30:8080/api/v1"
+
+
+def test_rf4_litellm_gateway_validates_only_active_gateway_endpoint() -> None:
+    settings = Settings(
+        app_env="production",
+        deployment_mode="offline_intranet",
+        llm_provider="gigachat",
+        llm_transport_mode="litellm_gateway",
+        litellm_gateway_url="http://10.0.0.2:4000",
+        litellm_gateway_model="gigachat-proxy",
+        gigachat_api_base_url="https://gigachat.devices.sberbank.ru/api/v1",
+        gigachat_auth_url="https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
+        gigachat_model="GigaChat-Pro",
+    )
+
+    report = build_gigachat_runtime_hardening_report(settings, require_credentials=False)
+    provider = build_llm_provider(settings)
+
+    assert report.status == "ready"
+    assert report.no_public_internet_runtime is True
+    assert isinstance(provider, LiteLLMCompatibleProvider)
+    assert provider.model_name == "gigachat-proxy"
+
+
+def test_rf4_litellm_gateway_rejects_public_active_gateway_endpoint() -> None:
+    settings = Settings(
+        app_env="production",
+        deployment_mode="offline_intranet",
+        llm_provider="gigachat",
+        llm_transport_mode="litellm_gateway",
+        litellm_gateway_url="https://gateway.public.example/v1",
+        litellm_gateway_model="gigachat-proxy",
+    )
+
+    report = build_gigachat_runtime_hardening_report(settings, require_credentials=False)
+
+    assert report.status == "not_ready"
+    assert report.no_public_internet_runtime is False
+    assert "litellm_gateway endpoint must be private/internal for offline_intranet" in report.errors
 
 
 def test_rf4_mocked_gigachat_diagnostics_success_and_timeout_are_safe() -> None:

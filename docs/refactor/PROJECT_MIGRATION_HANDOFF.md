@@ -854,3 +854,15 @@ Before producing or applying a patch, the assistant must audit the related imple
 Every patch must be reviewed for correctness, contract fit, syntax, importability, and wording quality before it is handed to the user. Documentation, comments, CLI help, operator messages, and user-facing text must be checked for spelling mistakes, accidental profile-specific wording, stale claims, and terminology drift. Incorrect spellings of key terms must not be introduced into project files; use `offline` and `senior engineer`.
 
 If the actual local state does not match the expected base, the assistant must stop, explain the mismatch, and either prepare a state-repair runner or ask for the missing evidence. Do not continue by assuming the filesystem, runtime, or dependency state.
+
+## Global LLM runtime endpoint-scope guardrail
+
+Runtime endpoint privacy checks must be scoped to the active LLM transport selected by `LLM_PROVIDER` and `LLM_TRANSPORT_MODE`.
+
+For `direct_gigachat`, the active runtime endpoints are `GIGACHAT_API_BASE_URL` and `GIGACHAT_AUTH_URL`.
+For `litellm_gateway`, the active runtime endpoint is `LITELLM_GATEWAY_URL`; inactive direct GigaChat defaults must not block the explicit internal LiteLLM gateway transport.
+For fallback or experimental transports, validation must remain fail-closed for production/offline use and must not silently route to public internet services.
+
+This rule is global and profile-neutral. It was captured after Profile 1 full-runner smoke tests showed that `build_llm_provider()` rejected the optional internal LiteLLM gateway path because inactive direct GigaChat public defaults were checked as if they were active runtime endpoints.
+
+The separate public internet GigaChat Authorization Key test mode is still required and must be implemented explicitly later. Do not hide public internet tests behind manual `APP_ENV=development` edits or claim offline/intranet proof from public endpoint probes.
