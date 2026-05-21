@@ -866,3 +866,21 @@ For fallback or experimental transports, validation must remain fail-closed for 
 This rule is global and profile-neutral. It was captured after Profile 1 full-runner smoke tests showed that `build_llm_provider()` rejected the optional internal LiteLLM gateway path because inactive direct GigaChat public defaults were checked as if they were active runtime endpoints.
 
 The separate public internet GigaChat Authorization Key test mode is still required and must be implemented explicitly later. Do not hide public internet tests behind manual `APP_ENV=development` edits or claim offline/intranet proof from public endpoint probes.
+
+## Global API test runtime isolation rule
+
+API route tests must not inherit production runtime defaults from an operator shell, CI host, or local profile. The API test suite is a test-mode contract surface: it uses SQLite repositories, local temporary storage, and fake LLM wiring unless a specific test explicitly overrides those defaults.
+
+Required API test defaults are:
+
+```text
+APP_ENV=test
+METADATA_BACKEND=sqlite
+SQLITE_RUNTIME_ALLOWED=true
+STORAGE_BACKEND=local
+LLM_PROVIDER=fake
+```
+
+This rule protects production/offline guardrails from being weakened while keeping test suites deterministic. Production runtime must still reject SQLite metadata truth and unsupported fake/noop LLM providers when `APP_ENV=production`. Future patches that add API tests must use the shared API test isolation fixture instead of copying partial environment setup into each test file.
+
+When a full runner fails because test code inherited `APP_ENV=production`, fix the test isolation boundary, not production guardrails.
