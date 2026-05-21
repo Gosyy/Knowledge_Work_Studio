@@ -19,11 +19,29 @@ _API_TEST_ENV_DEFAULTS = {
     "FAKE_LLM_RESPONSE": "TEST_LLM_RESPONSE",
 }
 
-for _key, _value in _API_TEST_ENV_DEFAULTS.items():
-    os.environ[_key] = _value
+_ORIGINAL_IMPORT_ENV = {
+    _key: os.environ.get(_key) for _key in _API_TEST_ENV_DEFAULTS
+}
 
+
+def _apply_api_test_import_environment() -> None:
+    for key, value in _API_TEST_ENV_DEFAULTS.items():
+        os.environ[key] = value
+
+
+def _restore_operator_import_environment() -> None:
+    for key, original_value in _ORIGINAL_IMPORT_ENV.items():
+        if original_value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = original_value
+
+
+_apply_api_test_import_environment()
 from backend.app.core.config import get_settings  # noqa: E402
 from backend.app.main import app  # noqa: E402
+_restore_operator_import_environment()
+get_settings.cache_clear()
 
 
 _APP_STATE_CACHE_ATTRIBUTES = (
@@ -40,6 +58,9 @@ def reset_api_test_app_state() -> None:
     for attribute in _APP_STATE_CACHE_ATTRIBUTES:
         if hasattr(app.state, attribute):
             delattr(app.state, attribute)
+
+
+reset_api_test_app_state()
 
 
 @pytest.fixture(autouse=True)

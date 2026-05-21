@@ -884,3 +884,19 @@ LLM_PROVIDER=fake
 This rule protects production/offline guardrails from being weakened while keeping test suites deterministic. Production runtime must still reject SQLite metadata truth and unsupported fake/noop LLM providers when `APP_ENV=production`. Future patches that add API tests must use the shared API test isolation fixture instead of copying partial environment setup into each test file.
 
 When a full runner fails because test code inherited `APP_ENV=production`, fix the test isolation boundary, not production guardrails.
+
+## Global API test environment non-leakage rule
+
+API test isolation must not pollute the wider backend pytest process. API tests may need test-mode environment variables before importing the FastAPI app, but those import-time variables must be restored immediately after import. Function-scoped API fixtures may then use pytest monkeypatch for each API test.
+
+This prevents API test defaults such as `APP_ENV=test`, `METADATA_BACKEND=sqlite`, and `LLM_PROVIDER=fake` from leaking into integration, smoke, CLI, diagnostics, or full-suite subprocess tests. CLI tests that pass an explicit `--env-file` must not be overridden by leftover parent-process test variables.
+
+Future patches that modify API test isolation must prove both directions:
+
+```text
+API tests still run in test mode with SQLite and fake LLM wiring.
+Non-API tests and CLI subprocess checks do not inherit API test defaults.
+Production/offline guardrails remain strict.
+```
+
+Unit or integration tests that instantiate `Settings()` directly must not accidentally inherit operator production/offline defaults when they are testing development/test factory behavior. Such tests must pass an explicit `app_env="test"` or explicit production-safe private/internal endpoints, depending on the contract being tested. This keeps production guardrails strict while preventing local operator environment from changing unit-test intent.
