@@ -63,6 +63,7 @@ def test_valid_llm_plan_is_used_after_schema_validation() -> None:
     fake_llm = _FakeSlidesPlanner(
         """
         {
+          "schema_version": "slides_plan.v1",
           "deck_title": "Внедрение KW Studio",
           "slides": [
             {"title": "Цель внедрения", "bullets": ["Сократить ручную работу", "Повысить проверяемость результатов"]},
@@ -81,6 +82,7 @@ def test_valid_llm_plan_is_used_after_schema_validation() -> None:
     assert result.slide_count == 6
     assert result.planning_metadata is not None
     assert result.planning_metadata["planning_mode"] == "llm_validated"
+    assert result.planning_metadata["llm_attempt_count"] == 1
     assert result.planning_metadata["llm_planning_used"] is True
     assert fake_llm.calls
     assert fake_llm.calls[0]["workflow"] == "slides_user_prompt_plan"
@@ -97,5 +99,6 @@ def test_invalid_llm_plan_falls_back_without_successful_placeholder_leakage() ->
     assert result.planning_metadata is not None
     assert result.planning_metadata["planning_mode"] == "deterministic_user_prompt_fallback"
     assert result.planning_metadata["llm_planning_used"] is False
-    assert result.planning_metadata["llm_planning_error_code"] == "llm_plan_invalid"
+    assert result.planning_metadata["llm_final_error_code"] == "missing_schema_version"
+    assert result.planning_metadata["degraded"] is True
     assert "Additional insight" not in _pptx_xml(result.artifact_content)
