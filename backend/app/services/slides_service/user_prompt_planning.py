@@ -27,6 +27,18 @@ _FORBIDDEN_PUBLIC_FRAGMENTS = (
     "Generate a presentation",
     "Generate presentation",
 )
+_TEMPLATE_LABEL_FRAGMENTS = (
+    "Key points",
+    "Option A",
+    "Current path",
+    "Step 1",
+    "Ключевые пункты",
+    "Текущий путь",
+    "Шаг 1",
+)
+_LOW_INFO_TITLES = {"a", "b", "c"}
+_LOW_INFO_BULLETS = {"b1", "b2", "x"}
+_SCHEMA_VERSION = "slides_plan.v1"
 
 
 @dataclass(frozen=True)
@@ -40,6 +52,25 @@ class _PromptIntent:
     topic: str
     style: str
     requested_slide_count: int
+
+
+@dataclass(frozen=True)
+class LlmPlanValidationError:
+    code: str
+    path: str
+    expected: str | None = None
+    observed_type: str | None = None
+    observed_count: int | None = None
+
+
+@dataclass(frozen=True)
+class LlmPlanAttemptResult:
+    plan: PresentationPlan | None
+    error_code: str | None
+    validation_errors: tuple[LlmPlanValidationError, ...]
+    schema_version: str | None
+    attempt_count: int
+    planning_mode: str
 
 
 def build_user_prompt_presentation_plan(
@@ -58,31 +89,46 @@ def build_user_prompt_presentation_plan(
     """
 
     intent = _extract_prompt_intent(source_text, min_slides=min_slides, max_slides=max_slides)
-    llm_error_code: str | None = None
+    llm_result: LlmPlanAttemptResult | None = None
 
     if llm_text_service is not None:
         try:
-            llm_plan = _build_plan_with_llm(
+            llm_result = _build_plan_with_llm(
                 llm_text_service=llm_text_service,
                 source_text=source_text,
                 intent=intent,
                 task_id=task_id,
             )
-            if llm_plan is not None:
+            if llm_result.plan is not None:
                 return UserPromptPlanningResult(
-                    plan=llm_plan,
+                    plan=llm_result.plan,
                     metadata={
-                        "planning_mode": "llm_validated",
+                        "planning_mode": llm_result.planning_mode,
                         "llm_planning_used": True,
+                        "llm_attempt_count": llm_result.attempt_count,
+                        "llm_final_error_code": None,
+                        "llm_planning_error_code": None,
+                        "llm_validation_errors": [],
                         "requested_slide_count": intent.requested_slide_count,
-                        "actual_slide_count": len(llm_plan.slides),
+                        "actual_slide_count": len(llm_result.plan.slides),
+                        "schema_version": _SCHEMA_VERSION,
                         "prompt_echo_blocked": True,
                         "placeholder_leakage_blocked": True,
+                        "template_label_leakage_blocked": True,
+                        "degraded": False,
+                        "raw_llm_response_logged": False,
                     },
                 )
-            llm_error_code = "llm_plan_invalid"
+            llm_result = llm_result
         except Exception:
-            llm_error_code = "llm_plan_failed"
+            llm_result = LlmPlanAttemptResult(
+                plan=None,
+                error_code="llm_plan_failed",
+                validation_errors=(),
+                schema_version=None,
+                attempt_count=1,
+                planning_mode="deterministic_user_prompt_fallback",
+            )
 
     fallback_plan = _build_deterministic_user_plan(intent)
     return UserPromptPlanningResult(
@@ -90,11 +136,18 @@ def build_user_prompt_presentation_plan(
         metadata={
             "planning_mode": "deterministic_user_prompt_fallback",
             "llm_planning_used": False,
-            "llm_planning_error_code": llm_error_code,
+            "llm_attempt_count": llm_result.attempt_count if llm_result else 0,
+            "llm_final_error_code": llm_result.error_code if llm_result else "llm_unavailable",
+            "llm_planning_error_code": llm_result.error_code if llm_result else "llm_unavailable",
+            "llm_validation_errors": [error.__dict__ for error in (llm_result.validation_errors if llm_result else ())],
             "requested_slide_count": intent.requested_slide_count,
             "actual_slide_count": len(fallback_plan.slides),
+            "schema_version": llm_result.schema_version if llm_result else None,
             "prompt_echo_blocked": True,
             "placeholder_leakage_blocked": True,
+            "template_label_leakage_blocked": True,
+            "degraded": True,
+            "raw_llm_response_logged": False,
         },
     )
 
@@ -105,10 +158,10 @@ def _build_plan_with_llm(
     source_text: str,
     intent: _PromptIntent,
     task_id: str | None,
-) -> PresentationPlan | None:
+) -> LlmPlanAttemptResult:
     complete_prompt = getattr(llm_text_service, "complete_prompt", None)
     if complete_prompt is None:
-        return None
+        return LlmPlanAttemptResult(None, "llm_provider_missing", (), None, 0, "deterministic_user_prompt_fallback")
 
     response = complete_prompt(
         _llm_user_prompt(source_text=source_text, intent=intent),
@@ -116,41 +169,94 @@ def _build_plan_with_llm(
         workflow="slides_user_prompt_plan",
         task_id=task_id,
     )
-    payload = _extract_json_object(str(response))
-    if not payload:
-        return None
+    payload, parse_errors = _extract_json_object(str(response))
+    validation = _validate_llm_payload(payload=payload, intent=intent, source_text=source_text, parse_errors=parse_errors)
+    if validation.plan is not None:
+        return validation
+    repair = complete_prompt(
+        _llm_repair_prompt(intent=intent, validation_errors=validation.validation_errors),
+        system_prompt=_llm_system_prompt(),
+        workflow="slides_user_prompt_plan_repair",
+        task_id=task_id,
+    )
+    repair_payload, repair_parse_errors = _extract_json_object(str(repair))
+    repaired = _validate_llm_payload(payload=repair_payload, intent=intent, source_text=source_text, parse_errors=repair_parse_errors)
+    if repaired.plan is not None:
+        return LlmPlanAttemptResult(repaired.plan, None, (), _SCHEMA_VERSION, 2, "llm_repaired")
+    return LlmPlanAttemptResult(None, repaired.error_code, repaired.validation_errors, repaired.schema_version, 2, "deterministic_user_prompt_fallback")
+
+
+def _validate_llm_payload(*, payload: dict[str, Any] | None, intent: _PromptIntent, source_text: str, parse_errors: tuple[LlmPlanValidationError, ...]) -> LlmPlanAttemptResult:
+    if payload is None:
+        code = parse_errors[0].code if parse_errors else "no_json_object"
+        return LlmPlanAttemptResult(None, code, parse_errors or (LlmPlanValidationError(code=code, path="$"),), None, 1, "deterministic_user_prompt_fallback")
+    if payload.get("schema_version") != _SCHEMA_VERSION:
+        code = "missing_schema_version" if "schema_version" not in payload else "unsupported_schema_version"
+        return LlmPlanAttemptResult(None, code, (LlmPlanValidationError(code=code, path="$.schema_version", expected=_SCHEMA_VERSION),), str(payload.get("schema_version") or ""), 1, "deterministic_user_prompt_fallback")
     slides_payload = payload.get("slides")
+    if slides_payload is None:
+        return LlmPlanAttemptResult(None, "missing_slides", (LlmPlanValidationError(code="missing_slides", path="$.slides", expected="array"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
     if not isinstance(slides_payload, list):
-        return None
+        return LlmPlanAttemptResult(None, "slides_not_array", (LlmPlanValidationError(code="slides_not_array", path="$.slides", expected="array", observed_type=type(slides_payload).__name__),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+    if len(slides_payload) != intent.requested_slide_count:
+        return LlmPlanAttemptResult(None, "wrong_slide_count", (LlmPlanValidationError(code="wrong_slide_count", path="$.slides", observed_count=len(slides_payload), expected=str(intent.requested_slide_count)),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
 
     slides: list[PlannedSlide] = []
-    for index, raw_slide in enumerate(slides_payload[: intent.requested_slide_count], start=1):
+    seen_numbers: set[int] = set()
+    for index, raw_slide in enumerate(slides_payload, start=1):
         if not isinstance(raw_slide, dict):
-            return None
-        title = _clean_public_text(str(raw_slide.get("title") or ""), fallback=f"Слайд {index}")
+            return LlmPlanAttemptResult(None, "slide_not_object", (LlmPlanValidationError(code="slide_not_object", path=f"$.slides[{index-1}]", expected="object"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+        raw_number = raw_slide.get("slide_number")
+        if raw_number is None:
+            return LlmPlanAttemptResult(None, "missing_slide_number", (LlmPlanValidationError(code="missing_slide_number", path=f"$.slides[{index-1}].slide_number", expected="int"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+        if not isinstance(raw_number, int) or raw_number < 1 or raw_number > intent.requested_slide_count or raw_number != index:
+            return LlmPlanAttemptResult(None, "invalid_slide_number", (LlmPlanValidationError(code="invalid_slide_number", path=f"$.slides[{index-1}].slide_number", expected=f"{index}", observed_type=type(raw_number).__name__),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+        if raw_number in seen_numbers:
+            return LlmPlanAttemptResult(None, "duplicate_slide_number", (LlmPlanValidationError(code="duplicate_slide_number", path=f"$.slides[{index-1}].slide_number"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+        seen_numbers.add(raw_number)
+        raw_title = str(raw_slide.get("title") or "").strip()
+        if not raw_title:
+            return LlmPlanAttemptResult(None, "missing_title", (LlmPlanValidationError(code="missing_title", path=f"$.slides[{index-1}].title"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+        if _has_forbidden_or_template_label(raw_title):
+            return LlmPlanAttemptResult(None, "template_label_detected", (LlmPlanValidationError(code="template_label_detected", path=f"$.slides[{index-1}].title"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+        if _is_low_information_text(raw_title, is_title=True):
+            return LlmPlanAttemptResult(None, "low_information_content", (LlmPlanValidationError(code="low_information_content", path=f"$.slides[{index-1}].title"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
         bullets_raw = raw_slide.get("bullets")
         if not isinstance(bullets_raw, list):
-            return None
+            return LlmPlanAttemptResult(None, "bullets_not_array", (LlmPlanValidationError(code="bullets_not_array", path=f"$.slides[{index-1}].bullets", expected="array"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+        if len(bullets_raw) > 5:
+            return LlmPlanAttemptResult(None, "too_many_bullets", (LlmPlanValidationError(code="too_many_bullets", path=f"$.slides[{index-1}].bullets", observed_count=len(bullets_raw)),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+        cleaned_bullets: list[str] = []
+        for bullet_index, item in enumerate(bullets_raw):
+            raw_bullet = str(item).strip()
+            if not raw_bullet:
+                continue
+            if _has_forbidden_or_template_label(raw_bullet):
+                return LlmPlanAttemptResult(None, "template_label_detected", (LlmPlanValidationError(code="template_label_detected", path=f"$.slides[{index-1}].bullets[{bullet_index}]"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+            if _is_low_information_text(raw_bullet, is_title=False):
+                return LlmPlanAttemptResult(None, "low_information_content", (LlmPlanValidationError(code="low_information_content", path=f"$.slides[{index-1}].bullets[{bullet_index}]"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+            cleaned_bullets.append(_clean_public_text(raw_bullet, fallback="Ключевой тезис"))
         bullets = tuple(
-            _clean_public_text(str(item), fallback="Ключевой тезис")
-            for item in bullets_raw[:5]
-            if str(item).strip()
+            cleaned_bullets
         )
         if len(bullets) < 2:
-            return None
+            return LlmPlanAttemptResult(None, "too_few_bullets", (LlmPlanValidationError(code="too_few_bullets", path=f"$.slides[{index-1}].bullets", observed_count=len(bullets)),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+        title = _clean_public_text(raw_title, fallback=f"Слайд {index}")
         slide_type = _slide_type_for_position(index, intent.requested_slide_count)
         slides.append(_planned_slide(index=index, slide_type=slide_type, title=title, bullets=bullets))
 
     if len(slides) != intent.requested_slide_count:
-        return None
+        return LlmPlanAttemptResult(None, "wrong_slide_count", (LlmPlanValidationError(code="wrong_slide_count", path="$.slides", observed_count=len(slides)),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
     if _plan_has_forbidden_fragments(slides):
-        return None
+        return LlmPlanAttemptResult(None, "forbidden_fragment", (LlmPlanValidationError(code="forbidden_fragment", path="$.slides"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
+    if _has_prompt_echo(source_text, [s.title for s in slides], [b for s in slides for b in s.bullets]):
+        return LlmPlanAttemptResult(None, "prompt_echo_detected", (LlmPlanValidationError(code="prompt_echo_detected", path="$.slides"),), _SCHEMA_VERSION, 1, "deterministic_user_prompt_fallback")
 
     deck_title = _clean_public_text(
         str(payload.get("deck_title") or slides[0].title),
         fallback=_deck_title_for_topic(intent.topic),
     )
-    return PresentationPlan(
+    return LlmPlanAttemptResult(PresentationPlan(
         deck_title=deck_title,
         deck_goal="Создать деловую презентацию по пользовательскому запросу без утечки текста промпта и служебных маркеров.",
         audience="business_decision_makers",
@@ -158,7 +264,7 @@ def _build_plan_with_llm(
         target_slide_count=intent.requested_slide_count,
         story_arc=tuple(slide.story_arc_stage for slide in slides),
         slides=tuple(slides),
-    )
+    ), None, (), _SCHEMA_VERSION, 1, "llm_validated")
 
 
 def _build_deterministic_user_plan(intent: _PromptIntent) -> PresentationPlan:
@@ -454,7 +560,7 @@ def _llm_system_prompt() -> str:
     return (
         "Ты планировщик деловых презентаций KW Studio. Верни только JSON без markdown. "
         "Не копируй команду пользователя как заголовок. Не используй заглушки. "
-        "JSON schema: {\"deck_title\": string, \"slides\": [{\"title\": string, \"bullets\": [string, string]}]}."
+        "JSON schema: {\"schema_version\": \"slides_plan.v1\", \"deck_title\": string, \"slides\": [{\"slide_number\": number, \"title\": string, \"bullets\": [string, string]}]}."
     )
 
 
@@ -469,7 +575,40 @@ def _llm_user_prompt(*, source_text: str, intent: _PromptIntent) -> str:
     )
 
 
-def _extract_json_object(text: str) -> dict[str, Any] | None:
+def _llm_repair_prompt(*, intent: _PromptIntent, validation_errors: tuple[LlmPlanValidationError, ...]) -> str:
+    serialized_errors = "; ".join(
+        f"code={e.code}, path={e.path}, expected={e.expected}, observed_type={e.observed_type}, observed_count={e.observed_count}"
+        for e in validation_errors
+    ) or "unknown"
+    return (
+        f"Исправь JSON-план. schema_version: {_SCHEMA_VERSION}. "
+        f"Схема JSON: {{\"schema_version\":\"{_SCHEMA_VERSION}\",\"deck_title\":\"string\",\"audience\":\"string\",\"tone\":\"string\",\"slides\":[{{\"slide_number\":1,\"title\":\"string\",\"slide_type\":\"title|section|content|comparison|timeline|conclusion\",\"bullets\":[\"string\",\"string\"],\"speaker_notes\":\"string\"}}]}}. "
+        f"Нужно ровно {intent.requested_slide_count} слайдов. Тема: {intent.topic}. Стиль: {intent.style}. "
+        f"Ошибки прошлой версии: {serialized_errors}. "
+        "Запрещены public labels: Additional insight, Local deterministic slide image generation, Key points, Option A, Current path, Step 1. "
+        "Верни только JSON без markdown и без пояснений."
+    )
+
+
+def _has_forbidden_or_template_label(value: str) -> bool:
+    text = value.lower()
+    return any(f.lower() in text for f in (*_FORBIDDEN_PUBLIC_FRAGMENTS, *_TEMPLATE_LABEL_FRAGMENTS))
+
+
+def _is_low_information_text(value: str, *, is_title: bool) -> bool:
+    normalized = value.strip().lower()
+    if is_title:
+        return normalized in _LOW_INFO_TITLES or len(normalized) <= 1
+    return normalized in _LOW_INFO_BULLETS or len(normalized) <= 2
+
+
+def _has_prompt_echo(source_text: str, titles: list[str], bullets: list[str]) -> bool:
+    prompt_norm = " ".join(source_text.lower().split())
+    target = " ".join((titles + bullets)).lower()
+    return len(prompt_norm) > 48 and prompt_norm[:96] in target
+
+
+def _extract_json_object(text: str) -> tuple[dict[str, Any] | None, tuple[LlmPlanValidationError, ...]]:
     cleaned = text.strip()
     if cleaned.startswith("```"):
         cleaned = re.sub(r"^```(?:json)?", "", cleaned, flags=re.IGNORECASE).strip()
@@ -477,12 +616,14 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
     start = cleaned.find("{")
     end = cleaned.rfind("}")
     if start < 0 or end <= start:
-        return None
+        return None, (LlmPlanValidationError(code="no_json_object", path="$"),)
     try:
         payload = json.loads(cleaned[start : end + 1])
     except json.JSONDecodeError:
-        return None
-    return payload if isinstance(payload, dict) else None
+        return None, (LlmPlanValidationError(code="json_decode_error", path="$"),)
+    if not isinstance(payload, dict):
+        return None, (LlmPlanValidationError(code="top_level_not_object", path="$", expected="object"),)
+    return payload, ()
 
 
 def user_plan_to_outline(plan: PresentationPlan) -> tuple[SlideOutlineItem, ...]:

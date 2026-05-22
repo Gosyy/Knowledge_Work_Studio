@@ -278,9 +278,9 @@ def _structured_blocks_for_slide(*, slide_id: str, slide_type: SlideType, title:
         return (
             ComparisonBlock(
                 block_id=f"{slide_id}_comparison",
-                left_title="Option A / Current path",
+                left_title="Current operating model",
                 left_items=left_items,
-                right_title="Option B / Recommended path",
+                right_title="Target operating model",
                 right_items=right_items,
             ),
         )
@@ -304,7 +304,7 @@ def _structured_blocks_for_slide(*, slide_id: str, slide_type: SlideType, title:
             ),
         )
     if slide_type is SlideType.CONTENT:
-        return (BulletBlock(block_id=f"{slide_id}_bullets", bullets=bullets, heading="Key points"),)
+        return (BulletBlock(block_id=f"{slide_id}_bullets", bullets=bullets, heading="Core takeaways"),)
     return (BulletBlock(block_id=f"{slide_id}_bullets", bullets=bullets, heading=title),)
 
 
@@ -318,7 +318,7 @@ def _split_items_for_comparison(bullets: tuple[str, ...]) -> tuple[tuple[str, ..
 def _timeline_items_from_bullets(bullets: tuple[str, ...]) -> tuple[TimelineItem, ...]:
     source_items = bullets or ("Start", "Execute", "Review")
     return tuple(
-        TimelineItem(label=f"Step {index}", detail=bullet)
+        TimelineItem(label=f"Phase {index}", detail=bullet)
         for index, bullet in enumerate(source_items[:4], start=1)
     )
 

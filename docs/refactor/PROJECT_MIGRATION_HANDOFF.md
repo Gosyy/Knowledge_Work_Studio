@@ -952,3 +952,32 @@ The explicit public GigaChat test mode must also be respected by diagnostic and 
 Tests or checkers whose contract refers to `.env.deploy.example` must pass that file explicitly and must not accidentally read an operator-local `.env.deploy` containing real secrets or temporary public endpoint settings. Local secret env files are runtime evidence, not deterministic test fixtures.
 
 This rule is global and profile-neutral. It was discovered on Profile 3 because a real `.env.deploy` and running `kw-studio` stack were present during patch validation, but future runners on every profile must account for local env files, containers, volumes, and ports before choosing tests or checkers.
+
+
+## KR-6D typed LLM slide planning contract (in progress)
+
+KR-6D introduces a versioned planning schema for real-user prompt slide planning:
+- `schema_version=slides_plan.v1` required;
+- required `slides` array with exact requested slide count;
+- each slide requires unique `slide_number` matching `1..N`, title, and 2..5 bullets.
+
+Validation is typed and sanitised (no raw LLM response, no full prompt logging). Error codes include parse, schema, structure, numbering, label leakage, prompt echo, and low-information content failures.
+
+Repair behavior: exactly one repair retry after first invalid attempt. Repair prompt includes schema version, exact schema, requested slide count, topic/style, sanitised validation errors (`code/path/expected/observed`), and forbidden public labels.
+
+Fallback semantics: deterministic fallback is allowed only after attempts are exhausted, with `degraded=true`, `llm_planning_used=false`, and specific final error code preserved in both `llm_final_error_code` and compatibility alias `llm_planning_error_code`.
+
+Planning metadata semantics:
+- `planning_mode`, `llm_planning_used`, `llm_attempt_count`;
+- `llm_final_error_code`, `llm_planning_error_code`, `llm_validation_errors`;
+- `requested_slide_count`, `actual_slide_count`, `schema_version`;
+- `prompt_echo_blocked`, `placeholder_leakage_blocked`, `template_label_leakage_blocked`;
+- `degraded`, `raw_llm_response_logged=false`.
+
+PPTX public text quality gate (workflow regression): output must keep requested slide count and reject template labels/public leakage (`Additional insight`, `Local deterministic slide image generation`, `Key points`, `Option A`, `Current path`, `Step 1`) and prompt echo in user-visible slide text.
+
+Compatibility requirements remain protected:
+- KR-6C source-mode routing behavior unchanged;
+- K2 source-aware API behavior unchanged;
+- RF2/RF2.1 media baseline preserved;
+- public internet test mode and render/visual QA bundle contracts unchanged.
