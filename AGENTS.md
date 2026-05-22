@@ -191,3 +191,22 @@ docs/refactor/KR6D_reliable_GigaChat_slide_planning_Codex_plan.md
 ```
 
 Do not implement KR-6D as a prompt-only tweak. It requires a versioned schema, typed validation result, robust parser, sanitized diagnostics, one repair retry, honest degraded fallback and real PPTX public-text quality gates.
+
+<!-- KR7_KIMI_LEVEL_SLIDES_AGENT_RULES -->
+
+## KR-7 Kimi-level Slides and test portfolio review
+
+Before implementing KR-7 Slides work, read:
+
+```text
+docs/refactor/SLIDES_KIMI_LEVEL_GAP_AUDIT.md
+docs/refactor/KR7_KIMI_LEVEL_SLIDES_ROADMAP.md
+docs/refactor/ASSISTANT_ENGINEERING_GUIDE_FOR_KIMI_LEVEL_SLIDES.md
+docs/refactor/TEST_PORTFOLIO_RATIONALIZATION_PLAN.md
+```
+
+KR-7 work must not be implemented as prompt-only tweaks. It must be contract-driven, source-backed, offline-safe, GigaChat-only and quality-gated.
+
+Do not add generated images. Do not create fake charts. Do not introduce local small LLMs. Do not copy external repository code without license/dependency review. Use external projects as references first, and ask the operator for source archives when deeper analysis is needed.
+
+Before deleting or weakening tests, produce a test inventory and classify each test by contract, tier, runtime cost and decision: keep, merge, quarantine, delete or rewrite.

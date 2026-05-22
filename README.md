@@ -648,3 +648,27 @@ docs/operators/
 ```
 
 `PROJECT_MIGRATION_HANDOFF.md` is the durable continuation source for process rules, profiles, guardrails and accepted operating procedure.
+
+<!-- KR7_KIMI_LEVEL_SLIDES_ROADMAP_LINKS -->
+
+## Slides Kimi-level roadmap and test portfolio review
+
+The Slides pillar is moving from validated LLM planning toward professional, source-backed, editable presentation generation. KR-6D proves that GigaChat can return a validated slide plan, but it does not claim professional Kimi-level deck quality.
+
+Current planning documents:
+
+```text
+docs/refactor/SLIDES_KIMI_LEVEL_GAP_AUDIT.md
+docs/refactor/KR7_KIMI_LEVEL_SLIDES_ROADMAP.md
+docs/refactor/ASSISTANT_ENGINEERING_GUIDE_FOR_KIMI_LEVEL_SLIDES.md
+docs/refactor/TEST_PORTFOLIO_RATIONALIZATION_PLAN.md
+```
+
+Important constraints:
+
+- production/offline mode has no public internet;
+- GigaChat is the only LLM runtime;
+- local small LLMs and arbitrary model selectors are not part of the target runtime;
+- images must be selected from uploaded documents/templates/assets, not generated;
+- charts must be backed by real data;
+- professional quality claims require content/design/coherence/data/assets/export gates.

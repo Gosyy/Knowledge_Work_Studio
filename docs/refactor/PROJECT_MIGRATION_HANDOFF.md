@@ -981,3 +981,35 @@ Compatibility requirements remain protected:
 - K2 source-aware API behavior unchanged;
 - RF2/RF2.1 media baseline preserved;
 - public internet test mode and render/visual QA bundle contracts unchanged.
+
+<!-- KR7_KIMI_LEVEL_SLIDES_HANDOFF_UPDATE -->
+
+## KR-7 Kimi-level Slides roadmap and test portfolio review
+
+After KR-6D, the project has validated and repairable GigaChat slide planning, but it does not yet have professional Kimi-level presentation generation. The user explicitly reported that the generated presentation is not informative, not representative, and contains poor visuals/lines instead of meaningful diagrams and charts. This is accepted as a product-quality blocker, not a mere prompt issue.
+
+The KR-7 direction is documented in:
+
+```text
+docs/refactor/SLIDES_KIMI_LEVEL_GAP_AUDIT.md
+docs/refactor/KR7_KIMI_LEVEL_SLIDES_ROADMAP.md
+docs/refactor/ASSISTANT_ENGINEERING_GUIDE_FOR_KIMI_LEVEL_SLIDES.md
+docs/refactor/TEST_PORTFOLIO_RATIONALIZATION_PLAN.md
+```
+
+Key global rules for future work:
+
+```text
+production/offline mode has no public internet;
+GigaChat is the only LLM runtime;
+local small LLMs must be removed from product/runtime scope;
+images must be reused from uploaded documents/templates/assets, not generated;
+charts must be backed by real data, not bullet length or fake weights;
+PresentationIR must become the future API-first contract;
+UI must be independent from backend and connect through API/OpenAPI;
+AIFixed is a UI/editor donor only, not a backend/runtime donor;
+external repositories may guide architecture, but copied code requires license and dependency review;
+existing tests must be inventoried and rationalized before broad deletion.
+```
+
+Test rationalization is allowed and desired, but only after a documented inventory. Do not remove production guardrails, API contracts, source-mode routing, artifact/provenance checks, render/visual QA, Docker smoke or public GigaChat mode tests without a stronger replacement contract and accepted evidence.
