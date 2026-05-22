@@ -1,87 +1,193 @@
-# AGENTS.md
+# AGENTS.md — KW Studio agent instructions
 
-## Project
+## Read this first
 
-Build **KW Studio**: an AI workspace for knowledge work that turns user files and natural-language tasks into finished work products.
+Before making changes, read these files:
 
-The MVP is a **modular monolith**, not a microservice platform.
+```text
+README.md
+docs/refactor/PROJECT_MIGRATION_HANDOFF.md
+docs/refactor/CODEX_PROJECT_BRIEFING.md
+docs/refactor/KR_PRODUCT_RESET_ROADMAP.md
+docs/architecture/WORKFLOW_CONTRACT_CORE.md
+```
 
-Primary MVP outcomes:
-- edited `.docx`
-- summarized `.pdf`
-- generated `.pptx`
-- spreadsheet/data analysis with charts and downloadable artifacts
+For KR-6D work, also read:
 
-## Product boundaries
+```text
+docs/refactor/KR6D_reliable_GigaChat_slide_planning_Codex_plan.md
+backend/app/services/slides_service/user_prompt_planning.py
+backend/app/services/slides_service/service.py
+backend/app/services/slides_service/entrypoint.py
+backend/app/orchestrator/execution.py
+backend/app/api/routes/tasks.py
+backend/tests/workflows/test_slides_real_user_prompt_quality.py
+backend/tests/workflows/test_slides_source_mode_routing.py
+backend/tests/workflows/test_slides_user_prompt_media_baseline.py
+backend/tests/smoke/test_public_gigachat_test_mode.py
+backend/tests/smoke/test_rf2_1_slides_runtime_inventory.py
+backend/tests/smoke/test_rf2_closure_slides_runtime.py
+```
 
-### In scope for MVP
-- Chat-based workspace
-- File upload and artifact download
-- DOCX workflows
-- PDF workflows
-- Slides generation
-- Spreadsheet / CSV data analysis
-- Python execution through a controlled runtime
-- Background task execution
-- Basic session/task/artifact persistence
+## Project identity
 
-### Out of scope for MVP
-- Full autonomous browser agent as a user-facing feature
-- Realtime collaboration
-- Broad file-format zoo
-- General-purpose app builder UI
-- Multi-tenant enterprise controls
-- Complex RBAC beyond basic authentication
+KW Studio is an offline/intranet-oriented, artifact-first, provenance-first, operator-gated knowledge-work studio. It is not only a slide generator and not only a chat wrapper.
 
-## Architecture rules
+The product direction is:
 
-- Keep the system as a **modular monolith** for v1.
-- Keep business services separate from runtime code.
-- Keep FastAPI endpoints thin.
-- Do not introduce hidden side effects at import time.
-- Browser runtime is **internal-only** in MVP.
-- Prefer adapters and service boundaries over direct cross-module calls.
-- New code should fit the repository structure described in `README.md` and `docs/product-spec.md`.
+```text
+source files + user intent
+-> workflow plan
+-> controlled deterministic tools
+-> generated artifacts
+-> validation / render / QA
+-> provenance / citations / evidence
+-> downloadable outputs
+-> task history / artifact history / restore / audit
+```
 
-## Coding rules
+Mandatory workflow pillars:
 
-### Python
-- Use type hints in new code.
-- Prefer explicit dependency injection over globals.
-- Use `logging`, not `print`.
-- Avoid broad `except Exception` unless you re-raise or log with context.
-- Use Pydantic models for external API contracts.
-- Keep runtime components restart-safe and testable.
+```text
+DOCX
+PDF
+XLSX / Excel
+Slides
+Python analysis
+Browser-assisted evidence
+```
 
-### Frontend
-- Use React / Next.js with clear feature boundaries.
-- Keep API calls in dedicated client modules.
-- Avoid business logic inside UI components.
-- Prefer small composable components.
+## Non-negotiable engineering rules
 
-### General
-- Prefer small, reviewable patches.
-- Add tests for every non-trivial change.
-- Update docs when architecture, APIs, or setup change.
-- Preserve backward compatibility unless the task explicitly allows breaking changes.
+- Work at senior engineer level.
+- Do not make shallow patches or brittle string-anchor edits.
+- Do not assume a clean checkout.
+- Do not make changes before auditing the relevant files, tests, contracts and runtime state.
+- Do not weaken production/offline guardrails to make tests pass.
+- Do not patch tests to hide real product failures.
+- Do not introduce unsupported claims about offline parity, Kimi-level quality, full Excel feature coverage or full presentation understanding.
+- Do not leak secrets in logs, docs, tests or artifacts.
+- Do not commit local `.env.deploy`, tokens, Authorization Keys or generated secret values.
+- Do not delete legacy files blindly; use audit, policy map, replacement coverage and controlled cleanup.
+- Do not use manual `APP_ENV=development` as a public GigaChat testing workaround; use `GIGACHAT_RUNTIME_MODE=public_internet_test`.
 
-## Required checks
+## Local-state-aware workflow
 
-When changing backend code:
-- `pytest -q`
+Before pulling, patching or running deploy actions, record the actual local state:
 
-When changing frontend code:
-- `npm run lint`
-- `npm run build`
+```bash
+git status --short --branch
+git rev-parse HEAD
+git rev-parse origin/9_Product_Release_Hardening || true
+test -f .env.deploy && echo env_present || echo env_absent
+docker compose ls || true
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}' || true
+docker volume ls --filter label=com.docker.compose.project=kw-studio || true
+```
 
-When changing runtime code:
-- run relevant smoke tests
-- explain what was tested
+If the tree is dirty, classify the dirty scope before applying a patch. Do not pull over unknown dirty state.
 
-## MVP definition of done
+## Required acceptance process
 
-A task is done only if:
-- the code builds or runs in the intended environment
-- relevant tests pass
-- the behavior matches the acceptance criteria
-- docs are updated when needed
+A successful product patch must close with:
+
+```text
+targeted apply/repair runner PASS
+commit
+full runner PASS
+Docker smoke PASS
+clean working tree
+push
+remote verification
+```
+
+Use these labels consistently:
+
+```text
+TARGETED PASS
+LOCAL ACCEPT
+REMOTE ACCEPT / CLOSED
+FAIL
+RUNNER BUG
+```
+
+## Required project runners
+
+Use project-resident runners:
+
+```bash
+bash scripts/kw_product_full_runner_logged.sh
+bash scripts/kw_product_docker_smoke_logged.sh --backend-port 18000 --frontend-port 13000
+```
+
+External scripts from a downloads directory are allowed only as apply/bootstrap helpers, not as final validation contracts.
+
+## Logging requirements
+
+Every runner must:
+
+- write logs under the project `logs/` directory;
+- duplicate output to terminal;
+- archive raw logs as `.log.tar.gz`;
+- include report directories when relevant;
+- remove raw `.log` after archiving;
+- print the archive path.
+
+## Runtime guardrails
+
+### Metadata backend
+
+Production runtime must use Postgres metadata storage. SQLite is allowed only for explicit development/test scope.
+
+### GigaChat runtime modes
+
+```text
+GIGACHAT_RUNTIME_MODE=offline_intranet
+GIGACHAT_RUNTIME_MODE=public_internet_test
+```
+
+`public_internet_test` is for temporary operator internet tests only. It is not offline/intranet proof and must warn accordingly.
+
+### Postgres volume credential drift
+
+If `.env.deploy` is regenerated with a new `POSTGRES_PASSWORD`, do not delete only containers while keeping the old Postgres metadata volume. Preserve the password or explicitly reset/migrate the Postgres metadata volume with operator confirmation. Do not delete artifact/storage volumes as a side effect.
+
+## Slides protected contracts
+
+Do not break source-mode routing:
+
+```text
+prompt_only + explicit real-user presentation intent -> user prompt planner
+prompt_only + short legacy/source-like text -> legacy outline planner
+uploaded_source / stored_source -> source-preserving planner
+direct internal calls with source_refs or non-default template -> legacy baseline path
+```
+
+Do not break RF2/RF2.1 media baseline. Do not leak prompt echo, `Additional insight`, `Local deterministic slide image generation`, `Key points`, `Option A / Current path` or `Step 1` as public PPTX template labels.
+
+## Documentation rules
+
+Update `docs/refactor/PROJECT_MIGRATION_HANDOFF.md` when changing:
+
+- accepted status;
+- phase plan;
+- workflow contracts;
+- runtime modes;
+- validation commands;
+- operating procedure;
+- deploy behavior;
+- system dependencies;
+- runner behavior;
+- profile rules.
+
+Check documentation, CLI help, comments and user-facing text for spelling, stale claims and unsupported claims.
+
+## KR-6D instruction
+
+For reliable GigaChat slide planning, use the detailed plan in:
+
+```text
+docs/refactor/KR6D_reliable_GigaChat_slide_planning_Codex_plan.md
+```
+
+Do not implement KR-6D as a prompt-only tweak. It requires a versioned schema, typed validation result, robust parser, sanitized diagnostics, one repair retry, honest degraded fallback and real PPTX public-text quality gates.
