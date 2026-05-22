@@ -54,6 +54,8 @@ def build_deployment_readiness(settings: Settings) -> DeploymentReadiness:
     metadata_backend = _normalized(settings.metadata_backend)
     storage_backend = _normalized(settings.storage_backend)
     llm_provider = _normalized(settings.llm_provider)
+    gigachat_runtime_mode = _normalized(getattr(settings, "gigachat_runtime_mode", "offline_intranet"))
+    public_internet_test_mode = gigachat_runtime_mode == "public_internet_test"
     storage_addressing_style = _normalized(settings.storage_addressing_style)
 
     checks: dict[str, bool] = {
@@ -67,12 +69,19 @@ def build_deployment_readiness(settings: Settings) -> DeploymentReadiness:
         and _is_set(settings.gigachat_auth_url),
         "gigachat_credentials_configured": _is_set(settings.gigachat_client_id)
         and _is_set(settings.gigachat_client_secret),
+        "gigachat_runtime_mode_supported": gigachat_runtime_mode in {"offline_intranet", "public_internet_test"},
+        "public_gigachat_test_mode_explicit": public_internet_test_mode,
         "secret_key_configured": _is_set(settings.secret_key)
         and settings.secret_key != "change-me"
         and len(settings.secret_key) >= 16,
     }
 
     warnings: list[str] = []
+    if public_internet_test_mode:
+        warnings.append(
+            "Public internet GigaChat test mode is active. This mode is for operator internet tests only "
+            "and must not be treated as offline/intranet deployment proof."
+        )
     storage_configured = False
     addressing_style_supported = True
 
@@ -128,6 +137,8 @@ def build_deployment_readiness(settings: Settings) -> DeploymentReadiness:
         errors.append("GigaChat API/auth URLs must be configured, preferably via an internal gateway.")
     if not checks["gigachat_credentials_configured"]:
         errors.append("GigaChat client credentials must be configured through secrets.")
+    if not checks["gigachat_runtime_mode_supported"]:
+        errors.append("GIGACHAT_RUNTIME_MODE must be offline_intranet or public_internet_test.")
     if not checks["secret_key_configured"]:
         errors.append("SECRET_KEY must be a non-default secret with at least 16 characters.")
 

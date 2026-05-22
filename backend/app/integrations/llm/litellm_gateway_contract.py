@@ -22,6 +22,7 @@ ENV_KEYS = (
     "GIGACHAT_API_BASE_URL",
     "GIGACHAT_AUTH_URL",
     "GIGACHAT_MODEL",
+    "GIGACHAT_RUNTIME_MODE",
     "GIGACHAT_CLIENT_ID",
     "GIGACHAT_CLIENT_SECRET",
     "LITELLM_GATEWAY_URL",
@@ -159,6 +160,9 @@ def build_litellm_gateway_manifest(
 ) -> dict[str, Any]:
     deployment_mode = values.get("DEPLOYMENT_MODE", "offline_intranet").strip().lower()
     app_env = values.get("APP_ENV", "production").strip().lower()
+    runtime_mode = values.get("GIGACHAT_RUNTIME_MODE", "offline_intranet").strip().lower() or "offline_intranet"
+    public_internet_test_mode = runtime_mode == "public_internet_test"
+    offline_endpoint_guard = deployment_mode == "offline_intranet" and not public_internet_test_mode
     provider = values.get("LLM_PROVIDER", DEFAULT_PROVIDER).strip().lower() or DEFAULT_PROVIDER
     transport = values.get("LLM_TRANSPORT_MODE", "direct_gigachat").strip().lower() or "direct_gigachat"
     offline_intranet = deployment_mode == "offline_intranet"
@@ -172,6 +176,12 @@ def build_litellm_gateway_manifest(
 
     errors: list[str] = []
     warnings: list[str] = []
+    if runtime_mode not in {"offline_intranet", "public_internet_test"}:
+        errors.append("unsupported GIGACHAT_RUNTIME_MODE; use offline_intranet or public_internet_test")
+    if public_internet_test_mode:
+        if provider != DEFAULT_PROVIDER or transport != "direct_gigachat":
+            errors.append("public_internet_test requires LLM_PROVIDER=gigachat and LLM_TRANSPORT_MODE=direct_gigachat")
+        warnings.append("public_internet_test is for operator internet tests only and is not offline/intranet proof")
 
     if provider != DEFAULT_PROVIDER:
         errors.append("offline_intranet requires LLM_PROVIDER=gigachat; LiteLLM is a gateway, not provider replacement")
@@ -186,7 +196,7 @@ def build_litellm_gateway_manifest(
             env_key="GIGACHAT_API_BASE_URL",
             value=values.get("GIGACHAT_API_BASE_URL", ""),
             summary=endpoint_summary(values.get("GIGACHAT_API_BASE_URL", ""), allow_placeholders=allow_placeholders),
-            offline_intranet=offline_intranet,
+            offline_intranet=offline_endpoint_guard,
         )
         _required_selected_endpoint(
             errors=errors,
@@ -194,7 +204,7 @@ def build_litellm_gateway_manifest(
             env_key="GIGACHAT_AUTH_URL",
             value=values.get("GIGACHAT_AUTH_URL", ""),
             summary=endpoint_summary(values.get("GIGACHAT_AUTH_URL", ""), allow_placeholders=allow_placeholders),
-            offline_intranet=offline_intranet,
+            offline_intranet=offline_endpoint_guard,
         )
 
     if transport == "litellm_gateway":
@@ -204,7 +214,7 @@ def build_litellm_gateway_manifest(
             env_key="LITELLM_GATEWAY_URL",
             value=values.get("LITELLM_GATEWAY_URL", ""),
             summary=endpoint_summary(values.get("LITELLM_GATEWAY_URL", ""), allow_placeholders=allow_placeholders),
-            offline_intranet=offline_intranet,
+            offline_intranet=offline_endpoint_guard,
         )
         if not values.get("LITELLM_GATEWAY_MODEL", "").strip():
             errors.append("litellm_gateway requires LITELLM_GATEWAY_MODEL")
@@ -223,6 +233,9 @@ def build_litellm_gateway_manifest(
         "status": "ready" if not errors else "not_ready",
         "mode": mode,
         "deployment_mode": deployment_mode,
+        "gigachat_runtime_mode": runtime_mode,
+        "public_internet_test_mode": public_internet_test_mode,
+        "public_internet_test_is_offline_proof": False,
         "default_provider": DEFAULT_PROVIDER,
         "selected_provider": provider,
         "selected_transport": transport,

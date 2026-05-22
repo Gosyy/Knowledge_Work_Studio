@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_env: str = "development"
     deployment_mode: str = "offline_intranet"
+    gigachat_runtime_mode: str = "offline_intranet"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     log_level: str = "INFO"

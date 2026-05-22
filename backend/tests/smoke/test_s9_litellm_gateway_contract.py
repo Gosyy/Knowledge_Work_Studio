@@ -9,6 +9,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = REPO_ROOT / "scripts" / "kw_litellm_gateway_check.py"
 CONTRACT_PATH = REPO_ROOT / "backend" / "app" / "integrations" / "llm" / "litellm_gateway_contract.py"
+ENV_EXAMPLE = REPO_ROOT / ".env.deploy.example"
 
 
 def load_contract_module():
@@ -116,7 +117,7 @@ def test_s9_rejects_missing_gateway_model_when_gateway_selected() -> None:
 
 
 def test_s9_cli_accepts_env_deploy_example_without_network_probe() -> None:
-    result = run_check("--allow-placeholders", "--require-ready")
+    result = run_check("--env-file", str(ENV_EXAMPLE), "--allow-placeholders", "--require-ready")
 
     assert result.returncode == 0, result.stderr + result.stdout
     assert "[PASS] LiteLLM gateway optional transport contract completed" in result.stdout
@@ -149,6 +150,37 @@ def test_s9_cli_accepts_internal_litellm_gateway_env_file(tmp_path: Path) -> Non
     assert manifest["status"] == "ready"
     assert manifest["selected_transport"] == "litellm_gateway"
     assert manifest["environment"]["LITELLM_GATEWAY_API_KEY"] == "[set]"
+    assert "secret-value" not in result.stdout
+
+
+def test_s9_cli_accepts_explicit_public_gigachat_test_env_file(tmp_path: Path) -> None:
+    env_file = tmp_path / ".env.public-gigachat-test"
+    env_file.write_text(
+        "\n".join(
+            [
+                "APP_ENV=production",
+                "DEPLOYMENT_MODE=offline_intranet",
+                "GIGACHAT_RUNTIME_MODE=public_internet_test",
+                "LLM_PROVIDER=gigachat",
+                "LLM_TRANSPORT_MODE=direct_gigachat",
+                "GIGACHAT_API_BASE_URL=https://gigachat.devices.sberbank.ru/api/v1",
+                "GIGACHAT_AUTH_URL=https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
+                "GIGACHAT_CLIENT_ID=client",
+                "GIGACHAT_CLIENT_SECRET=secret-value",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_check("--env-file", str(env_file), "--json", "--require-ready")
+
+    assert result.returncode == 0, result.stderr + result.stdout
+    manifest = json.loads(result.stdout)
+    assert manifest["status"] == "ready"
+    assert manifest["selected_transport"] == "direct_gigachat"
+    assert manifest["public_internet_test_mode"] is True
+    assert manifest["public_internet_test_is_offline_proof"] is False
+    assert any("operator internet tests only" in warning for warning in manifest["warnings"])
     assert "secret-value" not in result.stdout
 
 

@@ -12,6 +12,8 @@ from backend.app.integrations.llm.providers import GigaChatProvider, GigaChatPro
 GIGACHAT_RUNTIME_HARDENING_WORKFLOW_ID = "llm.gigachat_runtime_hardening"
 GIGACHAT_DIRECT_TRANSPORT = "direct_gigachat"
 GIGACHAT_PROVIDER = "gigachat"
+OFFLINE_INTRANET_RUNTIME_MODE = "offline_intranet"
+PUBLIC_GIGACHAT_TEST_RUNTIME_MODE = "public_internet_test"
 PRIVATE_OR_INTERNAL_HOSTS = {
     "localhost",
     "127.0.0.1",
@@ -136,6 +138,11 @@ def build_gigachat_runtime_hardening_report(
     app_env = settings.app_env.strip().lower()
     provider = settings.llm_provider.strip().lower()
     transport = settings.llm_transport_mode.strip().lower() or GIGACHAT_DIRECT_TRANSPORT
+    gigachat_runtime_mode = (
+        getattr(settings, "gigachat_runtime_mode", OFFLINE_INTRANET_RUNTIME_MODE).strip().lower()
+        or OFFLINE_INTRANET_RUNTIME_MODE
+    )
+    public_internet_test_mode = gigachat_runtime_mode == PUBLIC_GIGACHAT_TEST_RUNTIME_MODE
 
     endpoints = {
         "gigachat_api": endpoint_runtime_summary(settings.gigachat_api_base_url, allow_placeholders=allow_placeholders).as_dict(),
@@ -148,6 +155,15 @@ def build_gigachat_runtime_hardening_report(
     direct_mode = provider == GIGACHAT_PROVIDER and transport == GIGACHAT_DIRECT_TRANSPORT
     errors: list[str] = []
     warnings: list[str] = []
+    if gigachat_runtime_mode not in {OFFLINE_INTRANET_RUNTIME_MODE, PUBLIC_GIGACHAT_TEST_RUNTIME_MODE}:
+        errors.append("unsupported GIGACHAT_RUNTIME_MODE; use offline_intranet or public_internet_test")
+    if public_internet_test_mode:
+        if provider != GIGACHAT_PROVIDER or transport != GIGACHAT_DIRECT_TRANSPORT:
+            errors.append("public_internet_test requires LLM_PROVIDER=gigachat and LLM_TRANSPORT_MODE=direct_gigachat")
+        warnings.append(
+            "public_internet_test allows public GigaChat endpoints for operator internet tests only; "
+            "this is not offline/intranet deployment proof"
+        )
 
     if deployment_mode == "offline_intranet" and provider != GIGACHAT_PROVIDER:
         if provider in {"fake", "noop"} and app_env in {"development", "test"}:
@@ -169,7 +185,7 @@ def build_gigachat_runtime_hardening_report(
         errors.append("litellm_gateway transport requires LITELLM_GATEWAY_URL")
 
     active_runtime_endpoint_names = _active_runtime_endpoint_names(provider, transport)
-    if deployment_mode == "offline_intranet":
+    if deployment_mode == "offline_intranet" and not public_internet_test_mode:
         for name in active_runtime_endpoint_names:
             summary = endpoints[name]
             if summary["configured"] and not summary["private_or_internal"]:
@@ -197,6 +213,9 @@ def build_gigachat_runtime_hardening_report(
         "direct_gigachat_default": True,
         "default_production_llm": "gigachat",
         "default_transport_mode": GIGACHAT_DIRECT_TRANSPORT,
+        "gigachat_runtime_mode": gigachat_runtime_mode,
+        "public_internet_test_mode": public_internet_test_mode,
+        "public_internet_test_is_offline_proof": False,
         "server_3_gigachat_runtime_required": True,
         "server_2_litellm_gateway_optional": True,
         "no_silent_fallback": True,

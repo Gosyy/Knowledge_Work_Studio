@@ -917,3 +917,38 @@ When a full-runner failure shows Settings(app_env="production", metadata_backend
 ```
 
 This rule complements the API test-environment isolation rule: API fixtures may set scoped test defaults, but tests outside that fixture layer must still make their intended runtime mode explicit.
+
+
+## Global public internet GigaChat test mode rule
+
+Public internet tests against the external GigaChat API must use an explicit, profile-neutral runtime mode rather than ad-hoc `APP_ENV=development` overrides.
+
+The supported operator test mode is:
+
+```text
+GIGACHAT_RUNTIME_MODE=public_internet_test
+```
+
+This mode is only for temporary operator internet tests with public GigaChat endpoints and a real Authorization Key-derived credential pair. It is not production readiness evidence, not offline/intranet deployment proof, and not a substitute for the later strict offline endpoint policy.
+
+The normal production/offline profile remains:
+
+```text
+DEPLOYMENT_MODE=offline_intranet
+GIGACHAT_RUNTIME_MODE=offline_intranet
+LLM_PROVIDER=gigachat
+LLM_TRANSPORT_MODE=direct_gigachat
+```
+
+Patch and deploy runners must not ask operators to bypass runtime guardrails by manually editing `APP_ENV=development`. Instead, they must set or validate the explicit public internet test mode and keep secret values redacted. When the deploy env file is regenerated, the global Postgres metadata volume guardrail still applies: preserve the existing `POSTGRES_PASSWORD` or explicitly reset/migrate the Postgres metadata volume with operator confirmation.
+
+Strict rejection of public endpoints in the offline/intranet runtime mode must be preserved and can be tightened when the project reaches `kimi_level true` and the offline deployment preparation phase.
+
+
+## Global public internet GigaChat test mode and local env isolation rule
+
+The explicit public GigaChat test mode must also be respected by diagnostic and topology checkers that inspect deploy env files. `GIGACHAT_RUNTIME_MODE=public_internet_test` is allowed only for operator internet tests with direct GigaChat transport and must be reported as not being offline/intranet proof.
+
+Tests or checkers whose contract refers to `.env.deploy.example` must pass that file explicitly and must not accidentally read an operator-local `.env.deploy` containing real secrets or temporary public endpoint settings. Local secret env files are runtime evidence, not deterministic test fixtures.
+
+This rule is global and profile-neutral. It was discovered on Profile 3 because a real `.env.deploy` and running `kw-studio` stack were present during patch validation, but future runners on every profile must account for local env files, containers, volumes, and ports before choosing tests or checkers.
