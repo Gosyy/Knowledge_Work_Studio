@@ -270,3 +270,21 @@ Known failure mode discovered during KR-7A.1: the initial classifier evaluated k
 All test inventory scripts and test-portfolio checks must run through the project `.venv`.
 
 Inventory runners must prefer `<project-root>/.venv/bin/python`, verify `pytest` and required project dependencies, and fail clearly if the environment is missing. Running `scripts/kw_test_inventory.py` or its pytest coverage through system Python is not accepted evidence when `.venv` exists.
+
+
+<!-- KR7A1_PYTEST_COLLECTION_SCOPE -->
+
+## Pytest collection scope guardrail
+
+Test inventory and recovery runners may archive evidence under `logs/`. Those reports can contain snapshots of test files. The test portfolio must never allow pytest to collect evidence snapshots as live tests.
+
+Policy:
+
+```text
+pytest test discovery is scoped through `pytest.ini`;
+project-wide backend tests target `backend/tests`;
+logs, storage, frontend build outputs, `.venv`, `.pytest_cache`, `node_modules`, Playwright reports and other runtime artifacts are excluded from collection;
+inventory reports classify tests but do not become test sources.
+```
+
+This guardrail is part of KR-7A.1 because test rationalization produces additional reports and must not destabilize full runner collection.

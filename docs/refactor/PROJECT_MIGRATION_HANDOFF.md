@@ -1076,3 +1076,21 @@ python -m pytest --version
 If `.venv` exists, activate it and verify required dependencies before work. If a required dependency is missing, install it into `.venv` using the accepted dependency workflow for the project and fix installation/runtime warnings instead of ignoring them. If `.venv` is absent, create it and install the required project dependencies before patching or testing.
 
 System Python must not be used for project validation when `.venv` is available. Runners must select `.venv/bin/python` first and fail with a clear dependency error if the virtual environment is missing required tooling. Dependency warnings, missing packages and failed imports are patch blockers, not noise.
+
+
+<!-- KR7A1_PYTEST_COLLECTION_GUARDRAIL -->
+
+### KR-7A.1 pytest collection guardrail
+
+The project stores operator logs and report bundles under `logs/`. Some recovery runners may snapshot Python test files into report directories for auditability. Therefore full-suite pytest collection must be scoped to the intended test tree and must not recurse into runtime artifacts, logs, storage, frontend build output, or archived report directories.
+
+Global rule:
+
+```text
+pytest collection scope must be explicit;
+root-level `python -m pytest -q` must be protected by `pytest.ini`;
+production readiness backend pytest must target `backend/tests`;
+logs/report directories are evidence artifacts, not test sources.
+```
+
+Future runners that save file snapshots under `logs/` should avoid creating importable `test_*.py` files when possible, but the test runner must also remain robust if such evidence exists.

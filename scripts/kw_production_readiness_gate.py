@@ -1420,7 +1420,7 @@ def build_steps(repo_root: Path, args: argparse.Namespace) -> list[GateStep]:
         )
 
     if not args.skip_backend:
-        steps.append(GateStep("Backend full pytest suite", (python, "-m", "pytest", "-q"), repo_root))
+        steps.append(GateStep("Backend full pytest suite", (python, "-m", "pytest", "backend/tests", "-q"), repo_root))
         steps.append(GateStep("Backend compileall", (python, "-m", "compileall", "backend"), repo_root))
 
     if not args.skip_frontend:

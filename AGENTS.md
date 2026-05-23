@@ -248,3 +248,10 @@ python -c "import sys; print(sys.executable)"  # must point inside `.venv`
 If `.venv` exists, activate it and verify required dependencies before running tests. If dependencies are missing, install them into `.venv` through the accepted project dependency path and fix any dependency errors or warnings instead of ignoring them. If `.venv` is missing, create it, install the required project dependencies, then continue only after dependency checks pass.
 
 Do not run targeted tests, full runner helpers, inventory tools or patch validation with system Python when `.venv` is available.
+
+
+<!-- KR7A1_PYTEST_COLLECTION_AGENT_RULE -->
+
+## Pytest collection and logs
+
+Do not allow pytest to collect test snapshots from `logs/`, `storage/`, frontend build outputs, or recovery report directories. Production/full-suite pytest must be scoped to the real test tree. Runtime logs and evidence bundles are not test sources.
