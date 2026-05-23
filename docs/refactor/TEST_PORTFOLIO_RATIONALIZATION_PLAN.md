@@ -243,3 +243,30 @@ logs/test_inventory_*.md
 ```
 
 Do not delete any test in that first patch. The first patch only makes the test portfolio visible.
+
+<!-- KR7A1_INVENTORY_IMPLEMENTATION_CONTRACT -->
+
+## KR-7A.1 inventory implementation contract
+
+The first inventory implementation must be strong enough to support later rationalization decisions. It must not be a brittle keyword-only classifier.
+
+Required behavior:
+
+- path-first classification before keyword classification;
+- directory-aware handling for newly created test directories and dirty trees;
+- primary `contract` plus full `contracts` membership for cross-cutting tests;
+- deterministic tiers and runtime-cost labels;
+- no `delete` decision in the first inventory patch;
+- mandatory preservation of acceptance runners, Docker smoke, production readiness, GigaChat runtime, source-mode routing, render/visual QA and Slides workflow contracts;
+- JSON and Markdown reports that can be archived as evidence;
+- tests that prove Slides workflow files are not swallowed by incidental `gigachat`, `artifact`, `runtime`, or `source` keywords.
+
+Known failure mode discovered during KR-7A.1: the initial classifier evaluated keyword rules before path ownership, so no primary `slides_workflow` classification was produced. Repair must fix taxonomy design, not only add one brittle special case.
+
+<!-- KR7_VENV_ONLY_DEV_RULE -->
+
+## Test inventory execution environment
+
+All test inventory scripts and test-portfolio checks must run through the project `.venv`.
+
+Inventory runners must prefer `<project-root>/.venv/bin/python`, verify `pytest` and required project dependencies, and fail clearly if the environment is missing. Running `scripts/kw_test_inventory.py` or its pytest coverage through system Python is not accepted evidence when `.venv` exists.

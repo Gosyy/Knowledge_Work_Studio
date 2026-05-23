@@ -243,3 +243,40 @@ After code:
 4. report risks;
 5. state whether full runner/Docker smoke/push were done;
 6. never claim ACCEPT without evidence logs.
+
+<!-- LOCAL_FULL_HISTORY_ENGINEERING_REQUIREMENT -->
+
+## Local full-history engineering requirement
+
+For KR-7 and all future code work, an assistant must not write or repair code from snippets alone. It must work against an actual local checkout or mirror-derived clone with full Git history.
+
+Required preflight for code patches:
+
+```bash
+git rev-parse --is-shallow-repository
+git status --short --branch
+git log --oneline --decorate --graph -20
+git branch -vv
+git remote -v
+```
+
+If no such checkout is available, ask the operator for a full-history clone or bare mirror archive. Do not approximate the patch from GitHub file views. Do not issue a weak repair-runner before reproducing the failure and testing the fix locally.
+
+<!-- KR7_VENV_ONLY_DEV_RULE -->
+
+## Virtual environment requirement
+
+Use the project `.venv` for all local analysis, code generation support, patch validation and tests.
+
+Required preflight:
+
+```bash
+cd <project-root>
+test -d .venv || python3 -m venv .venv
+. .venv/bin/activate
+python -c "import sys; print(sys.executable)"
+python -m pip --version
+python -m pytest --version
+```
+
+The printed Python executable must point inside the project `.venv`. If dependencies are missing, install them into `.venv` through the project dependency files and resolve the failure before continuing. Do not silently fall back to `/usr/bin/python`, do not ignore warnings, and do not treat a system-Python run as valid evidence for acceptance.

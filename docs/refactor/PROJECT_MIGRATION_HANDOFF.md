@@ -1013,3 +1013,66 @@ existing tests must be inventoried and rationalized before broad deletion.
 ```
 
 Test rationalization is allowed and desired, but only after a documented inventory. Do not remove production guardrails, API contracts, source-mode routing, artifact/provenance checks, render/visual QA, Docker smoke or public GigaChat mode tests without a stronger replacement contract and accepted evidence.
+
+<!-- KR7_LOCAL_FULL_HISTORY_DEVELOPMENT_RULE -->
+
+## Global local full-history development rule
+
+The operator has made this a blocking engineering rule:
+
+```text
+It is forbidden to conduct development or prepare code patches without an actual, up-to-date, locally deployed project copy with full Git history and local verification.
+```
+
+Every future assistant must treat this as profile-neutral and global. Before preparing a code patch, repair runner, test rewrite, or test deletion, the assistant must verify a local checkout and record at minimum:
+
+```bash
+git rev-parse --is-shallow-repository
+git status --short --branch
+git log --oneline --decorate --graph -20
+git branch -vv
+git remote -v
+```
+
+Expected value:
+
+```text
+git rev-parse --is-shallow-repository -> false
+```
+
+If the assistant does not have a current local full-history checkout, it must not proceed with development based only on GitHub snippets, generated runners, or uploaded logs. It must ask the operator to clone or mirror the repository with full history and upload/provide that clone or mirror for local analysis. A bare mirror archive is acceptable if the assistant can clone from it locally, verify full history, apply the latest state and run targeted checks.
+
+This rule was reinforced during KR-7A.1 after a weak repair-runner attempted a narrow fix without first deeply auditing the partially applied inventory patch. Future work must follow this order:
+
+```text
+1. obtain/verify full-history local checkout;
+2. inspect actual local and remote state;
+3. inspect dirty tree before any pull or patch;
+4. reproduce the failure locally;
+5. design a complete solution from the contracts and docs;
+6. apply the patch locally;
+7. run targeted checks locally;
+8. only then provide a profile runner/patch to the operator;
+9. after operator logs, run full runner and Docker smoke before ACCEPT.
+```
+
+<!-- KR7_VENV_ONLY_DEV_RULE -->
+
+## Global `.venv` development rule
+
+The project must be developed, analyzed and tested through the project virtual environment `.venv`.
+
+Before preparing, applying or repairing any code patch, the assistant/runner must verify:
+
+```bash
+cd <project-root>
+test -d .venv || python3 -m venv .venv
+. .venv/bin/activate
+python -c "import sys; print(sys.executable)"  # must resolve to <project-root>/.venv/bin/python
+python -m pip --version
+python -m pytest --version
+```
+
+If `.venv` exists, activate it and verify required dependencies before work. If a required dependency is missing, install it into `.venv` using the accepted dependency workflow for the project and fix installation/runtime warnings instead of ignoring them. If `.venv` is absent, create it and install the required project dependencies before patching or testing.
+
+System Python must not be used for project validation when `.venv` is available. Runners must select `.venv/bin/python` first and fail with a clear dependency error if the virtual environment is missing required tooling. Dependency warnings, missing packages and failed imports are patch blockers, not noise.

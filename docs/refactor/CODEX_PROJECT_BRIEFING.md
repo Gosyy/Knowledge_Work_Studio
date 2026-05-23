@@ -310,3 +310,27 @@ working tree is clean;
 commit is pushed;
 remote commit is verified.
 ```
+
+<!-- LOCAL_FULL_HISTORY_PROJECT_BRIEFING_RULE -->
+
+## Local full-history checkout is mandatory for code work
+
+Do not develop code patches without a local full-history checkout that can be inspected and tested. GitHub browsing, uploaded logs and snippets are not a substitute.
+
+If the coding environment lacks a current full-history checkout, request a full clone or bare mirror archive from the operator, clone from it locally, verify `git rev-parse --is-shallow-repository` is `false`, then reproduce and test the change locally before proposing a patch.
+
+<!-- KR7_VENV_ONLY_DEV_RULE -->
+
+## Use `.venv` for all project checks
+
+Before changing or validating code, activate the project virtual environment:
+
+```bash
+cd <project-root>
+test -d .venv || python3 -m venv .venv
+. .venv/bin/activate
+python -c "import sys; print(sys.executable)"
+python -m pytest --version
+```
+
+If `.venv` is missing dependencies, install the required dependencies into `.venv` and fix any warnings/errors. Do not run tests through system Python when `.venv` exists. A patch validated outside `.venv` is not acceptable project evidence.

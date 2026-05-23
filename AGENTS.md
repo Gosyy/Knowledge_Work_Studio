@@ -210,3 +210,41 @@ KR-7 work must not be implemented as prompt-only tweaks. It must be contract-dri
 Do not add generated images. Do not create fake charts. Do not introduce local small LLMs. Do not copy external repository code without license/dependency review. Use external projects as references first, and ask the operator for source archives when deeper analysis is needed.
 
 Before deleting or weakening tests, produce a test inventory and classify each test by contract, tier, runtime cost and decision: keep, merge, quarantine, delete or rewrite.
+
+<!-- KR7_LOCAL_FULL_HISTORY_DEV_RULE -->
+
+## Mandatory local full-history development rule
+
+Do not develop, generate code patches, or issue repair runners without an actual local full-history checkout of the project that can be inspected and tested.
+
+Before any code or test patch, verify and record:
+
+```text
+git rev-parse --is-shallow-repository  # must be false
+git status --short --branch
+git log --oneline --decorate --graph -20
+git branch -vv
+git remote -v
+```
+
+If the assistant environment does not have a current local checkout with full Git history, it must stop and ask the operator to provide a separate full-history clone or mirror archive. Work may continue only after that clone/mirror is unpacked, checked out to the current branch, audited, patched and tested locally. GitHub file browsing and uploaded logs are useful evidence, but they are not a substitute for a local full-history project checkout.
+
+<!-- KR7_VENV_ONLY_DEV_RULE -->
+
+## Mandatory `.venv` development rule
+
+All project analysis, code patching and test execution must use the project virtual environment `.venv`.
+
+Before any patch or repair work:
+
+```bash
+python3 -m venv .venv          # only if `.venv` is missing
+. .venv/bin/activate
+python -m pip --version
+python -m pytest --version
+python -c "import sys; print(sys.executable)"  # must point inside `.venv`
+```
+
+If `.venv` exists, activate it and verify required dependencies before running tests. If dependencies are missing, install them into `.venv` through the accepted project dependency path and fix any dependency errors or warnings instead of ignoring them. If `.venv` is missing, create it, install the required project dependencies, then continue only after dependency checks pass.
+
+Do not run targeted tests, full runner helpers, inventory tools or patch validation with system Python when `.venv` is available.
