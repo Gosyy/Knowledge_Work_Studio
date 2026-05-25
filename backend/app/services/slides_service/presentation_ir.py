@@ -8,6 +8,7 @@ from backend.app.services.slides_service.outline import PresentationPlan
 PRESENTATION_IR_SCHEMA_VERSION = "presentation_ir.v1"
 PRESENTATION_IR_SOURCE_FORMAT_LEGACY_PLAN = "legacy_plan_snapshot.v1"
 PRESENTATION_IR_SOURCE_FORMAT_NATIVE = "presentation_ir_native.v1"
+PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION = "presentation_source_attachment.v1"
 
 PresentationIRStorageFormat = Literal["presentation_ir", "legacy_plan_snapshot"]
 
@@ -55,6 +56,18 @@ def validate_presentation_ir_payload(payload: dict[str, Any]) -> list[str]:
     for key in ("sources", "assets", "slides"):
         if not isinstance(payload.get(key), list):
             errors.append(f"{key} must be a list")
+
+    for index, source in enumerate(payload.get("sources") or []):
+        if not isinstance(source, dict):
+            errors.append(f"sources[{index}] must be an object")
+            continue
+        for key in ("source_id", "source_type", "role", "extraction_status"):
+            if not str(source.get(key) or "").strip():
+                errors.append(f"sources[{index}].{key} is required")
+        if source.get("source_type") not in {"uploaded_file", "stored_file", "document", "presentation"}:
+            errors.append(f"sources[{index}].source_type is unsupported")
+        if source.get("extraction_status") not in {"not_started", "pending", "ready", "unsupported", "missing"}:
+            errors.append(f"sources[{index}].extraction_status is unsupported")
 
     quality_contract = payload.get("quality_contract")
     if not isinstance(quality_contract, dict):
@@ -191,6 +204,44 @@ def presentation_ir_version_metadata(payload: dict[str, Any]) -> dict[str, str]:
         "ir_schema_version": PRESENTATION_IR_SCHEMA_VERSION,
         "storage_format": detect_presentation_ir_storage_format(payload),
     }
+
+
+def presentation_ir_source_attachments(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the safe source attachment/read contract payload from PresentationIR.
+
+    This is a read contract, not a KR-7D extraction runtime. Source objects are
+    persisted inside PresentationIR and must not expose storage keys or local URIs.
+    """
+
+    presentation_ir = require_presentation_ir_payload(payload)
+    sources: list[dict[str, Any]] = []
+    for source in presentation_ir.get("sources", []):
+        if not isinstance(source, dict):
+            continue
+        source_id = str(source.get("source_id") or "").strip()
+        source_type = str(source.get("source_type") or "").strip()
+        role = str(source.get("role") or "").strip()
+        extraction_status = str(source.get("extraction_status") or "").strip()
+        if not source_id or not source_type or not role or not extraction_status:
+            continue
+        sources.append(
+            {
+                "source_id": source_id,
+                "source_type": source_type,
+                "role": role,
+                "title": source.get("title"),
+                "file_type": source.get("file_type"),
+                "mime_type": source.get("mime_type"),
+                "checksum_sha256": source.get("checksum_sha256"),
+                "size_bytes": source.get("size_bytes"),
+                "extraction_status": extraction_status,
+                "source_file_id": source.get("source_file_id"),
+                "source_document_id": source.get("source_document_id"),
+                "source_presentation_id": source.get("source_presentation_id"),
+                "provenance_ref": source.get("provenance_ref"),
+            }
+        )
+    return sources
 
 
 def _slide_role(slide_type: str) -> str:

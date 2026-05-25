@@ -538,3 +538,25 @@ native PresentationIR snapshots are validated before persistence;
 scripts/kw_presentation_api_contract_check.py verifies the new paths, schemas, and source helpers;
 full runner and Docker smoke pass before LOCAL ACCEPT.
 ```
+
+
+### KR-7C.3 Presentation source attachment/read contract
+
+Purpose:
+
+```text
+complete the next API-first Presentation contract layer by exposing source attachment metadata through /api/v1 without implementing KR-7D extraction runtime;
+make PresentationIR source references canonical, validated, versioned, and safe to read from API clients;
+keep source attachment mutation fail-closed until persistence/mutation behavior is implemented in a later subphase.
+```
+
+Acceptance:
+
+```text
+PresentationIR sources require source_id, source_type, role, and extraction_status;
+/api/v1/presentations/{presentation_id}/sources returns safe source metadata from the latest PresentationIR-compatible snapshot;
+legacy snapshots return an empty source list without claiming extraction;
+source attachment POST remains explicit 501 until mutation/runtime persistence exists;
+scripts/kw_presentation_api_contract_check.py verifies the source read path, schemas, and source helper phrases;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```

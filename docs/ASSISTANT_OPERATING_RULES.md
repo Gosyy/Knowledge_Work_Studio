@@ -63,6 +63,20 @@ python -m pytest --version
 
 The Python executable used for tests and project scripts must resolve inside `<project-root>/.venv` unless a specific bootstrap phase is explicitly creating that environment.
 
+## Mandatory phase-plan conformity check
+
+Before and during each KR patch, compare the proposed scope, implementation depth, validation plan, and limitations against the relevant phase documents. For KR-7 Slides work this includes:
+
+```text
+docs/refactor/KR_PRODUCT_RESET_ROADMAP.md
+docs/refactor/KR7_KIMI_LEVEL_SLIDES_ROADMAP.md
+docs/refactor/PROJECT_MIGRATION_HANDOFF.md
+docs/QUALITY_MATRIX.md
+docs/PROJECT_PROHIBITIONS.md
+```
+
+The patch must not jump ahead of its phase by claiming runtime behavior that belongs to a later phase. The post-patch report must state which phase requirement was satisfied and which roadmap items remain intentionally out of scope.
+
 ## Mandatory pre-patch report
 
 Before changing files, produce or internally complete the pre-patch report defined in:

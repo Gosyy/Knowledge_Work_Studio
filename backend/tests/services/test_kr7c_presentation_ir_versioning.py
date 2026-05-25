@@ -11,10 +11,12 @@ from backend.app.repositories.sqlite import (
 )
 from backend.app.services.slides_service import (
     PRESENTATION_IR_SCHEMA_VERSION,
+    PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
     PresentationPlanSnapshotService,
     build_presentation_ir_from_legacy_plan,
     build_presentation_plan,
     detect_presentation_ir_storage_format,
+    presentation_ir_source_attachments,
     require_presentation_ir_payload,
 )
 
@@ -136,3 +138,68 @@ def test_invalid_native_presentation_ir_is_rejected_before_persistence(tmp_path:
             presentation_ir=invalid,
             snapshot_id="plansnap_invalid_ir",
         )
+
+
+def test_presentation_ir_source_attachment_contract_requires_canonical_source_metadata(tmp_path: Path) -> None:
+    service = _build_service(tmp_path)
+    plan = build_presentation_plan("One. Two. Three. Four. Five. Six.", min_slides=6, max_slides=6)
+    presentation_ir = build_presentation_ir_from_legacy_plan(
+        plan,
+        presentation_id="pres_ir_contract",
+        presentation_version_id="presver_ir_contract_v1",
+        created_from_task_id="task_ir_contract",
+    )
+    presentation_ir["sources"] = [
+        {
+            "source_id": "sf_source_contract",
+            "source_type": "stored_file",
+            "role": "primary_source",
+            "title": "Source contract",
+            "file_type": "docx",
+            "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "checksum_sha256": "source_contract",
+            "size_bytes": 1234,
+            "extraction_status": "not_started",
+            "source_file_id": "sf_source_contract",
+            "provenance_ref": "source_evidence_manifest.json#sf_source_contract",
+        }
+    ]
+
+    snapshot = service.create_presentation_ir_snapshot(
+        presentation_id="pres_ir_contract",
+        presentation_version_id="presver_ir_contract_v1",
+        presentation_ir=presentation_ir,
+        created_from_task_id="task_ir_contract",
+        change_summary="Source attachment read contract",
+        snapshot_id="plansnap_ir_sources_contract",
+    )
+
+    persisted_ir = service.get_presentation_ir_for_snapshot(snapshot)
+    assert persisted_ir["schema_version"] == PRESENTATION_IR_SCHEMA_VERSION
+    assert PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION == "presentation_source_attachment.v1"
+    assert presentation_ir_source_attachments(persisted_ir) == [
+        {
+            "source_id": "sf_source_contract",
+            "source_type": "stored_file",
+            "role": "primary_source",
+            "title": "Source contract",
+            "file_type": "docx",
+            "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "checksum_sha256": "source_contract",
+            "size_bytes": 1234,
+            "extraction_status": "not_started",
+            "source_file_id": "sf_source_contract",
+            "source_document_id": None,
+            "source_presentation_id": None,
+            "provenance_ref": "source_evidence_manifest.json#sf_source_contract",
+        }
+    ]
+
+
+def test_presentation_ir_rejects_incomplete_source_attachment_metadata() -> None:
+    plan = build_presentation_plan("One. Two. Three. Four. Five. Six.", min_slides=6, max_slides=6)
+    presentation_ir = build_presentation_ir_from_legacy_plan(plan, presentation_id="pres_ir_contract")
+    presentation_ir["sources"] = [{"source_id": "sf_missing_contract"}]
+
+    with pytest.raises(ValueError, match=r"sources\[0\]\.source_type is required"):
+        require_presentation_ir_payload(presentation_ir)

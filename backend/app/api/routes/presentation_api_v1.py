@@ -19,6 +19,7 @@ from backend.app.api.schemas import (
     PresentationApiSlidePatchRequestSchema,
     PresentationApiSlidesResponseSchema,
     PresentationApiSourceAttachRequestSchema,
+    PresentationApiSourcesResponseSchema,
     PresentationIRSnapshotResponseSchema,
     PresentationIRVersionSummarySchema,
     PresentationIRVersionsResponseSchema,
@@ -28,8 +29,10 @@ from backend.app.domain import PresentationPlanSnapshot
 from backend.app.services import PresentationCatalogService
 from backend.app.services.slides_service import (
     PRESENTATION_IR_SCHEMA_VERSION,
+    PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
     PresentationPlanSnapshotService,
     detect_presentation_ir_storage_format,
+    presentation_ir_source_attachments,
 )
 from backend.app.api.routes.presentations import _sanitize_public_plan_payload
 
@@ -75,11 +78,53 @@ def get_presentation_v1(
     )
 
 
+@router.get(
+    "/presentations/{presentation_id}/sources",
+    response_model=PresentationApiSourcesResponseSchema,
+    summary="Read PresentationIR source attachment metadata through the API-first contract.",
+)
+def list_presentation_sources_v1(
+    presentation_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+    catalog_service: PresentationCatalogService = Depends(get_presentation_catalog_service),
+    plan_snapshot_service: PresentationPlanSnapshotService = Depends(get_presentation_plan_snapshot_service),
+) -> PresentationApiSourcesResponseSchema:
+    catalog_service.get_presentation_for_user(presentation_id=presentation_id, owner_user_id=current_user_id)
+    snapshot = plan_snapshot_service.get_latest_snapshot(presentation_id)
+    if snapshot is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Presentation '{presentation_id}' has no source attachment snapshot yet.",
+        )
+
+    presentation_ir = plan_snapshot_service.get_presentation_ir_for_snapshot(snapshot)
+    safe_ir = _sanitize_public_plan_payload(presentation_ir)
+    if not isinstance(safe_ir, dict):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="PresentationIR source attachment payload is invalid.")
+
+    return PresentationApiSourcesResponseSchema(
+        api_version=_API_VERSION,
+        presentation_id=presentation_id,
+        snapshot_id=snapshot.id,
+        presentation_version_id=snapshot.presentation_version_id,
+        ir_schema_version=PRESENTATION_IR_SCHEMA_VERSION,
+        storage_format=detect_presentation_ir_storage_format(snapshot.snapshot_json),
+        version_number=_snapshot_version_number(
+            plan_snapshot_service=plan_snapshot_service,
+            presentation_id=presentation_id,
+            snapshot_id=snapshot.id,
+        ),
+        attachment_contract_version=PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
+        extraction_runtime_implemented=False,
+        sources=presentation_ir_source_attachments(safe_ir),
+    )
+
+
 @router.post(
     "/presentations/{presentation_id}/sources",
     response_model=PresentationApiContractStatusSchema,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    summary="Declare the API-first source attachment contract.",
+    summary="Declare the API-first source attachment mutation contract.",
 )
 def attach_presentation_source_v1(
     presentation_id: str,

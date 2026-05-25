@@ -1242,3 +1242,25 @@ Important limitation:
 ```text
 KR-7C.2 is still a contract/persistence layer. Mutation, planning, render, export, and quality endpoints remain fail-closed until later KR-7C/KR-7H/KR-7N phases implement runtime behavior.
 ```
+
+
+## KR-7C.3 Presentation source attachment/read contract
+
+KR-7C.3 extends the API-first Presentation contract after PresentationIR persistence. It adds safe read access to source attachment metadata stored inside the latest PresentationIR-compatible snapshot. It deliberately does not implement KR-7D source extraction, source asset registry, evidence retrieval, or source mutation persistence.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/presentation_ir.py validates canonical source attachment metadata;
+backend/app/api/routes/presentation_api_v1.py exposes read-only GET /api/v1/presentations/{presentation_id}/sources;
+backend/app/api/schemas/presentations.py exposes source attachment request/read schemas;
+scripts/kw_presentation_api_contract_check.py verifies source paths, schemas, and helper phrases;
+backend/tests/api/test_kr7c_presentation_api_contract.py covers source read API behavior and fail-closed source attach mutation;
+backend/tests/services/test_kr7c_presentation_ir_versioning.py covers source metadata validation and persistence through PresentationIR.
+```
+
+Important limitation:
+
+```text
+KR-7C.3 is a source attachment/read contract only. It must not be described as source ingestion/extraction. KR-7D is still responsible for extracting DOCX/PDF/XLSX/PPTX/Markdown structure, tables, images, and provenance assets.
+```

@@ -103,6 +103,40 @@ class PresentationApiSourceAttachRequestSchema(BaseModel):
     source_file_ids: list[str] = Field(default_factory=list)
     document_ids: list[str] = Field(default_factory=list)
     presentation_ids: list[str] = Field(default_factory=list)
+    role: str = "primary_source"
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiSourceRefSchema(BaseModel):
+    source_id: str
+    source_type: Literal["uploaded_file", "stored_file", "document", "presentation"]
+    role: str
+    title: str | None = None
+    file_type: str | None = None
+    mime_type: str | None = None
+    checksum_sha256: str | None = None
+    size_bytes: int | None = None
+    extraction_status: Literal["not_started", "pending", "ready", "unsupported", "missing"]
+    source_file_id: str | None = None
+    source_document_id: str | None = None
+    source_presentation_id: str | None = None
+    provenance_ref: str | None = None
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiSourcesResponseSchema(BaseModel):
+    api_version: str
+    presentation_id: str
+    snapshot_id: str
+    presentation_version_id: str | None
+    ir_schema_version: str
+    storage_format: Literal["presentation_ir", "legacy_plan_snapshot"]
+    version_number: int | None = None
+    attachment_contract_version: str
+    extraction_runtime_implemented: bool = False
+    sources: list[PresentationApiSourceRefSchema]
 
     model_config = ConfigDict(extra="forbid")
 

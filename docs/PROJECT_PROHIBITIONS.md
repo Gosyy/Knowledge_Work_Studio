@@ -22,7 +22,8 @@ add a new checker, runner, or smoke test without updating `scripts/kw_test_inven
 use documentation-only patches to claim runtime behavior changed;
 make API-first mutation/render/export/quality endpoints look successful before their runtime implementation exists;
 persist PresentationIR-compatible payloads without explicit schema_version and validation;
-expose PresentationIR payloads through API-first endpoints without version metadata and secret-safe sanitization.
+expose PresentationIR payloads through API-first endpoints without version metadata and secret-safe sanitization;
+claim source ingestion/extraction is implemented when a patch only adds source attachment/read metadata.
 ```
 
 ## Runtime and deploy prohibitions

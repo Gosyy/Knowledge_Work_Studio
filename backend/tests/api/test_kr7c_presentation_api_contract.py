@@ -14,6 +14,7 @@ from backend.app.repositories.sqlite import (
 )
 from backend.app.services.slides_service import (
     PRESENTATION_IR_SCHEMA_VERSION,
+    PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
     PresentationPlanSnapshotService,
     build_presentation_ir_from_legacy_plan,
     build_presentation_plan,
@@ -25,7 +26,7 @@ client = TestClient(app)
 _V1_PATHS = {
     "/api/v1/presentations": {"post"},
     "/api/v1/presentations/{presentation_id}": {"get"},
-    "/api/v1/presentations/{presentation_id}/sources": {"post"},
+    "/api/v1/presentations/{presentation_id}/sources": {"get", "post"},
     "/api/v1/presentations/{presentation_id}/plan": {"get", "post"},
     "/api/v1/presentations/{presentation_id}/ir": {"get"},
     "/api/v1/presentations/{presentation_id}/ir/versions": {"get"},
@@ -152,6 +153,22 @@ def _seed_native_presentation_ir_snapshot(repository_db_path: str) -> None:
         presentation_version_id="presver_kr7c_v1",
         created_from_task_id="task_kr7c_v1",
     )
+    presentation_ir["sources"] = [
+        {
+            "source_id": "sf_source_report",
+            "source_type": "stored_file",
+            "role": "primary_source",
+            "title": "Market report",
+            "file_type": "pdf",
+            "mime_type": "application/pdf",
+            "checksum_sha256": "sourcehash",
+            "size_bytes": 4096,
+            "extraction_status": "pending",
+            "source_file_id": "sf_source_report",
+            "provenance_ref": "source_evidence_manifest.json#sf_source_report",
+            "storage_uri": "local://secret/source.pdf",
+        }
+    ]
     service.create_presentation_ir_snapshot(
         presentation_id="pres_kr7c",
         presentation_version_id="presver_kr7c_v1",
@@ -182,6 +199,8 @@ def test_kr7c_openapi_exposes_api_v1_presentation_contract_and_legacy_compatibil
     assert "PresentationApiCreateRequestSchema" in component_schemas
     assert "PresentationApiPlanSnapshotResponseSchema" in component_schemas
     assert "PresentationApiSlidesResponseSchema" in component_schemas
+    assert "PresentationApiSourcesResponseSchema" in component_schemas
+    assert "PresentationApiSourceRefSchema" in component_schemas
     assert "PresentationIRSnapshotResponseSchema" in component_schemas
     assert "PresentationIRVersionSummarySchema" in component_schemas
     assert "PresentationIRVersionsResponseSchema" in component_schemas
@@ -197,6 +216,7 @@ def test_kr7c_checker_reports_ready() -> None:
     assert report["missing_legacy_paths"] == []
     assert report["missing_schemas"] == []
     assert report["missing_ir_source_phrases"] == []
+    assert report["missing_source_attachment_phrases"] == []
 
 
 def test_kr7c_gets_presentation_metadata_through_api_v1(
@@ -322,6 +342,65 @@ def test_kr7c_persists_native_presentation_ir_and_lists_versions(
     ]
 
 
+def test_kr7c_lists_presentation_source_attachments_from_latest_presentation_ir(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_native_presentation_ir_snapshot(repository_db_path)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/sources")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["api_version"] == "presentation_api.v1"
+    assert payload["presentation_id"] == "pres_kr7c"
+    assert payload["snapshot_id"] == "plansnap_ir_kr7c_v1"
+    assert payload["ir_schema_version"] == PRESENTATION_IR_SCHEMA_VERSION
+    assert payload["storage_format"] == "presentation_ir"
+    assert payload["attachment_contract_version"] == PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION
+    assert payload["extraction_runtime_implemented"] is False
+    assert payload["sources"] == [
+        {
+            "source_id": "sf_source_report",
+            "source_type": "stored_file",
+            "role": "primary_source",
+            "title": "Market report",
+            "file_type": "pdf",
+            "mime_type": "application/pdf",
+            "checksum_sha256": "sourcehash",
+            "size_bytes": 4096,
+            "extraction_status": "pending",
+            "source_file_id": "sf_source_report",
+            "source_document_id": None,
+            "source_presentation_id": None,
+            "provenance_ref": "source_evidence_manifest.json#sf_source_report",
+        }
+    ]
+    assert "storage_uri" not in str(payload)
+    assert "local://secret" not in str(payload)
+
+
+def test_kr7c_lists_empty_sources_for_legacy_snapshot_without_extraction_claim(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_plan_snapshot(repository_db_path)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/sources")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["storage_format"] == "legacy_plan_snapshot"
+    assert payload["sources"] == []
+    assert payload["extraction_runtime_implemented"] is False
+
+
 def test_kr7c_future_mutation_endpoints_fail_closed() -> None:
     create_response = client.post(
         "/api/v1/presentations",
@@ -329,6 +408,12 @@ def test_kr7c_future_mutation_endpoints_fail_closed() -> None:
     )
     assert create_response.status_code == 501
     assert "KR-7C API-first Presentation contract endpoint" in create_response.json()["detail"]
+
+    source_attach_response = client.post(
+        "/api/v1/presentations/pres_kr7c/sources",
+        json={"source_file_ids": ["sf_source_report"], "role": "primary_source"},
+    )
+    assert source_attach_response.status_code == 501
 
     patch_response = client.patch(
         "/api/v1/presentations/pres_kr7c/slides/slide_001",

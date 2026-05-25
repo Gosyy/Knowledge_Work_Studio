@@ -64,9 +64,11 @@ from backend.app.services.slides_service.plan_snapshot import (
 )
 from backend.app.services.slides_service.presentation_ir import (
     PRESENTATION_IR_SCHEMA_VERSION,
+    PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
     build_presentation_ir_from_legacy_plan,
     detect_presentation_ir_storage_format,
     is_presentation_ir_payload,
+    presentation_ir_source_attachments,
     require_presentation_ir_payload,
 )
 from backend.app.services.slides_service.provenance_manifest_runtime import (
@@ -184,9 +186,11 @@ __all__ = [
     "PlannedSlide",
     "PresentationPlanSnapshotService",
     "PRESENTATION_IR_SCHEMA_VERSION",
+    "PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION",
     "build_presentation_ir_from_legacy_plan",
     "detect_presentation_ir_storage_format",
     "is_presentation_ir_payload",
+    "presentation_ir_source_attachments",
     "require_presentation_ir_payload",
     "deserialize_presentation_plan",
     "serialize_presentation_plan",
