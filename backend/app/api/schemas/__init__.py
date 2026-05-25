@@ -1,6 +1,19 @@
 from backend.app.api.schemas.artifacts import ArtifactSchema
 from backend.app.api.schemas.files import UploadedFileSchema
-from backend.app.api.schemas.presentations import PresentationCurrentFileSchema, PresentationSchema, PresentationVersionSummarySchema
+from backend.app.api.schemas.presentations import (
+    PresentationApiContractStatusSchema,
+    PresentationApiCreateRequestSchema,
+    PresentationApiMetadataResponseSchema,
+    PresentationApiPlanRequestSchema,
+    PresentationApiPlanSnapshotResponseSchema,
+    PresentationApiRenderRequestSchema,
+    PresentationApiSlidePatchRequestSchema,
+    PresentationApiSlidesResponseSchema,
+    PresentationApiSourceAttachRequestSchema,
+    PresentationCurrentFileSchema,
+    PresentationSchema,
+    PresentationVersionSummarySchema,
+)
 from backend.app.api.schemas.plan_snapshots import PresentationPlanDiffSchema, PresentationPlanSlideDeltaSchema, PresentationPlanSnapshotSchema
 from backend.app.api.schemas.slides import (
     SlideCitationSchema,
@@ -44,6 +57,15 @@ __all__ = [
     "PresentationPlanDiffSchema",
     "PresentationPlanSlideDeltaSchema",
     "PresentationPlanSnapshotSchema",
+    "PresentationApiContractStatusSchema",
+    "PresentationApiCreateRequestSchema",
+    "PresentationApiMetadataResponseSchema",
+    "PresentationApiPlanRequestSchema",
+    "PresentationApiPlanSnapshotResponseSchema",
+    "PresentationApiRenderRequestSchema",
+    "PresentationApiSlidePatchRequestSchema",
+    "PresentationApiSlidesResponseSchema",
+    "PresentationApiSourceAttachRequestSchema",
     "PresentationCurrentFileSchema",
     "PresentationSchema",
     "PresentationVersionSummarySchema",

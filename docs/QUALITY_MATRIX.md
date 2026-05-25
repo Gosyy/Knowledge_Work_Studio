@@ -22,7 +22,7 @@ Needs verification current implementation must be re-audited before claims
 | DOCX | Planned | Planned | Planned | Planned | Planned | Planned | Partial | Needs verification | Mandatory pillar; future work must align with workflow contract core. |
 | PDF | Planned | Planned | Planned | Planned | Planned | Planned | Partial | Needs verification | Mandatory pillar; source-grounded extraction/evidence must remain honest. |
 | XLSX / CSV | Implemented | Planned | Implemented | Implemented | Implemented | Not applicable | Partial | Partial | KR-5A/KR-5B added inspect and bundle validation; no destructive editing or complete Excel coverage claim. |
-| Slides | Implemented | Partial | Partial | Implemented | Partial | Implemented | Partial | Partial | KR-6D validates/repairs GigaChat planning; KR-7 targets professional PresentationIR, source assets, data-backed charts, template rewrite, and quality gates. |
+| Slides | Implemented | Partial | Partial | Implemented | Partial | Implemented | Partial | Partial | KR-6D validates/repairs GigaChat planning; KR-7B locks GigaChat-only runtime scope; KR-7C.1 adds API-first /api/v1 Presentation contract skeleton; future KR-7 targets professional PresentationIR, source assets, data-backed charts, template rewrite, and quality gates. |
 | Python analysis | Planned | Planned | Planned | Planned | Planned | Planned | Partial | Needs verification | Must remain controlled, deterministic, logged, and artifact-backed. |
 | Browser evidence | Planned | Planned | Planned | Planned | Planned | Planned | Partial | Needs verification | Must remain operator-gated and evidence/provenance-first, not autonomous browsing. |
 

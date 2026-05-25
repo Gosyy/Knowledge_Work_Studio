@@ -1198,3 +1198,24 @@ SQL_DRAFT_SCHEMA_V1.sql no longer lists obsolete openai/qwen/noop provider optio
 backend/tests/fixtures/k_phase/rc1_golden_benchmark_cases.json uses unsupported local-model option instead of Ollama fallback;
 scripts/kw_llm_provider_scope_check.py verifies these residual claim boundaries.
 ```
+
+
+## KR-7C.1 API-first Presentation contract skeleton
+
+KR-7C.1 starts the API-first Presentation contract phase. It adds a versioned `/api/v1` Presentation API surface while keeping existing unversioned `/tasks` and presentation endpoints as compatibility adapters.
+
+Validation surface:
+
+```text
+backend/app/api/routes/presentation_api_v1.py declares the versioned Presentation API routes;
+backend/app/api/schemas/presentations.py contains request/response schemas for the API-first contract;
+scripts/kw_presentation_api_contract_check.py validates OpenAPI paths, schemas, tag, and legacy compatibility routes;
+backend/tests/api/test_kr7c_presentation_api_contract.py covers OpenAPI shape, safe metadata, safe slide plan payloads, and fail-closed future endpoints;
+scripts/kw_full_tests_with_proxy_runner.sh runs the presentation API contract checker.
+```
+
+Important limitation:
+
+```text
+KR-7C.1 is a contract skeleton and compatibility bridge. It does not implement full PresentationIR planning, source attachment execution, slide editing, render, export, or quality evaluation. Those endpoints must fail closed with 501 until their runtime implementation lands in later KR-7C subphases.
+```

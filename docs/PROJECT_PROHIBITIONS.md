@@ -19,7 +19,8 @@ claim ACCEPT without targeted checks, full runner, Docker smoke, log review, com
 weaken tests to hide a product failure;
 make brittle text-anchor edits without proving exact pre-state first;
 add a new checker, runner, or smoke test without updating `scripts/kw_test_inventory.py` classification rules when required;
-use documentation-only patches to claim runtime behavior changed.
+use documentation-only patches to claim runtime behavior changed;
+make API-first mutation/render/export/quality endpoints look successful before their runtime implementation exists.
 ```
 
 ## Runtime and deploy prohibitions

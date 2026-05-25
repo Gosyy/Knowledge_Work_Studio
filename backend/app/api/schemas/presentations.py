@@ -76,3 +76,97 @@ class PresentationSchema(BaseModel):
             }
         }
     )
+
+
+from datetime import datetime as _datetime_for_api_v1
+from typing import Any, Literal
+
+from pydantic import Field
+
+
+class PresentationApiCreateRequestSchema(BaseModel):
+    """API-first presentation creation contract for KR-7C."""
+
+    session_id: str | None = None
+    title: str | None = None
+    objective: str = Field(min_length=1)
+    audience: str | None = None
+    scenario: str | None = None
+    language: str = "ru"
+    slide_count: int | None = Field(default=None, ge=1, le=100)
+    source_ids: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiSourceAttachRequestSchema(BaseModel):
+    source_file_ids: list[str] = Field(default_factory=list)
+    document_ids: list[str] = Field(default_factory=list)
+    presentation_ids: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiPlanRequestSchema(BaseModel):
+    objective: str | None = None
+    force_replan: bool = False
+    source_ids: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiSlidePatchRequestSchema(BaseModel):
+    title: str | None = None
+    takeaway: str | None = None
+    content: dict[str, Any] = Field(default_factory=dict)
+    change_summary: str | None = None
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiRenderRequestSchema(BaseModel):
+    format: Literal["pptx", "pdf", "png"] = "pptx"
+    quality_gate: bool = True
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiContractStatusSchema(BaseModel):
+    api_version: str = "presentation_api.v1"
+    status: Literal["not_implemented"] = "not_implemented"
+    phase: str = "KR-7C"
+    message: str = "Endpoint contract is declared; runtime implementation belongs to a later KR-7C subphase."
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiMetadataResponseSchema(BaseModel):
+    api_version: str
+    presentation: PresentationSchema
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiPlanSnapshotResponseSchema(BaseModel):
+    api_version: str
+    snapshot_id: str
+    presentation_id: str
+    presentation_version_id: str | None
+    created_from_task_id: str | None
+    change_summary: str | None
+    created_at: _datetime_for_api_v1
+    schema_version: str
+    plan: dict[str, Any]
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationApiSlidesResponseSchema(BaseModel):
+    api_version: str
+    presentation_id: str
+    snapshot_id: str
+    presentation_version_id: str | None
+    schema_version: str
+    slides: list[dict[str, Any]]
+
+    model_config = ConfigDict(extra="forbid")

@@ -491,3 +491,26 @@ SQL_DRAFT_SCHEMA_V1.sql does not whitelist obsolete openai/qwen/noop provider va
 active test fixtures avoid presenting legacy local-model fallback as a current option;
 full runner and Docker smoke pass before LOCAL ACCEPT.
 ```
+
+
+### KR-7C.1 API-first Presentation contract skeleton
+
+Purpose:
+
+```text
+start KR-7C by exposing a versioned /api/v1 Presentation contract that can be consumed by replaceable frontend clients;
+keep legacy /tasks and unversioned presentation endpoints as compatibility adapters;
+fail closed for future mutation/render/export/quality endpoints until their runtime implementation is delivered in later KR-7C subphases.
+```
+
+Acceptance:
+
+```text
+/api/v1/presentations OpenAPI contract exists;
+/api/v1/presentations/{presentation_id} exposes safe metadata;
+/api/v1/presentations/{presentation_id}/plan and /slides expose safe plan/slide payloads from existing snapshots;
+future mutation/render/export/quality endpoints return explicit 501 instead of pretending to work;
+scripts/kw_presentation_api_contract_check.py passes;
+legacy /tasks slides path remains available;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```

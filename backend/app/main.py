@@ -14,6 +14,7 @@ _OPENAPI_TAGS = [
     {"name": "uploads", "description": "File upload endpoints that attach source files to a session."},
     {"name": "tasks", "description": "Task creation, synchronous execution, queued execution, semantic execution, and task status endpoints."},
     {"name": "artifacts", "description": "Artifact listing, metadata lookup, and download endpoints for generated outputs."},
+    {"name": "presentation-api-v1", "description": "API-first KR-7C Presentation contract endpoints for replaceable frontend clients."},
 ]
 
 configure_logging(get_settings().log_level)
