@@ -77,7 +77,7 @@ def test_rf4_validates_direct_gigachat_offline_runtime_settings() -> None:
     assert report.direct_gigachat_config_ready is True
     assert report.no_silent_fallback is True
     assert report.no_litellm_override is True
-    assert report.no_ollama_override is True
+    assert report.no_local_small_llm_override is True
     assert report.no_public_internet_runtime is True
     assert report.credentials_configured is True
     assert report.safe_metadata["raw_secret_values_stored"] is False

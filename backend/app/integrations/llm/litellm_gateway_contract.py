@@ -28,8 +28,6 @@ ENV_KEYS = (
     "LITELLM_GATEWAY_URL",
     "LITELLM_GATEWAY_MODEL",
     "LITELLM_GATEWAY_API_KEY",
-    "OLLAMA_API_BASE_URL",
-    "OLLAMA_MODEL",
 )
 
 
@@ -171,7 +169,6 @@ def build_litellm_gateway_manifest(
         "gigachat_api": endpoint_summary(values.get("GIGACHAT_API_BASE_URL", ""), allow_placeholders=allow_placeholders).as_dict(),
         "gigachat_auth": endpoint_summary(values.get("GIGACHAT_AUTH_URL", ""), allow_placeholders=allow_placeholders).as_dict(),
         "litellm_gateway": endpoint_summary(values.get("LITELLM_GATEWAY_URL", ""), allow_placeholders=allow_placeholders).as_dict(),
-        "ollama": endpoint_summary(values.get("OLLAMA_API_BASE_URL", ""), allow_placeholders=allow_placeholders).as_dict(),
     }
 
     errors: list[str] = []
@@ -224,9 +221,6 @@ def build_litellm_gateway_manifest(
     if values.get("LITELLM_GATEWAY_URL", "").strip() and transport != "litellm_gateway":
         warnings.append("LITELLM_GATEWAY_URL is configured but LLM_TRANSPORT_MODE is not litellm_gateway")
 
-    if values.get("OLLAMA_API_BASE_URL", "").strip() and app_env not in {"development", "test"}:
-        warnings.append("OLLAMA is fallback/dev only and must not become production default")
-
     return {
         "schema_version": SCHEMA_VERSION,
         "workflow_id": WORKFLOW_ID,
@@ -262,7 +256,6 @@ def build_litellm_gateway_manifest(
         "controls": {
             "direct_gigachat_remains_first_class": True,
             "litellm_gateway_is_optional": True,
-            "ollama_is_dev_fallback_only": True,
             "no_network_probe_by_default": True,
             "secrets_redacted": True,
             "offline_intranet_required": offline_intranet,

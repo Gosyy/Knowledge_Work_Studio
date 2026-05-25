@@ -44,7 +44,7 @@ LITELLM_GATEWAY_MODEL=gigachat-proxy
 LITELLM_GATEWAY_API_KEY=<internal gateway token if enabled>
 ```
 
-Ollama remains development/fallback only. It is not the production default and must not be selected as the offline provider.
+Local-small-LLM endpoints are not part of active product runtime scope. Historical references may remain in archive/codex materials only.
 
 ## S1 acceptance
 

@@ -199,14 +199,14 @@ def _comparison_table_specs(source_text: str, count: int) -> list[dict[str, Any]
     default = _first_row_matching(rows, "direct local gigachat") or (rows[0] if rows else {})
     litellm = _first_row_matching(rows, "litellm")
     cloud = _first_row_matching(rows, "cloud")
-    ollama = _first_row_matching(rows, "ollama")
-    options = [r.get("option", "option") for r in rows[:5]] or ["Direct local GigaChat", "LiteLLM gateway", "Ollama fallback", "Cloud LLM"]
+    local_fallback = _first_row_matching(rows, "fallback") or _first_row_matching(rows, "local model")
+    options = [r.get("option", "option") for r in rows[:5]] or ["Direct local GigaChat", "LiteLLM gateway", "Unsupported local model option", "Cloud LLM"]
     specs = [
         _spec(SlideType.TITLE, "Decision: keep local GigaChat as default", [_decision_sentence(source_text), "Frame alternatives by offline fit, operational surface, and data locality."]),
         _spec(SlideType.COMPARISON, "Decision matrix: runtime options", ["Options: " + "; ".join(options), "Compare each option by strength, weakness, and recommendation."]),
         _spec(SlideType.CONCLUSION, "Recommended default: Direct local GigaChat", [_row_text(default, "strength"), _row_text(default, "weakness"), _row_text(default, "recommendation")]),
         _spec(SlideType.CONTENT, "Optional path: LiteLLM gateway on Server 2", [_row_text(litellm, "strength"), _row_text(litellm, "weakness"), _row_text(litellm, "recommendation")]),
-        _spec(SlideType.CONTENT, "Fallback boundary: Ollama remains non-production", [_row_text(ollama, "strength"), _row_text(ollama, "weakness"), _row_text(ollama, "recommendation")]),
+        _spec(SlideType.CONTENT, "Runtime boundary: local model option is not product runtime", [_row_text(local_fallback, "strength"), _row_text(local_fallback, "weakness"), _row_text(local_fallback, "recommendation")]),
         _spec(SlideType.CONCLUSION, "Rejected default: cloud LLM for production", [_row_text(cloud, "strength"), _row_text(cloud, "weakness"), _row_text(cloud, "recommendation")]),
         _spec(SlideType.DATA, "Release constraint: measure quality before expansion", ["Use RC1 to measure workflow quality before expanding runtime scope.", "Preserve offline-first defaults and data locality."]),
     ]
@@ -254,7 +254,7 @@ def _technical_architecture_specs(source_text: str, count: int) -> list[dict[str
         _spec(SlideType.TITLE, "Architecture review: offline KW Studio topology", [_sentence_containing(source_text, "three offline") or _segments(source_text)[0]]),
         _spec(SlideType.SECTION, "Topology map: Server 1/2/3 responsibilities", [server1, server2, server3]),
         _spec(SlideType.CONTENT, "Production path: direct local GigaChat", [default_route, "Keep cloud LLM routes outside the default production runtime."]),
-        _spec(SlideType.CONTENT, "Server 2 boundary: optional gateway and heavy runtime", [server2, "Treat LiteLLM/Ollama paths as optional transport, fallback, or experimental capacity, not production default."]),
+        _spec(SlideType.CONTENT, "Server 2 boundary: optional gateway and heavy runtime", [server2, "Treat LiteLLM as optional transport only; non-GigaChat local model paths are outside product runtime scope."]),
         _spec(SlideType.DATA, "Closed foundation controls: deployment and diagnostics", [foundation, "Use preflight, readiness, diagnostics, backup, restore, and dependency checks as operator gates."]),
         _spec(SlideType.CONTENT, "Runtime capabilities: plan, render, QA, provenance", [k_phase, "Preserve editable plans, retry, source-to-slide evidence, and artifact history for operator review."]),
         _spec(SlideType.CONCLUSION, "Failure modes and operator gates", [review_focus, "Gate endpoint misconfiguration, hidden network use, fallback drift, provenance gaps, and visual/layout regressions."]),

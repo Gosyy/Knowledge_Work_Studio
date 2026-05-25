@@ -201,7 +201,7 @@ Server 3 local_intranet proof
 human approval
 ```
 
-The default production/offline LLM direction is direct local GigaChat on Server 3. LiteLLM is optional gateway infrastructure, not a replacement for GigaChat. Ollama/local models are fallback/dev/experimental unless separately accepted.
+The default production/offline LLM direction is direct local GigaChat on Server 3. LiteLLM is optional gateway infrastructure, not a replacement for GigaChat. Ollama/local-small-LLM endpoints are outside active product/runtime scope; historical references belong in archive/codex evidence only.
 
 ### 4.4 No uncontrolled dependency fixes
 
@@ -1150,3 +1150,20 @@ run scripts/kw_assistant_governance_check.py --repo-root . --require-ready befor
 The KR-GOV-1 governance checker and its smoke test are active acceptance-surface items. They must be classified by `scripts/kw_test_inventory.py` as `handoff_policy` so the KR-7A.1 test portfolio inventory does not fail closed on unclassified governance checks.
 
 Future patches that add new checkers, runners, or smoke tests must update the test inventory classification rules in the same patch, or the full runner will reject the change during `backend/tests/test_portfolio/test_inventory_classification.py`.
+
+
+<!-- KR7B1_LLM_PROVIDER_SCOPE_CLEANUP -->
+
+## KR-7B.1 active LLM provider scope cleanup
+
+KR-7B.1 starts the KR-7B GigaChat-only cleanup by removing Ollama/local-small-LLM endpoint handling from active runtime topology and hardening checks. GigaChat remains the only active product provider. LiteLLM remains an optional transport to GigaChat, not a provider replacement. Fake/noop providers remain explicit development/test doubles only.
+
+Active documentation and runtime code must not present Ollama/local-small-LLM as an available fallback, product provider, topology endpoint, or UI/runtime option. Historical references may remain only in `docs/archive/`, `docs/codex/`, explicitly historical fixtures, or migration/audit text that clearly marks them as non-active.
+
+Guardrail:
+
+```text
+scripts/kw_llm_provider_scope_check.py --repo-root . --require-ready
+```
+
+Future patches touching LLM provider selection, runtime topology, LiteLLM transport, public GigaChat tests, fake/noop test doubles, or Slides planning text must keep this checker ready and update `docs/PROJECT_PROHIBITIONS.md` when new forbidden provider-scope shortcuts are found.

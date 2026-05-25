@@ -101,3 +101,16 @@ def test_kw_test_inventory_classifies_assistant_governance_items(tmp_path: Path)
     assert governance_script["decision"] == "keep"
     assert governance_smoke["contract"] == "handoff_policy"
     assert governance_smoke["decision"] == "keep"
+
+
+def test_kw_test_inventory_classifies_kr7b_llm_provider_scope_items(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    inventory = _run_inventory(repo_root, tmp_path)
+    by_path = {entry["path"]: entry for entry in inventory["tests"]}
+
+    scope_script = by_path["scripts/kw_llm_provider_scope_check.py"]
+    scope_smoke = by_path["backend/tests/smoke/test_kr7b_llm_provider_scope.py"]
+    assert scope_script["contract"] == "gigachat_runtime"
+    assert scope_script["decision"] == "keep"
+    assert scope_smoke["contract"] == "gigachat_runtime"
+    assert scope_smoke["decision"] == "keep"

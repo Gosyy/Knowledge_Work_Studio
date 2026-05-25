@@ -27,8 +27,6 @@ ENV_KEYS = (
     "LITELLM_GATEWAY_URL",
     "LITELLM_GATEWAY_MODEL",
     "LITELLM_GATEWAY_API_KEY",
-    "OLLAMA_API_BASE_URL",
-    "OLLAMA_MODEL",
 )
 
 
@@ -161,7 +159,6 @@ def build_contract(values: dict[str, str], *, allow_placeholders: bool) -> dict[
         "gigachat_api": endpoint_summary(values.get("GIGACHAT_API_BASE_URL", ""), allow_placeholders=allow_placeholders).as_dict(),
         "gigachat_auth": endpoint_summary(values.get("GIGACHAT_AUTH_URL", ""), allow_placeholders=allow_placeholders).as_dict(),
         "litellm_gateway": endpoint_summary(values.get("LITELLM_GATEWAY_URL", ""), allow_placeholders=allow_placeholders).as_dict(),
-        "ollama": endpoint_summary(values.get("OLLAMA_API_BASE_URL", ""), allow_placeholders=allow_placeholders).as_dict(),
     }
 
     errors: list[str] = []
@@ -177,9 +174,6 @@ def build_contract(values: dict[str, str], *, allow_placeholders: bool) -> dict[
             errors.append("direct_gigachat requires GIGACHAT_AUTH_URL")
     if transport == "litellm_gateway" and not values.get("LITELLM_GATEWAY_URL", "").strip():
         errors.append("litellm_gateway requires LITELLM_GATEWAY_URL")
-    if values.get("OLLAMA_API_BASE_URL", "").strip() and app_env not in {"development", "test"}:
-        warnings.append("OLLAMA_API_BASE_URL is configured outside development/test; Ollama is fallback/dev only")
-
     if deployment_mode == "offline_intranet":
         for name, summary in endpoints.items():
             if summary["configured"] and not summary["private_or_internal"]:
@@ -201,7 +195,6 @@ def build_contract(values: dict[str, str], *, allow_placeholders: bool) -> dict[
         "optional_components": {
             "server_2_litellm_gateway": transport == "litellm_gateway" or bool(values.get("LITELLM_GATEWAY_URL", "").strip()),
             "server_2_heavy_runtime_modules": bool(values.get("LITELLM_GATEWAY_URL", "").strip()),
-            "ollama_fallback_dev_only": bool(values.get("OLLAMA_API_BASE_URL", "").strip()),
         },
         "errors": errors,
         "warnings": warnings,

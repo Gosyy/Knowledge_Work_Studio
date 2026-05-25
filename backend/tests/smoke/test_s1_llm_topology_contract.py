@@ -67,12 +67,14 @@ def test_s1_litellm_gateway_is_optional_transport_for_gigachat() -> None:
     assert provider.model_name == "gigachat-proxy"
     assert contract.status == "ready"
     assert contract.optional_components["server_2_litellm_gateway"] is True
+    assert "legacy_local_llm" not in contract.endpoints
+    assert "legacy_local_llm_fallback_dev_only" not in contract.optional_components
 
 
 def test_s1_offline_mode_rejects_non_gigachat_provider() -> None:
     settings = Settings(
         deployment_mode="offline_intranet",
-        llm_provider="ollama",
+        llm_provider="local_model",
         llm_transport_mode="direct_gigachat",
         gigachat_api_base_url="http://10.0.0.3:8080/api",
         gigachat_auth_url="http://10.0.0.3:8080/auth",

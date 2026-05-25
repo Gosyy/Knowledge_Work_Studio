@@ -54,7 +54,7 @@ def bad_semantic_plan() -> PresentationPlan:
                 slide_type=SlideType.COMPARISON,
                 story_arc_stage=StoryArcStage.ANALYSIS,
                 title="Weak comparison synthesis",
-                bullets=("Direct local GigaChat", "Optional gateway", "Ollama fallback"),
+                bullets=("Direct local GigaChat", "Optional gateway", "unsupported local-model option"),
                 layout_hint="two_column_comparison",
                 blocks=(
                     ComparisonBlock(
@@ -98,7 +98,7 @@ def good_semantic_plan() -> PresentationPlan:
                 slide_type=SlideType.COMPARISON,
                 story_arc_stage=StoryArcStage.RECOMMENDATION,
                 title="Decision matrix preserves runtime option trade-offs",
-                bullets=("Use direct local GigaChat by default", "Keep LiteLLM optional", "Keep Ollama fallback only"),
+                bullets=("Use direct local GigaChat by default", "Keep LiteLLM optional", "Keep unsupported local-model option out of runtime scope"),
                 layout_hint="two_column_comparison",
                 blocks=(
                     ComparisonBlock(

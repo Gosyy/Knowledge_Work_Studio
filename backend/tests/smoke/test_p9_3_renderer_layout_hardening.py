@@ -140,7 +140,7 @@ def test_p9_3_normalizes_existing_generic_rch1_blocks() -> None:
                 story_arc_stage=StoryArcStage.ANALYSIS,
                 title="Decision matrix: runtime options",
                 bullets=(
-                    "Options: Direct local GigaChat; LiteLLM gateway; Ollama fallback; Cloud LLM; Manual slide creation",
+                    "Options: Direct local GigaChat; LiteLLM gateway; Unsupported local-model option; Cloud LLM; Manual slide creation",
                     "Compare each option by strength, weakness, and recommendation.",
                 ),
                 blocks=(

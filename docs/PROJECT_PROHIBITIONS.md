@@ -30,6 +30,7 @@ weaken production/offline guardrails to make tests pass;
 use manual APP_ENV=development as a public GigaChat test workaround;
 claim public internet GigaChat tests prove offline/intranet readiness;
 use fake/noop LLM providers in production runtime;
+present Ollama/local-small-LLM endpoints as an active product fallback, provider, topology endpoint, or UI/runtime option;
 regenerate deploy env with a new POSTGRES_PASSWORD and recommend container-only cleanup while preserving the old Postgres metadata volume;
 delete artifact/storage volumes as a side effect of metadata credential repair;
 print Authorization Keys, access tokens, GigaChat secrets, POSTGRES_PASSWORD, `.env.deploy`, or raw LLM responses in logs.

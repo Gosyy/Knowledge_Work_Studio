@@ -98,7 +98,7 @@ External scripts from a downloads directory are allowed only as bootstrap or eme
 Production must not assume public Internet access.
 The default production LLM topology remains direct local GigaChat on Server 3.
 LiteLLM may be an optional gateway, not a replacement for GigaChat.
-Ollama or other local models are development or fallback paths unless separately accepted.
+Local-small-LLM endpoints are outside active product/runtime scope unless a future ADR explicitly reopens that decision.
 
 Do not claim local_intranet proof, Kimi-level quality, selected parity, or human approval without corresponding evidence artifacts and logs.
 

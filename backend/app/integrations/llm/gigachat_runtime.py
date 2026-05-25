@@ -60,7 +60,7 @@ class GigaChatRuntimeHardeningReport:
     direct_gigachat_config_ready: bool
     no_silent_fallback: bool
     no_litellm_override: bool
-    no_ollama_override: bool
+    no_local_small_llm_override: bool
     no_public_internet_runtime: bool
     endpoint_diagnostics_supported: bool
     timeout_seconds: float
@@ -83,7 +83,7 @@ class GigaChatRuntimeHardeningReport:
             "direct_gigachat_config_ready": self.direct_gigachat_config_ready,
             "no_silent_fallback": self.no_silent_fallback,
             "no_litellm_override": self.no_litellm_override,
-            "no_ollama_override": self.no_ollama_override,
+            "no_local_small_llm_override": self.no_local_small_llm_override,
             "no_public_internet_runtime": self.no_public_internet_runtime,
             "endpoint_diagnostics_supported": self.endpoint_diagnostics_supported,
             "timeout_seconds": self.timeout_seconds,
@@ -148,7 +148,6 @@ def build_gigachat_runtime_hardening_report(
         "gigachat_api": endpoint_runtime_summary(settings.gigachat_api_base_url, allow_placeholders=allow_placeholders).as_dict(),
         "gigachat_auth": endpoint_runtime_summary(settings.gigachat_auth_url, allow_placeholders=allow_placeholders).as_dict(),
         "litellm_gateway": endpoint_runtime_summary(settings.litellm_gateway_url, allow_placeholders=allow_placeholders).as_dict(),
-        "ollama": endpoint_runtime_summary(settings.ollama_api_base_url, allow_placeholders=allow_placeholders).as_dict(),
     }
     credentials_configured = bool(settings.gigachat_client_id.strip() and settings.gigachat_client_secret.strip())
     timeout_configured = settings.gigachat_timeout_seconds > 0
@@ -192,11 +191,8 @@ def build_gigachat_runtime_hardening_report(
                 errors.append(f"{name} endpoint must be private/internal for offline_intranet")
     if not timeout_configured:
         errors.append("GIGACHAT_TIMEOUT_SECONDS must be greater than zero")
-    if settings.ollama_api_base_url.strip() and app_env not in {"development", "test"}:
-        warnings.append("Ollama endpoint configured outside development/test; Ollama remains fallback/dev only")
-
     no_litellm_override = not (provider == GIGACHAT_PROVIDER and transport == "litellm_gateway")
-    no_ollama_override = provider != "ollama"
+    no_local_small_llm_override = provider not in {"local_model", "local_small_llm", "unsupported_local_model"}
     no_public_runtime = not any(
         endpoints[name]["configured"] and not endpoints[name]["private_or_internal"]
         for name in active_runtime_endpoint_names
@@ -220,7 +216,7 @@ def build_gigachat_runtime_hardening_report(
         "server_2_litellm_gateway_optional": True,
         "no_silent_fallback": True,
         "no_litellm_override": no_litellm_override,
-        "no_ollama_override": no_ollama_override,
+        "no_local_small_llm_override": no_local_small_llm_override,
         "no_public_internet_runtime": no_public_runtime,
         "endpoint_diagnostics_supported": True,
         "timeout_configured": timeout_configured,
@@ -245,7 +241,7 @@ def build_gigachat_runtime_hardening_report(
         direct_gigachat_config_ready=config_ready,
         no_silent_fallback=True,
         no_litellm_override=no_litellm_override,
-        no_ollama_override=no_ollama_override,
+        no_local_small_llm_override=no_local_small_llm_override,
         no_public_internet_runtime=no_public_runtime,
         endpoint_diagnostics_supported=True,
         timeout_seconds=settings.gigachat_timeout_seconds,
@@ -300,8 +296,6 @@ def _active_runtime_endpoint_names(provider: str, transport: str) -> tuple[str, 
         return ("gigachat_api", "gigachat_auth")
     if provider == GIGACHAT_PROVIDER and transport == "litellm_gateway":
         return ("litellm_gateway",)
-    if provider == "ollama":
-        return ("ollama",)
     return ()
 
 def endpoint_runtime_summary(value: str, *, allow_placeholders: bool) -> GigaChatEndpointRuntimeSummary:

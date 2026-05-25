@@ -355,7 +355,7 @@ Current known quality target:
 
 ### LLM integration layer
 
-The LLM integration layer selects and validates the runtime provider. Production/offline mode is GigaChat-first. LiteLLM may be an optional gateway transport. Fake/noop providers are for development/test contexts, not production offline runtime.
+The LLM integration layer selects and validates the runtime provider. Production/offline mode is GigaChat-first. LiteLLM may be an optional gateway transport. Fake/noop providers are for explicit development/test contexts only, not production offline runtime. Ollama/local-small-LLM endpoints are not part of active product runtime scope.
 
 Scheme:
 
@@ -673,7 +673,7 @@ Important constraints:
 
 - production/offline mode has no public internet;
 - GigaChat is the only LLM runtime;
-- local small LLMs and arbitrary model selectors are not part of the target runtime;
+- local small LLMs, Ollama endpoints, and arbitrary model selectors are not part of the target runtime;
 - images must be selected from uploaded documents/templates/assets, not generated;
 - charts must be backed by real data;
 - professional quality claims require content/design/coherence/data/assets/export gates.

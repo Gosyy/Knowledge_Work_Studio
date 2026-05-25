@@ -48,12 +48,10 @@ def build_llm_topology_contract(settings: Settings) -> LLMTopologyContract:
         "gigachat_api": _endpoint_summary(settings.gigachat_api_base_url),
         "gigachat_auth": _endpoint_summary(settings.gigachat_auth_url),
         "litellm_gateway": _endpoint_summary(settings.litellm_gateway_url),
-        "ollama": _endpoint_summary(settings.ollama_api_base_url),
     }
     optional_components = {
         "server_2_litellm_gateway": transport_mode == "litellm_gateway" or bool(settings.litellm_gateway_url.strip()),
         "server_2_heavy_runtime_modules": bool(settings.litellm_gateway_url.strip()),
-        "ollama_fallback_dev_only": bool(settings.ollama_api_base_url.strip()),
     }
 
     errors: list[str] = []
@@ -70,9 +68,6 @@ def build_llm_topology_contract(settings: Settings) -> LLMTopologyContract:
             errors.append("direct_gigachat requires GIGACHAT_AUTH_URL")
     if transport_mode == "litellm_gateway" and not settings.litellm_gateway_url.strip():
         errors.append("litellm_gateway transport requires LITELLM_GATEWAY_URL")
-    if settings.ollama_api_base_url.strip() and settings.app_env.strip().lower() not in {"development", "test"}:
-        warnings.append("OLLAMA_API_BASE_URL is configured outside development/test; Ollama is fallback/dev only")
-
     for name, summary in endpoints.items():
         if summary["configured"] and not summary["private_or_internal"] and deployment_mode == "offline_intranet":
             warnings.append(f"{name} endpoint does not look private/internal for offline_intranet")

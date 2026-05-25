@@ -55,7 +55,7 @@ def _build_bad_plan():
                 slide_type=SlideType.COMPARISON,
                 story_arc_stage=StoryArcStage.ANALYSIS,
                 title="Decision comparison needs operator review",
-                bullets=("Direct local GigaChat default", "Optional LiteLLM gateway", "Ollama fallback is experimental"),
+                bullets=("Direct local GigaChat default", "Optional LiteLLM gateway", "Local-model fallback is out of runtime scope"),
                 layout_hint="two_column_comparison",
                 blocks=(
                     ComparisonBlock(
@@ -102,7 +102,7 @@ def _build_good_plan():
                 slide_type=SlideType.COMPARISON,
                 story_arc_stage=StoryArcStage.RECOMMENDATION,
                 title="Decision matrix preserves runtime option trade-offs",
-                bullets=("Direct local GigaChat is the recommended default", "LiteLLM gateway stays optional", "Ollama remains fallback only"),
+                bullets=("Direct local GigaChat is the recommended default", "LiteLLM gateway stays optional", "Local-model fallback remains out of runtime scope"),
                 layout_hint="two_column_comparison",
                 blocks=(
                     ComparisonBlock(

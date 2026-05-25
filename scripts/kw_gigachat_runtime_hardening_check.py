@@ -184,7 +184,7 @@ def run_runtime_smoke(repo_root: Path) -> dict[str, Any]:
         "direct_provider_built": isinstance(default_provider, GigaChatProvider),
         "no_silent_fallback": ready_report.no_silent_fallback,
         "no_litellm_override": ready_report.no_litellm_override,
-        "no_ollama_override": ready_report.no_ollama_override,
+        "no_local_small_llm_override": ready_report.no_local_small_llm_override,
         "public_endpoint_rejected": public_report.status != "ready",
         "production_fake_provider_rejected": fake_rejected,
         "endpoint_diagnostics_supported": ready_report.endpoint_diagnostics_supported,
