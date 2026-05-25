@@ -1167,3 +1167,18 @@ scripts/kw_llm_provider_scope_check.py --repo-root . --require-ready
 ```
 
 Future patches touching LLM provider selection, runtime topology, LiteLLM transport, public GigaChat tests, fake/noop test doubles, or Slides planning text must keep this checker ready and update `docs/PROJECT_PROHIBITIONS.md` when new forbidden provider-scope shortcuts are found.
+
+
+## KR-7B.2 fake/noop provider test-double boundary
+
+KR-7B.2 tightens the GigaChat-only runtime cleanup after KR-7B.1. `fake` and `noop` LLM providers are now explicit `app_env=test` doubles only. They must not be accepted in development, production, offline/intranet deploy, UI runtime, or operator workflows.
+
+Validation surface:
+
+```text
+backend/app/integrations/llm/gigachat_runtime.py rejects fake/noop outside app_env=test;
+backend/app/composition.py only builds fake/noop LLM text service when app_env=test;
+scripts/kw_llm_provider_scope_check.py verifies this boundary;
+backend/tests/integrations/test_llm_provider_factory.py covers rejection outside test;
+backend/tests/smoke/test_kr7b_llm_provider_scope.py covers the provider-scope checker.
+```

@@ -80,3 +80,21 @@ def test_factory_unit_cases_are_explicitly_test_scoped() -> None:
     provider = build_llm_provider(settings)
     assert isinstance(provider, FakeLLMProvider)
     assert provider.complete(request=provider_complete_request()).text == "scoped"
+
+
+@pytest.mark.parametrize("provider", ["fake", "noop"])
+def test_build_llm_provider_rejects_fake_provider_outside_test_env(provider: str) -> None:
+    with pytest.raises(ValueError, match="fake/noop LLM provider is allowed only in app_env=test"):
+        build_llm_provider(Settings(app_env="development", llm_provider=provider, fake_llm_response="not-runtime"))
+
+
+def test_build_llm_provider_rejects_fake_provider_in_production_offline_runtime() -> None:
+    with pytest.raises(ValueError, match="fake/noop LLM provider is allowed only in app_env=test"):
+        build_llm_provider(
+            Settings(
+                app_env="production",
+                deployment_mode="offline_intranet",
+                llm_provider="fake",
+                fake_llm_response="not-runtime",
+            )
+        )

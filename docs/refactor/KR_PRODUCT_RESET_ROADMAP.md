@@ -449,3 +449,23 @@ AGENTS.md, README.md, CODEX_PROJECT_BRIEFING.md, and PROJECT_MIGRATION_HANDOFF.m
 git diff --check passes;
 full runner and Docker smoke pass before LOCAL ACCEPT.
 ```
+
+
+### KR-7B.2 fake/noop provider test-double boundary
+
+Purpose:
+
+```text
+finish the second layer of KR-7B active provider cleanup by ensuring fake/noop LLM providers are explicit app_env=test doubles only;
+reject fake/noop in development, production, offline/intranet runtime, and operator workflows;
+keep GigaChat as the only active runtime provider while preserving test doubles for isolated tests.
+```
+
+Acceptance:
+
+```text
+provider factory rejects fake/noop outside app_env=test;
+composition only wires fake/noop LLM text service under app_env=test;
+LLM provider scope checker passes;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```

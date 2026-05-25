@@ -118,10 +118,15 @@ class GigaChatRuntimeSelectionError(ValueError):
 
 
 def validate_llm_runtime_selection(settings: Settings) -> None:
-    # Preserve development/test ergonomics: provider construction may happen with
-    # placeholder or empty endpoints, while runtime calls still validate credentials.
-    # RF4 strict no-silent-fallback policy applies to production offline/intranet.
-    if settings.app_env.strip().lower() in {"development", "test"}:
+    # Preserve development/test ergonomics for real GigaChat and gateway construction
+    # with placeholder or empty endpoints, while runtime calls still validate credentials.
+    # fake/noop providers are explicit app_env=test doubles only; development runtime
+    # must not silently become a fake provider path.
+    app_env = settings.app_env.strip().lower()
+    provider = settings.llm_provider.strip().lower()
+    if app_env == "test":
+        return
+    if app_env == "development" and provider not in {"fake", "noop"}:
         return
     report = build_gigachat_runtime_hardening_report(settings, require_credentials=False, allow_placeholders=True)
     if report.errors:
@@ -164,11 +169,13 @@ def build_gigachat_runtime_hardening_report(
             "this is not offline/intranet deployment proof"
         )
 
-    if deployment_mode == "offline_intranet" and provider != GIGACHAT_PROVIDER:
-        if provider in {"fake", "noop"} and app_env in {"development", "test"}:
-            warnings.append("fake/noop LLM provider is allowed only in development/test")
+    if provider in {"fake", "noop"}:
+        if app_env == "test":
+            warnings.append("fake/noop LLM provider is allowed only as an explicit test double")
         else:
-            errors.append("offline_intranet production runtime requires LLM_PROVIDER=gigachat")
+            errors.append("fake/noop LLM provider is allowed only in app_env=test")
+    elif deployment_mode == "offline_intranet" and provider != GIGACHAT_PROVIDER:
+        errors.append("offline_intranet production runtime requires LLM_PROVIDER=gigachat")
     if provider == GIGACHAT_PROVIDER and transport not in {GIGACHAT_DIRECT_TRANSPORT, "litellm_gateway"}:
         errors.append("LLM_TRANSPORT_MODE must be direct_gigachat or litellm_gateway")
     if deployment_mode == "offline_intranet" and provider == GIGACHAT_PROVIDER and transport != GIGACHAT_DIRECT_TRANSPORT:

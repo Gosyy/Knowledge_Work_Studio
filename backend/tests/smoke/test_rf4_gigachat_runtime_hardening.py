@@ -94,7 +94,7 @@ def test_rf4_rejects_public_endpoint_and_production_fake_provider() -> None:
     assert public_report.no_public_internet_runtime is False
     assert any("private/internal" in error for error in public_report.errors)
 
-    with pytest.raises(GigaChatRuntimeSelectionError, match="requires LLM_PROVIDER=gigachat"):
+    with pytest.raises(GigaChatRuntimeSelectionError, match="fake/noop LLM provider is allowed only in app_env=test"):
         build_llm_provider(Settings(app_env="production", deployment_mode="offline_intranet", llm_provider="fake"))
 
 

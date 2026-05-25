@@ -77,9 +77,21 @@ REQUIRED_ABSENCE_BY_FILE = {
 }
 
 REQUIRED_ALLOWED_CONTEXT_PHRASES = {
-    "README.md": "Ollama/local-small-LLM endpoints are not part of active product runtime scope",
-    "docs/PROJECT_PROHIBITIONS.md": "present Ollama/local-small-LLM endpoints as an active product fallback",
-    "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": "outside active product/runtime scope",
+    "README.md": "Fake/noop providers are explicit test doubles only",
+    "docs/PROJECT_PROHIBITIONS.md": "use fake/noop LLM providers outside app_env=test automated test doubles",
+    "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": "fake/noop provider test-double boundary",
+}
+
+REQUIRED_TEST_DOUBLE_BOUNDARY_PHRASES = {
+    "backend/app/integrations/llm/gigachat_runtime.py": (
+        'if app_env == "test":',
+        'if app_env == "development" and provider not in {"fake", "noop"}:',
+        'if provider in {"fake", "noop"}:',
+        'fake/noop LLM provider is allowed only in app_env=test',
+    ),
+    "backend/app/composition.py": (
+        'fake_ready = provider in {"fake", "noop"} and settings.app_env.strip().lower() == "test"',
+    ),
 }
 
 
@@ -114,6 +126,7 @@ def build_report(repo_root: Path) -> dict[str, object]:
     scoped_absence_failures: list[dict[str, object]] = []
     missing_required_files: list[str] = []
     missing_allowed_context: list[dict[str, object]] = []
+    missing_test_double_boundary: list[dict[str, object]] = []
 
     for rel in REQUIRED_FILES:
         path = repo_root / rel
@@ -155,6 +168,14 @@ def build_report(repo_root: Path) -> dict[str, object]:
             missing_allowed_context.append({"path": rel, "required_phrase": phrase})
             issues.append(f"{rel} missing required non-active scope phrase: {phrase}")
 
+    for rel, phrases in REQUIRED_TEST_DOUBLE_BOUNDARY_PHRASES.items():
+        path = repo_root / rel
+        text = path.read_text(encoding="utf-8") if path.exists() else ""
+        for phrase in phrases:
+            if phrase not in text:
+                missing_test_double_boundary.append({"path": rel, "required_phrase": phrase})
+                issues.append(f"{rel} missing required fake/noop test-double boundary phrase: {phrase}")
+
     return {
         "schema_version": "kw_llm_provider_scope.v1",
         "status": "ready" if not issues else "not_ready",
@@ -165,6 +186,7 @@ def build_report(repo_root: Path) -> dict[str, object]:
         "scoped_absence_failures": scoped_absence_failures,
         "active_banned_hits": active_banned_hits,
         "missing_allowed_context": missing_allowed_context,
+        "missing_test_double_boundary": missing_test_double_boundary,
         "issues": issues,
     }
 

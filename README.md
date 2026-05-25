@@ -355,7 +355,7 @@ Current known quality target:
 
 ### LLM integration layer
 
-The LLM integration layer selects and validates the runtime provider. Production/offline mode is GigaChat-first. LiteLLM may be an optional gateway transport. Fake/noop providers are for explicit development/test contexts only, not production offline runtime. Ollama/local-small-LLM endpoints are not part of active product runtime scope.
+The LLM integration layer selects and validates the runtime provider. Production/offline mode is GigaChat-first. LiteLLM may be an optional gateway transport. Fake/noop providers are explicit test doubles only, not development, production, or offline runtime providers. Ollama/local-small-LLM endpoints are not part of active product runtime scope.
 
 Scheme:
 
@@ -464,14 +464,14 @@ scripts/deploy/kw_postgres_volume_guardrail.py
 
 ### Development/test mode
 
-Used for local development and automated tests. SQLite and fake/noop LLM providers are allowed only when explicitly scoped to development/test.
+Used for local development and automated tests. SQLite remains local/test-scoped; fake/noop LLM providers are allowed only as explicit automated-test doubles.
 
 Typical properties:
 
 ```text
 APP_ENV=test or development
 METADATA_BACKEND=sqlite when explicitly allowed
-LLM_PROVIDER=fake for test-only behavior
+LLM_PROVIDER=fake for automated-test-only behavior
 ```
 
 ### Offline/intranet mode

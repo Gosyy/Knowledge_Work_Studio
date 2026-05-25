@@ -11,6 +11,7 @@ It is forbidden to:
 ```text
 issue code patches without a verified local full-history checkout;
 issue repair runners from GitHub snippets alone;
+allow fake/noop providers in development runtime;
 assume a clean checkout without checking branch, HEAD and dirty tree;
 pull over unknown dirty state;
 run project validation through system Python when `.venv` is available;
@@ -29,7 +30,7 @@ It is forbidden to:
 weaken production/offline guardrails to make tests pass;
 use manual APP_ENV=development as a public GigaChat test workaround;
 claim public internet GigaChat tests prove offline/intranet readiness;
-use fake/noop LLM providers in production runtime;
+use fake/noop LLM providers outside app_env=test automated test doubles;
 present Ollama/local-small-LLM endpoints as an active product fallback, provider, topology endpoint, or UI/runtime option;
 regenerate deploy env with a new POSTGRES_PASSWORD and recommend container-only cleanup while preserving the old Postgres metadata volume;
 delete artifact/storage volumes as a side effect of metadata credential repair;

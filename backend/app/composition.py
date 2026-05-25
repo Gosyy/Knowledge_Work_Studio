@@ -279,7 +279,7 @@ def build_slides_llm_text_service_if_configured(settings: Settings) -> LLMTextSe
         and bool(settings.litellm_gateway_url.strip())
         and bool(settings.litellm_gateway_model.strip() or settings.gigachat_model.strip())
     )
-    fake_ready = provider in {"fake", "noop"}
+    fake_ready = provider in {"fake", "noop"} and settings.app_env.strip().lower() == "test"
     if not (direct_ready or gateway_ready or fake_ready):
         return None
     return build_llm_text_service(
