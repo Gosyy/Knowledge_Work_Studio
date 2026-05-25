@@ -446,9 +446,8 @@ CREATE TABLE IF NOT EXISTS llm_runs (
         CHECK (
             provider IN (
                 'gigachat',
-                'openai',
-                'qwen',
-                'noop',
+                'litellm_gateway',
+                'test_double',
                 'other'
             )
         ),

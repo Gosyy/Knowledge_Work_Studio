@@ -1156,7 +1156,7 @@ Future patches that add new checkers, runners, or smoke tests must update the te
 
 ## KR-7B.1 active LLM provider scope cleanup
 
-KR-7B.1 starts the KR-7B GigaChat-only cleanup by removing Ollama/local-small-LLM endpoint handling from active runtime topology and hardening checks. GigaChat remains the only active product provider. LiteLLM remains an optional transport to GigaChat, not a provider replacement. Fake/noop providers remain explicit development/test doubles only.
+KR-7B.1 starts the KR-7B GigaChat-only cleanup by removing Ollama/local-small-LLM endpoint handling from active runtime topology and hardening checks. GigaChat remains the only active product provider. LiteLLM remains an optional transport to GigaChat, not a provider replacement. Fake/noop providers were first scoped by KR-7B.1 and then tightened by KR-7B.2 to explicit `app_env=test` doubles only.
 
 Active documentation and runtime code must not present Ollama/local-small-LLM as an available fallback, product provider, topology endpoint, or UI/runtime option. Historical references may remain only in `docs/archive/`, `docs/codex/`, explicitly historical fixtures, or migration/audit text that clearly marks them as non-active.
 
@@ -1181,4 +1181,20 @@ backend/app/composition.py only builds fake/noop LLM text service when app_env=t
 scripts/kw_llm_provider_scope_check.py verifies this boundary;
 backend/tests/integrations/test_llm_provider_factory.py covers rejection outside test;
 backend/tests/smoke/test_kr7b_llm_provider_scope.py covers the provider-scope checker.
+```
+
+
+## KR-7B.3 final provider-scope UI/docs/config claim audit
+
+KR-7B.3 closes the residual provider-claim audit after KR-7B.1 and KR-7B.2. Active UI, docs, config examples, and schema drafts must not present Ollama, arbitrary local LLMs, fake providers, or noop providers as product/runtime/development options.
+
+Validation surface:
+
+```text
+.env.example omits fake/noop runtime settings from the production-like example;
+docs/product/PRODUCT_VISION.md says GigaChat intranet first instead of generic local LLM first;
+docs/refactor/CODEX_PROJECT_BRIEFING.md says fake/noop are app_env=test doubles only;
+SQL_DRAFT_SCHEMA_V1.sql no longer lists obsolete openai/qwen/noop provider options;
+backend/tests/fixtures/k_phase/rc1_golden_benchmark_cases.json uses unsupported local-model option instead of Ollama fallback;
+scripts/kw_llm_provider_scope_check.py verifies these residual claim boundaries.
 ```

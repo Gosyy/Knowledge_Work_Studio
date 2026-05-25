@@ -25,3 +25,5 @@ def test_kr7b_llm_provider_scope_checker_reports_ready() -> None:
     assert report["status"] == "ready"
     assert report["active_banned_hits"] == []
     assert report["scoped_absence_failures"] == []
+    assert report["missing_test_double_boundary"] == []
+    assert report["missing_residual_claim_boundaries"] == []

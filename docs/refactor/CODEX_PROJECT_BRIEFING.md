@@ -206,9 +206,9 @@ LLM_TRANSPORT_MODE=direct_gigachat
 
 This mode may use public GigaChat endpoints for temporary operator tests. It must warn that it is not offline/intranet proof. Do not replace this with manual `APP_ENV=development` overrides.
 
-### Test/development runtime
+### Test runtime and development runtime
 
-SQLite and fake/noop LLM providers are allowed only in explicit development/test scope. Direct `Settings(...)` tests that expect SQLite/fake behavior must set `app_env="test"` explicitly.
+SQLite remains allowed for explicit development/test metadata scenarios. Fake/noop LLM providers are allowed only as explicit `app_env="test"` doubles. Development runtime must use real GigaChat configuration or an explicit internal LiteLLM transport to GigaChat; it must not silently become a fake/noop provider path. Direct `Settings(...)` tests that expect SQLite/fake behavior must set `app_env="test"` explicitly.
 
 ## 8. Postgres volume credential-drift guardrail
 
@@ -257,7 +257,7 @@ Protected quality expectations:
 
 - GigaChat is the production/offline provider direction.
 - LiteLLM may be an optional gateway transport, not a provider replacement.
-- Fake/noop providers are for test/development only.
+- Fake/noop providers are app_env=test doubles only; they are not development runtime providers.
 - Runtime endpoint privacy checks must be scoped to the active transport.
 
 ## 10. Documentation update rules

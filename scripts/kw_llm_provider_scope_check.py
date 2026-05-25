@@ -74,6 +74,13 @@ REQUIRED_ABSENCE_BY_FILE = {
     "backend/app/integrations/llm/gigachat_runtime.py": ("ollama_api_base_url", '"ollama":'),
     "backend/app/integrations/llm/litellm_gateway_contract.py": ("OLLAMA_API_BASE_URL", '"ollama"'),
     "scripts/kw_llm_topology_check.py": ("OLLAMA_API_BASE_URL", "OLLAMA_MODEL", '"ollama"'),
+    ".env.example": ("FAKE_LLM_RESPONSE=",),
+    "SQL_DRAFT_SCHEMA_V1.sql": ("'openai'", "'qwen'", "'noop'"),
+    "backend/tests/fixtures/k_phase/rc1_golden_benchmark_cases.json": ("Ollama fallback",),
+    "backend/tests/fixtures/p9/p9_1_human_review_results.json": ("Ollama fallback",),
+    "docs/product/PRODUCT_VISION.md": ("Local LLM first",),
+    "docs/refactor/CODEX_PROJECT_BRIEFING.md": ("Fake/noop providers are for test/development only", "SQLite and fake/noop LLM providers are allowed only in explicit development/test scope"),
+    "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": ("Fake/noop providers remain explicit development/test doubles only",),
 }
 
 REQUIRED_ALLOWED_CONTEXT_PHRASES = {
@@ -92,6 +99,16 @@ REQUIRED_TEST_DOUBLE_BOUNDARY_PHRASES = {
     "backend/app/composition.py": (
         'fake_ready = provider in {"fake", "noop"} and settings.app_env.strip().lower() == "test"',
     ),
+}
+
+REQUIRED_RESIDUAL_CLAIM_BOUNDARY_PHRASES = {
+    ".env.example": "Test-only fake/noop LLM provider settings are intentionally omitted from this production-like example.",
+    "docs/product/PRODUCT_VISION.md": "GigaChat intranet first",
+    "docs/refactor/CODEX_PROJECT_BRIEFING.md": 'Fake/noop LLM providers are allowed only as explicit `app_env="test"` doubles',
+    "SQL_DRAFT_SCHEMA_V1.sql": "'litellm_gateway'",
+    "backend/tests/fixtures/k_phase/rc1_golden_benchmark_cases.json": "Unsupported local-model option",
+    "backend/tests/fixtures/p9/p9_1_human_review_results.json": "Unsupported local-model option row",
+    "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": "KR-7B.3 final provider-scope UI/docs/config claim audit",
 }
 
 
@@ -127,6 +144,7 @@ def build_report(repo_root: Path) -> dict[str, object]:
     missing_required_files: list[str] = []
     missing_allowed_context: list[dict[str, object]] = []
     missing_test_double_boundary: list[dict[str, object]] = []
+    missing_residual_claim_boundaries: list[dict[str, object]] = []
 
     for rel in REQUIRED_FILES:
         path = repo_root / rel
@@ -176,6 +194,13 @@ def build_report(repo_root: Path) -> dict[str, object]:
                 missing_test_double_boundary.append({"path": rel, "required_phrase": phrase})
                 issues.append(f"{rel} missing required fake/noop test-double boundary phrase: {phrase}")
 
+    for rel, phrase in REQUIRED_RESIDUAL_CLAIM_BOUNDARY_PHRASES.items():
+        path = repo_root / rel
+        text = path.read_text(encoding="utf-8") if path.exists() else ""
+        if phrase not in text:
+            missing_residual_claim_boundaries.append({"path": rel, "required_phrase": phrase})
+            issues.append(f"{rel} missing required final provider-scope claim boundary phrase: {phrase}")
+
     return {
         "schema_version": "kw_llm_provider_scope.v1",
         "status": "ready" if not issues else "not_ready",
@@ -187,6 +212,7 @@ def build_report(repo_root: Path) -> dict[str, object]:
         "active_banned_hits": active_banned_hits,
         "missing_allowed_context": missing_allowed_context,
         "missing_test_double_boundary": missing_test_double_boundary,
+        "missing_residual_claim_boundaries": missing_residual_claim_boundaries,
         "issues": issues,
     }
 

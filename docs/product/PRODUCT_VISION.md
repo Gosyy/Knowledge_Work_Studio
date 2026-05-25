@@ -18,7 +18,7 @@ The product is not a generic chat interface. The product is a controlled workflo
 3. **Provenance first**: generated claims, slides, reports, charts, and workbook changes should be traceable to source files, browser evidence, or explicit user input.
 4. **Operator gated**: release, restore, backup, destructive edits, external calls, and security changes require visible checks and reviewable logs.
 5. **Portable by default**: the project must run from any checkout path and on any supported machine. Active code, tests, and docs must not depend on local profile names, `Downloads`, branch names, or commit hashes.
-6. **Local LLM first**: the default production route is the local GigaChat endpoint on the intranet. LiteLLM-compatible gateway and other providers are optional adapters, not the core product identity.
+6. **GigaChat intranet first**: the default production route is GigaChat over a private/intranet endpoint. LiteLLM-compatible gateway is an optional internal transport to GigaChat, not a provider replacement; arbitrary local LLMs, fake providers, and noop providers are not part of the product runtime identity.
 
 ## What KW Studio should feel like
 

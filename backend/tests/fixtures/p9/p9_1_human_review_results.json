@@ -286,7 +286,7 @@
           "slide": 3
         },
         {
-          "finding": "Ollama fallback row is split into arbitrary Current/Target columns.",
+          "finding": "Unsupported local-model option row is split into arbitrary Current/Target columns.",
           "severity": "warning",
           "slide": 4
         },

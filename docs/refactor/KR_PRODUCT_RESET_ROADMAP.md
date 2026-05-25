@@ -469,3 +469,25 @@ composition only wires fake/noop LLM text service under app_env=test;
 LLM provider scope checker passes;
 full runner and Docker smoke pass before LOCAL ACCEPT.
 ```
+
+
+### KR-7B.3 final provider-scope UI/docs/config claim audit
+
+Purpose:
+
+```text
+finish KR-7B by auditing remaining UI, docs, config examples, schema drafts, and fixtures for provider-scope claims;
+ensure active project surfaces do not present legacy local-model, arbitrary local LLM, fake provider, or noop provider options as runtime/development/product choices;
+make scripts/kw_llm_provider_scope_check.py verify residual claim boundaries.
+```
+
+Acceptance:
+
+```text
+production-like examples omit fake/noop runtime settings;
+product docs say GigaChat intranet first rather than generic local LLM first;
+CODEX briefing says fake/noop are app_env=test doubles only;
+SQL_DRAFT_SCHEMA_V1.sql does not whitelist obsolete openai/qwen/noop provider values;
+active test fixtures avoid presenting legacy local-model fallback as a current option;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
