@@ -6,6 +6,10 @@ Before making changes, read these files:
 
 ```text
 README.md
+docs/ASSISTANT_OPERATING_RULES.md
+docs/DEFINITION_OF_DONE.md
+docs/PROJECT_PROHIBITIONS.md
+docs/QUALITY_MATRIX.md
 docs/refactor/PROJECT_MIGRATION_HANDOFF.md
 docs/refactor/CODEX_PROJECT_BRIEFING.md
 docs/refactor/KR_PRODUCT_RESET_ROADMAP.md
@@ -181,6 +185,29 @@ Update `docs/refactor/PROJECT_MIGRATION_HANDOFF.md` when changing:
 - profile rules.
 
 Check documentation, CLI help, comments and user-facing text for spelling, stale claims and unsupported claims.
+
+## Assistant decision governance and documentation stewardship
+
+The assistant decision-governance layer is authoritative for day-to-day agent behavior:
+
+```text
+docs/ASSISTANT_OPERATING_RULES.md
+docs/DEFINITION_OF_DONE.md
+docs/PROJECT_PROHIBITIONS.md
+docs/QUALITY_MATRIX.md
+docs/adr/0001-assistant-decision-governance.md
+docs/templates/PRE_PATCH_REPORT_TEMPLATE.md
+docs/templates/POST_PATCH_REPORT_TEMPLATE.md
+docs/templates/LOG_ANALYSIS_TEMPLATE.md
+```
+
+Future assistants must maintain documentation as structured source-of-truth files, not as an append-only transcript. When a patch changes a rule, phase, workflow contract, runner, acceptance criterion, runtime mode, profile behavior, or known failure mode, update the closest authoritative document and add only a durable summary with links to `PROJECT_MIGRATION_HANDOFF.md`.
+
+Before a patch is considered ready, run:
+
+```bash
+python scripts/kw_assistant_governance_check.py --repo-root . --require-ready
+```
 
 ## KR-6D instruction
 

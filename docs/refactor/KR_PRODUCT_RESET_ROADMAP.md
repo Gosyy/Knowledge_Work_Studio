@@ -412,3 +412,40 @@ Non-goals:
 no claim of broad presentation feature coverage;
 no replacement for later real PPTX render integration and deeper visual comparison.
 ```
+
+
+## KR-GOV-1 — Assistant Decision Governance
+
+Purpose:
+
+```text
+consolidate assistant operating rules, Definition of Done, prohibitions, quality matrix, report templates, ADR policy, and machine-checkable governance validation;
+make it harder for future assistants to forget rules, simplify tasks, issue unverified patches, or hide product failures behind workarounds;
+keep documentation maintainable as the project continues through KR-7 and later phases.
+```
+
+Implementation surface:
+
+```text
+docs/ASSISTANT_OPERATING_RULES.md
+docs/DEFINITION_OF_DONE.md
+docs/PROJECT_PROHIBITIONS.md
+docs/QUALITY_MATRIX.md
+docs/adr/0001-assistant-decision-governance.md
+docs/templates/PRE_PATCH_REPORT_TEMPLATE.md
+docs/templates/POST_PATCH_REPORT_TEMPLATE.md
+docs/templates/LOG_ANALYSIS_TEMPLATE.md
+scripts/kw_assistant_governance_check.py
+```
+
+Documentation stewardship is part of KR-GOV-1. Future assistants must update the closest authoritative document first and use `PROJECT_MIGRATION_HANDOFF.md` for durable summaries and links, not as an unstructured dumping ground.
+
+Acceptance:
+
+```text
+scripts/kw_assistant_governance_check.py --repo-root . --require-ready passes;
+assistant governance check is included in the project full runner;
+AGENTS.md, README.md, CODEX_PROJECT_BRIEFING.md, and PROJECT_MIGRATION_HANDOFF.md reference the governance layer;
+git diff --check passes;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```

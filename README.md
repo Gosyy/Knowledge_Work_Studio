@@ -637,6 +637,11 @@ Start with:
 
 ```text
 README.md
+AGENTS.md
+docs/ASSISTANT_OPERATING_RULES.md
+docs/DEFINITION_OF_DONE.md
+docs/PROJECT_PROHIBITIONS.md
+docs/QUALITY_MATRIX.md
 docs/refactor/PROJECT_MIGRATION_HANDOFF.md
 docs/refactor/CODEX_PROJECT_BRIEFING.md
 docs/refactor/KR6D_reliable_GigaChat_slide_planning_Codex_plan.md

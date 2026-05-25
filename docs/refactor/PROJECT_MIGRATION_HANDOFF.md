@@ -44,6 +44,8 @@ XLSX / Excel is mandatory, not optional. Slides are high priority, but slides ar
 
 ## 2. Current accepted continuation status
 
+This section records the original handoff anchor from the KR reset work. Future assistants must not treat these early phase labels as the current branch state without checking the latest handoff updates below and verifying the remote/local HEAD.
+
 Current active branch:
 
 ```text
@@ -58,7 +60,7 @@ accepted commit short id: 3eaa9f8
 accepted subject: KR-4A add workflow contract core
 ```
 
-Current phase being prepared after this handoff update:
+Historical phase prepared after this handoff update:
 
 ```text
 phase: KR-5A
@@ -88,7 +90,7 @@ KR-3F: archived inactive root historical prompt packs in a controlled batch
 KR-4A: added workflow contract core
 ```
 
-Next planned product direction after KR-4A:
+Historical planned product direction after KR-4A:
 
 ```text
 KR-5A: XLSX inspect workflow — in progress for this patch
@@ -1094,3 +1096,57 @@ logs/report directories are evidence artifacts, not test sources.
 ```
 
 Future runners that save file snapshots under `logs/` should avoid creating importable `test_*.py` files when possible, but the test runner must also remain robust if such evidence exists.
+
+
+<!-- KR_GOV_1_ASSISTANT_DECISION_GOVERNANCE -->
+
+## Assistant Decision Governance and documentation stewardship
+
+KR-GOV-1 consolidates assistant operating rules into a project-resident governance layer. The goal is to control the assistant's decision process so it is harder to forget rules, simplify the task, issue an unverified patch, or hide a product defect behind a workaround.
+
+Authoritative governance documents:
+
+```text
+docs/ASSISTANT_OPERATING_RULES.md
+docs/DEFINITION_OF_DONE.md
+docs/PROJECT_PROHIBITIONS.md
+docs/QUALITY_MATRIX.md
+docs/adr/0001-assistant-decision-governance.md
+docs/templates/PRE_PATCH_REPORT_TEMPLATE.md
+docs/templates/POST_PATCH_REPORT_TEMPLATE.md
+docs/templates/LOG_ANALYSIS_TEMPLATE.md
+```
+
+Machine-checkable guardrail:
+
+```text
+scripts/kw_assistant_governance_check.py
+```
+
+The project full runner runs this guardrail. Future patches must keep it ready.
+
+Documentation stewardship rule:
+
+```text
+When a patch changes operating rules, phase status, workflow contracts, acceptance criteria, runtime modes, runner behavior, profile behavior, quality status, prohibitions, or known failure modes, update the closest authoritative document first. Then add a short durable handoff summary with links. Do not let PROJECT_MIGRATION_HANDOFF.md become the only place where important rules live.
+```
+
+Required maintenance behavior:
+
+```text
+update docs/ASSISTANT_OPERATING_RULES.md when assistant workflow changes;
+update docs/DEFINITION_OF_DONE.md when acceptance criteria change;
+update docs/PROJECT_PROHIBITIONS.md when a new forbidden shortcut or failure mode is discovered;
+update docs/QUALITY_MATRIX.md when workflow maturity, validation, provenance, QA, or UI visibility changes;
+add or update ADRs for cross-cutting architecture or governance decisions;
+keep AGENTS.md and CODEX_PROJECT_BRIEFING.md as short entrypoints with links;
+mark stale handoff sections historical or replace them with current-state pointers;
+run scripts/kw_assistant_governance_check.py --repo-root . --require-ready before declaring targeted readiness.
+```
+
+
+### KR-GOV-1 inventory classification hotfix
+
+The KR-GOV-1 governance checker and its smoke test are active acceptance-surface items. They must be classified by `scripts/kw_test_inventory.py` as `handoff_policy` so the KR-7A.1 test portfolio inventory does not fail closed on unclassified governance checks.
+
+Future patches that add new checkers, runners, or smoke tests must update the test inventory classification rules in the same patch, or the full runner will reject the change during `backend/tests/test_portfolio/test_inventory_classification.py`.

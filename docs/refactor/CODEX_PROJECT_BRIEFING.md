@@ -55,6 +55,10 @@ Read these before any change:
 ```text
 README.md
 AGENTS.md
+docs/ASSISTANT_OPERATING_RULES.md
+docs/DEFINITION_OF_DONE.md
+docs/PROJECT_PROHIBITIONS.md
+docs/QUALITY_MATRIX.md
 docs/refactor/PROJECT_MIGRATION_HANDOFF.md
 docs/refactor/KR_PRODUCT_RESET_ROADMAP.md
 docs/architecture/WORKFLOW_CONTRACT_CORE.md
@@ -275,6 +279,20 @@ migration instructions
 ```
 
 Documentation must be checked for spelling, stale claims and unsupported claims.
+
+### Assistant decision-governance documentation maintenance
+
+The assistant decision-governance layer must be maintained when operating rules, prohibitions, Definition of Done, workflow maturity, or documentation stewardship rules change:
+
+```text
+docs/ASSISTANT_OPERATING_RULES.md
+docs/DEFINITION_OF_DONE.md
+docs/PROJECT_PROHIBITIONS.md
+docs/QUALITY_MATRIX.md
+docs/adr/0001-assistant-decision-governance.md
+```
+
+Use `PROJECT_MIGRATION_HANDOFF.md` for durable summaries and links. Do not duplicate long policy blocks across multiple files. Update or add ADRs for cross-cutting decisions. Run `scripts/kw_assistant_governance_check.py --require-ready` before considering the patch ready.
 
 ## 11. Negative instructions
 

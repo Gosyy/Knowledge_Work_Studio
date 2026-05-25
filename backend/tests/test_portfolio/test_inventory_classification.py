@@ -88,3 +88,16 @@ def test_kw_test_inventory_preserves_acceptance_runners(tmp_path: Path) -> None:
     assert docker_smoke["tier"] == "tier6_docker_smoke"
     assert docker_smoke["contract"] == "docker_smoke"
     assert docker_smoke["decision"] == "keep"
+
+
+def test_kw_test_inventory_classifies_assistant_governance_items(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    inventory = _run_inventory(repo_root, tmp_path)
+    by_path = {entry["path"]: entry for entry in inventory["tests"]}
+
+    governance_script = by_path["scripts/kw_assistant_governance_check.py"]
+    governance_smoke = by_path["backend/tests/smoke/test_assistant_governance_check.py"]
+    assert governance_script["contract"] == "handoff_policy"
+    assert governance_script["decision"] == "keep"
+    assert governance_smoke["contract"] == "handoff_policy"
+    assert governance_smoke["decision"] == "keep"
