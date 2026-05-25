@@ -19,11 +19,18 @@ from backend.app.api.schemas import (
     PresentationApiSlidePatchRequestSchema,
     PresentationApiSlidesResponseSchema,
     PresentationApiSourceAttachRequestSchema,
+    PresentationIRSnapshotResponseSchema,
+    PresentationIRVersionSummarySchema,
+    PresentationIRVersionsResponseSchema,
     PresentationSchema,
 )
 from backend.app.domain import PresentationPlanSnapshot
 from backend.app.services import PresentationCatalogService
-from backend.app.services.slides_service import PresentationPlanSnapshotService
+from backend.app.services.slides_service import (
+    PRESENTATION_IR_SCHEMA_VERSION,
+    PresentationPlanSnapshotService,
+    detect_presentation_ir_storage_format,
+)
 from backend.app.api.routes.presentations import _sanitize_public_plan_payload
 
 router = APIRouter(prefix="/api/v1", tags=["presentation-api-v1"])
@@ -99,7 +106,69 @@ def get_presentation_plan_v1(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Presentation '{presentation_id}' has no API-first plan snapshot yet.",
         )
-    return _api_plan_snapshot_response(snapshot)
+    return _api_plan_snapshot_response(snapshot, plan_snapshot_service=plan_snapshot_service)
+
+
+@router.get(
+    "/presentations/{presentation_id}/ir",
+    response_model=PresentationIRSnapshotResponseSchema,
+    summary="Read the latest versioned PresentationIR payload for a presentation.",
+)
+def get_presentation_ir_v1(
+    presentation_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+    catalog_service: PresentationCatalogService = Depends(get_presentation_catalog_service),
+    plan_snapshot_service: PresentationPlanSnapshotService = Depends(get_presentation_plan_snapshot_service),
+) -> PresentationIRSnapshotResponseSchema:
+    catalog_service.get_presentation_for_user(presentation_id=presentation_id, owner_user_id=current_user_id)
+    snapshot = plan_snapshot_service.get_latest_snapshot(presentation_id)
+    if snapshot is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Presentation '{presentation_id}' has no PresentationIR snapshot yet.",
+        )
+    presentation_ir = plan_snapshot_service.get_presentation_ir_for_snapshot(snapshot)
+    safe_ir = _sanitize_public_plan_payload(presentation_ir)
+    if not isinstance(safe_ir, dict):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="PresentationIR snapshot is not a JSON object.")
+    return PresentationIRSnapshotResponseSchema(
+        api_version=_API_VERSION,
+        presentation_id=presentation_id,
+        snapshot_id=snapshot.id,
+        presentation_version_id=snapshot.presentation_version_id,
+        ir_schema_version=PRESENTATION_IR_SCHEMA_VERSION,
+        storage_format=detect_presentation_ir_storage_format(snapshot.snapshot_json),
+        version_number=_snapshot_version_number(
+            plan_snapshot_service=plan_snapshot_service,
+            presentation_id=presentation_id,
+            snapshot_id=snapshot.id,
+        ),
+        presentation_ir=safe_ir,
+    )
+
+
+@router.get(
+    "/presentations/{presentation_id}/ir/versions",
+    response_model=PresentationIRVersionsResponseSchema,
+    summary="List persisted PresentationIR-compatible snapshot versions.",
+)
+def list_presentation_ir_versions_v1(
+    presentation_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+    catalog_service: PresentationCatalogService = Depends(get_presentation_catalog_service),
+    plan_snapshot_service: PresentationPlanSnapshotService = Depends(get_presentation_plan_snapshot_service),
+) -> PresentationIRVersionsResponseSchema:
+    catalog_service.get_presentation_for_user(presentation_id=presentation_id, owner_user_id=current_user_id)
+    versions = [
+        PresentationIRVersionSummarySchema(**version)
+        for version in plan_snapshot_service.list_ir_snapshot_versions(presentation_id)
+    ]
+    return PresentationIRVersionsResponseSchema(
+        api_version=_API_VERSION,
+        presentation_id=presentation_id,
+        ir_schema_version=PRESENTATION_IR_SCHEMA_VERSION,
+        versions=versions,
+    )
 
 
 @router.post(
@@ -148,6 +217,13 @@ def list_presentation_slides_v1(
         snapshot_id=snapshot.id,
         presentation_version_id=snapshot.presentation_version_id,
         schema_version=schema_version,
+        ir_schema_version=PRESENTATION_IR_SCHEMA_VERSION,
+        storage_format=detect_presentation_ir_storage_format(snapshot.snapshot_json),
+        version_number=_snapshot_version_number(
+            plan_snapshot_service=plan_snapshot_service,
+            presentation_id=presentation_id,
+            snapshot_id=snapshot.id,
+        ),
         slides=[item for item in slides if isinstance(item, dict)],
     )
 
@@ -202,7 +278,11 @@ def get_presentation_quality_v1(presentation_id: str) -> PresentationApiContract
     _not_implemented()
 
 
-def _api_plan_snapshot_response(snapshot: PresentationPlanSnapshot) -> PresentationApiPlanSnapshotResponseSchema:
+def _api_plan_snapshot_response(
+    snapshot: PresentationPlanSnapshot,
+    *,
+    plan_snapshot_service: PresentationPlanSnapshotService,
+) -> PresentationApiPlanSnapshotResponseSchema:
     plan = _sanitize_public_plan_payload(snapshot.snapshot_json)
     if not isinstance(plan, dict):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Presentation plan snapshot is not a JSON object.")
@@ -216,5 +296,24 @@ def _api_plan_snapshot_response(snapshot: PresentationPlanSnapshot) -> Presentat
         change_summary=snapshot.change_summary,
         created_at=snapshot.created_at,
         schema_version=schema_version,
+        ir_schema_version=PRESENTATION_IR_SCHEMA_VERSION,
+        storage_format=detect_presentation_ir_storage_format(snapshot.snapshot_json),
+        version_number=_snapshot_version_number(
+            plan_snapshot_service=plan_snapshot_service,
+            presentation_id=snapshot.presentation_id,
+            snapshot_id=snapshot.id,
+        ),
         plan=plan,
     )
+
+
+def _snapshot_version_number(
+    *,
+    plan_snapshot_service: PresentationPlanSnapshotService,
+    presentation_id: str,
+    snapshot_id: str,
+) -> int | None:
+    for version in plan_snapshot_service.list_ir_snapshot_versions(presentation_id):
+        if version["snapshot_id"] == snapshot_id:
+            return int(version["version_number"])
+    return None

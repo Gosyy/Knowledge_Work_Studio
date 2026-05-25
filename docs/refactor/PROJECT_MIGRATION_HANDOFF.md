@@ -1219,3 +1219,26 @@ Important limitation:
 ```text
 KR-7C.1 is a contract skeleton and compatibility bridge. It does not implement full PresentationIR planning, source attachment execution, slide editing, render, export, or quality evaluation. Those endpoints must fail closed with 501 until their runtime implementation lands in later KR-7C subphases.
 ```
+
+
+## KR-7C.2 PresentationIR versioning and persistence contract
+
+KR-7C.2 adds the first stable PresentationIR versioning and persistence contract. It does not implement full PresentationIR planning, source ingestion, rendering, or quality evaluation. It makes current and future plan snapshots API-readable through a versioned `presentation_ir.v1` envelope.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/presentation_ir.py defines `presentation_ir.v1` validation and legacy-plan adaptation;
+backend/app/services/slides_service/plan_snapshot.py can persist native PresentationIR payloads and list IR-compatible snapshot versions;
+backend/app/api/routes/presentation_api_v1.py exposes read-only /ir and /ir/versions endpoints;
+backend/app/api/schemas/presentations.py exposes IR snapshot and version response schemas;
+scripts/kw_presentation_api_contract_check.py verifies paths, schemas, and source helpers;
+backend/tests/api/test_kr7c_presentation_api_contract.py covers API reads and OpenAPI shape;
+backend/tests/services/test_kr7c_presentation_ir_versioning.py covers validation, persistence, and legacy adaptation.
+```
+
+Important limitation:
+
+```text
+KR-7C.2 is still a contract/persistence layer. Mutation, planning, render, export, and quality endpoints remain fail-closed until later KR-7C/KR-7H/KR-7N phases implement runtime behavior.
+```

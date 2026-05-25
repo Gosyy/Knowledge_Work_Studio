@@ -514,3 +514,27 @@ scripts/kw_presentation_api_contract_check.py passes;
 legacy /tasks slides path remains available;
 full runner and Docker smoke pass before LOCAL ACCEPT.
 ```
+
+
+### KR-7C.2 PresentationIR versioning and persistence contract
+
+Purpose:
+
+```text
+add the first stable `presentation_ir.v1` envelope and validation helpers;
+allow existing legacy plan snapshots to be exposed as PresentationIR-compatible API payloads without pretending a new planner exists;
+allow native PresentationIR payloads to be validated and persisted through the plan snapshot store;
+expose read-only PresentationIR version metadata through API-first endpoints.
+```
+
+Acceptance:
+
+```text
+PresentationIR payloads require explicit schema_version, deck, theme, sources, assets, slides, and quality_contract fields;
+legacy plan snapshots are adapted to `presentation_ir.v1` for API reads;
+native PresentationIR snapshots are validated before persistence;
+/api/v1/presentations/{presentation_id}/ir exposes the latest safe PresentationIR payload;
+/api/v1/presentations/{presentation_id}/ir/versions lists persisted IR-compatible snapshot versions;
+scripts/kw_presentation_api_contract_check.py verifies the new paths, schemas, and source helpers;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```

@@ -15,6 +15,8 @@ REQUIRED_API_V1_METHODS: dict[str, set[str]] = {
     "/api/v1/presentations/{presentation_id}": {"get"},
     "/api/v1/presentations/{presentation_id}/sources": {"post"},
     "/api/v1/presentations/{presentation_id}/plan": {"get", "post"},
+    "/api/v1/presentations/{presentation_id}/ir": {"get"},
+    "/api/v1/presentations/{presentation_id}/ir/versions": {"get"},
     "/api/v1/presentations/{presentation_id}/slides": {"get"},
     "/api/v1/presentations/{presentation_id}/slides/{slide_id}": {"patch"},
     "/api/v1/presentations/{presentation_id}/render": {"post"},
@@ -39,6 +41,23 @@ REQUIRED_SCHEMA_NAMES = {
     "PresentationApiPlanSnapshotResponseSchema",
     "PresentationApiSlidesResponseSchema",
     "PresentationApiContractStatusSchema",
+    "PresentationIRSnapshotResponseSchema",
+    "PresentationIRVersionSummarySchema",
+    "PresentationIRVersionsResponseSchema",
+}
+
+REQUIRED_PRESENTATION_IR_SOURCE_PHRASES = {
+    "backend/app/services/slides_service/presentation_ir.py": (
+        'PRESENTATION_IR_SCHEMA_VERSION = "presentation_ir.v1"',
+        "def validate_presentation_ir_payload",
+        "def build_presentation_ir_from_legacy_plan",
+        "def detect_presentation_ir_storage_format",
+    ),
+    "backend/app/services/slides_service/plan_snapshot.py": (
+        "def create_presentation_ir_snapshot",
+        "def get_latest_presentation_ir",
+        "def list_ir_snapshot_versions",
+    ),
 }
 
 
@@ -71,6 +90,14 @@ def build_report(repo_root: Path | None = None) -> dict[str, Any]:
                 missing_legacy_paths.append({"path": path, "method": method})
 
     missing_tags = [] if "presentation-api-v1" in tags else ["presentation-api-v1"]
+    missing_ir_source_phrases: list[dict[str, str]] = []
+    if repo_root is not None:
+        for relative_path, phrases in REQUIRED_PRESENTATION_IR_SOURCE_PHRASES.items():
+            path = repo_root / relative_path
+            text = path.read_text(encoding="utf-8") if path.exists() else ""
+            for phrase in phrases:
+                if phrase not in text:
+                    missing_ir_source_phrases.append({"path": relative_path, "required_phrase": phrase})
     issues: list[str] = []
     issues.extend(f"missing API v1 path/method: {entry['method'].upper()} {entry['path']}" for entry in missing_paths)
     issues.extend(
@@ -79,6 +106,10 @@ def build_report(repo_root: Path | None = None) -> dict[str, Any]:
     )
     issues.extend(f"missing OpenAPI schema: {schema}" for schema in missing_schemas)
     issues.extend(f"missing OpenAPI tag: {tag}" for tag in missing_tags)
+    issues.extend(
+        f"{entry['path']} missing PresentationIR source phrase: {entry['required_phrase']}"
+        for entry in missing_ir_source_phrases
+    )
 
     return {
         "schema_version": "kw_presentation_api_contract.v1",
@@ -89,6 +120,7 @@ def build_report(repo_root: Path | None = None) -> dict[str, Any]:
         "missing_legacy_paths": missing_legacy_paths,
         "missing_schemas": missing_schemas,
         "missing_tags": missing_tags,
+        "missing_ir_source_phrases": missing_ir_source_phrases,
         "issues": issues,
     }
 

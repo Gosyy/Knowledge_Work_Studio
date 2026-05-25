@@ -27,6 +27,13 @@ from backend.app.services.slides_service.blocks import (
 from backend.app.services.slides_service.image_pipeline import ImageSpec, VisualIntent
 from backend.app.services.slides_service.media import ImageFitMode, SlideMediaAsset
 from backend.app.services.slides_service.outline import PlannedSlide, PresentationPlan, SlideType, StoryArcStage
+from backend.app.services.slides_service.presentation_ir import (
+    PRESENTATION_IR_SCHEMA_VERSION,
+    build_presentation_ir_from_legacy_plan,
+    coerce_snapshot_payload_to_presentation_ir,
+    detect_presentation_ir_storage_format,
+    require_presentation_ir_payload,
+)
 from backend.app.services.slides_service.source_grounding import SlideCitation
 
 
@@ -81,6 +88,79 @@ class PresentationPlanSnapshotService:
         if snapshot is None:
             return None
         return deserialize_presentation_plan(snapshot.snapshot_json)
+
+    def create_presentation_ir_snapshot(
+        self,
+        *,
+        presentation_id: str,
+        presentation_ir: dict[str, Any],
+        presentation_version_id: str | None = None,
+        created_from_task_id: str | None = None,
+        change_summary: str | None = None,
+        snapshot_id: str | None = None,
+    ) -> PresentationPlanSnapshot:
+        presentation = self.presentations.get(presentation_id)
+        if presentation is None:
+            raise ValueError(f"Presentation '{presentation_id}' not found.")
+
+        if presentation_version_id is not None and self.presentation_versions is not None:
+            version_ids = {
+                version.id
+                for version in self.presentation_versions.list_by_presentation(presentation_id)
+            }
+            if presentation_version_id not in version_ids:
+                raise ValueError(
+                    f"Presentation version '{presentation_version_id}' not found for presentation '{presentation_id}'."
+                )
+
+        payload = require_presentation_ir_payload(presentation_ir)
+        snapshot = PresentationPlanSnapshot(
+            id=snapshot_id or f"plansnap_ir_{uuid4().hex}",
+            presentation_id=presentation_id,
+            presentation_version_id=presentation_version_id,
+            snapshot_json=payload,
+            created_from_task_id=created_from_task_id,
+            change_summary=change_summary,
+        )
+        return self.snapshots.create(snapshot)
+
+    def get_latest_presentation_ir(self, presentation_id: str) -> dict[str, Any] | None:
+        snapshot = self.get_latest_snapshot(presentation_id)
+        if snapshot is None:
+            return None
+        return self.get_presentation_ir_for_snapshot(snapshot)
+
+    def get_presentation_ir_for_snapshot(self, snapshot: PresentationPlanSnapshot) -> dict[str, Any]:
+        legacy_plan = None
+        if detect_presentation_ir_storage_format(snapshot.snapshot_json) == "legacy_plan_snapshot":
+            legacy_plan = deserialize_presentation_plan(snapshot.snapshot_json)
+        return coerce_snapshot_payload_to_presentation_ir(
+            snapshot.snapshot_json,
+            presentation_id=snapshot.presentation_id,
+            snapshot_id=snapshot.id,
+            presentation_version_id=snapshot.presentation_version_id,
+            created_from_task_id=snapshot.created_from_task_id,
+            legacy_plan=legacy_plan,
+        )
+
+    def list_ir_snapshot_versions(self, presentation_id: str) -> list[dict[str, Any]]:
+        snapshots = self.snapshots.list_by_presentation(presentation_id)
+        versions: list[dict[str, Any]] = []
+        for index, snapshot in enumerate(snapshots, start=1):
+            versions.append(
+                {
+                    "snapshot_id": snapshot.id,
+                    "presentation_id": snapshot.presentation_id,
+                    "presentation_version_id": snapshot.presentation_version_id,
+                    "created_from_task_id": snapshot.created_from_task_id,
+                    "change_summary": snapshot.change_summary,
+                    "created_at": snapshot.created_at,
+                    "ir_schema_version": PRESENTATION_IR_SCHEMA_VERSION,
+                    "storage_format": detect_presentation_ir_storage_format(snapshot.snapshot_json),
+                    "version_number": index,
+                }
+            )
+        return versions
 
     def get_snapshot_for_version(self, presentation_version_id: str) -> PresentationPlanSnapshot | None:
         return self.snapshots.get_by_version(presentation_version_id)

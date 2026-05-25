@@ -12,7 +12,12 @@ from backend.app.repositories.sqlite import (
     SqlitePresentationVersionRepository,
     SqliteStoredFileRepository,
 )
-from backend.app.services.slides_service import PresentationPlanSnapshotService, build_presentation_plan
+from backend.app.services.slides_service import (
+    PRESENTATION_IR_SCHEMA_VERSION,
+    PresentationPlanSnapshotService,
+    build_presentation_ir_from_legacy_plan,
+    build_presentation_plan,
+)
 
 client = TestClient(app)
 
@@ -22,6 +27,8 @@ _V1_PATHS = {
     "/api/v1/presentations/{presentation_id}": {"get"},
     "/api/v1/presentations/{presentation_id}/sources": {"post"},
     "/api/v1/presentations/{presentation_id}/plan": {"get", "post"},
+    "/api/v1/presentations/{presentation_id}/ir": {"get"},
+    "/api/v1/presentations/{presentation_id}/ir/versions": {"get"},
     "/api/v1/presentations/{presentation_id}/slides": {"get"},
     "/api/v1/presentations/{presentation_id}/slides/{slide_id}": {"patch"},
     "/api/v1/presentations/{presentation_id}/render": {"post"},
@@ -127,6 +134,34 @@ def _seed_plan_snapshot(repository_db_path: str) -> None:
     )
 
 
+def _seed_native_presentation_ir_snapshot(repository_db_path: str) -> None:
+    service = PresentationPlanSnapshotService(
+        snapshots=SqlitePresentationPlanSnapshotRepository(repository_db_path),
+        presentations=SqlitePresentationRepository(repository_db_path),
+        presentation_versions=SqlitePresentationVersionRepository(repository_db_path),
+    )
+    plan = build_presentation_plan(
+        "Opening. Context. Analysis. Compare. Timeline. Data. Close.",
+        min_slides=7,
+        max_slides=7,
+    )
+    presentation_ir = build_presentation_ir_from_legacy_plan(
+        plan,
+        presentation_id="pres_kr7c",
+        snapshot_id="plansnap_ir_kr7c_v1",
+        presentation_version_id="presver_kr7c_v1",
+        created_from_task_id="task_kr7c_v1",
+    )
+    service.create_presentation_ir_snapshot(
+        presentation_id="pres_kr7c",
+        presentation_version_id="presver_kr7c_v1",
+        presentation_ir=presentation_ir,
+        created_from_task_id="task_kr7c_v1",
+        change_summary="Initial native PresentationIR snapshot",
+        snapshot_id="plansnap_ir_kr7c_v1",
+    )
+
+
 def test_kr7c_openapi_exposes_api_v1_presentation_contract_and_legacy_compatibility() -> None:
     schema = app.openapi()
     paths = schema["paths"]
@@ -147,6 +182,9 @@ def test_kr7c_openapi_exposes_api_v1_presentation_contract_and_legacy_compatibil
     assert "PresentationApiCreateRequestSchema" in component_schemas
     assert "PresentationApiPlanSnapshotResponseSchema" in component_schemas
     assert "PresentationApiSlidesResponseSchema" in component_schemas
+    assert "PresentationIRSnapshotResponseSchema" in component_schemas
+    assert "PresentationIRVersionSummarySchema" in component_schemas
+    assert "PresentationIRVersionsResponseSchema" in component_schemas
     assert any(tag["name"] == "presentation-api-v1" for tag in schema["tags"])
 
 
@@ -158,6 +196,7 @@ def test_kr7c_checker_reports_ready() -> None:
     assert report["missing_paths"] == []
     assert report["missing_legacy_paths"] == []
     assert report["missing_schemas"] == []
+    assert report["missing_ir_source_phrases"] == []
 
 
 def test_kr7c_gets_presentation_metadata_through_api_v1(
@@ -215,9 +254,72 @@ def test_kr7c_gets_public_safe_slides_from_latest_plan_snapshot(
     assert payload["presentation_id"] == "pres_kr7c"
     assert payload["snapshot_id"] == "plansnap_kr7c_v1"
     assert payload["schema_version"] == "1"
+    assert payload["ir_schema_version"] == PRESENTATION_IR_SCHEMA_VERSION
+    assert payload["storage_format"] == "legacy_plan_snapshot"
+    assert payload["version_number"] == 1
     assert len(payload["slides"]) == 7
     assert "storage_uri" not in str(payload)
     assert "local://secret" not in str(payload)
+
+
+def test_kr7c_gets_versioned_presentation_ir_from_legacy_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_plan_snapshot(repository_db_path)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/ir")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["api_version"] == "presentation_api.v1"
+    assert payload["ir_schema_version"] == PRESENTATION_IR_SCHEMA_VERSION
+    assert payload["storage_format"] == "legacy_plan_snapshot"
+    assert payload["version_number"] == 1
+    presentation_ir = payload["presentation_ir"]
+    assert presentation_ir["schema_version"] == PRESENTATION_IR_SCHEMA_VERSION
+    assert presentation_ir["deck"]["presentation_id"] == "pres_kr7c"
+    assert presentation_ir["deck"]["slide_count"] == 7
+    assert len(presentation_ir["slides"]) == 7
+
+
+def test_kr7c_persists_native_presentation_ir_and_lists_versions(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_native_presentation_ir_snapshot(repository_db_path)
+
+    ir_response = client.get("/api/v1/presentations/pres_kr7c/ir")
+    versions_response = client.get("/api/v1/presentations/pres_kr7c/ir/versions")
+
+    assert ir_response.status_code == 200
+    ir_payload = ir_response.json()
+    assert ir_payload["snapshot_id"] == "plansnap_ir_kr7c_v1"
+    assert ir_payload["storage_format"] == "presentation_ir"
+    assert ir_payload["presentation_ir"]["schema_version"] == PRESENTATION_IR_SCHEMA_VERSION
+
+    assert versions_response.status_code == 200
+    versions_payload = versions_response.json()
+    assert versions_payload["ir_schema_version"] == PRESENTATION_IR_SCHEMA_VERSION
+    assert versions_payload["versions"] == [
+        {
+            "snapshot_id": "plansnap_ir_kr7c_v1",
+            "presentation_id": "pres_kr7c",
+            "presentation_version_id": "presver_kr7c_v1",
+            "created_from_task_id": "task_kr7c_v1",
+            "change_summary": "Initial native PresentationIR snapshot",
+            "created_at": versions_payload["versions"][0]["created_at"],
+            "ir_schema_version": PRESENTATION_IR_SCHEMA_VERSION,
+            "storage_format": "presentation_ir",
+            "version_number": 1,
+        }
+    ]
 
 
 def test_kr7c_future_mutation_endpoints_fail_closed() -> None:

@@ -62,6 +62,13 @@ from backend.app.services.slides_service.plan_snapshot import (
     deserialize_presentation_plan,
     serialize_presentation_plan,
 )
+from backend.app.services.slides_service.presentation_ir import (
+    PRESENTATION_IR_SCHEMA_VERSION,
+    build_presentation_ir_from_legacy_plan,
+    detect_presentation_ir_storage_format,
+    is_presentation_ir_payload,
+    require_presentation_ir_payload,
+)
 from backend.app.services.slides_service.provenance_manifest_runtime import (
     PROVENANCE_MANIFEST_CONTENT_TYPE,
     SlidesGenerationProvenanceRuntimeResult,
@@ -176,6 +183,11 @@ __all__ = [
     "ImageSpec",
     "PlannedSlide",
     "PresentationPlanSnapshotService",
+    "PRESENTATION_IR_SCHEMA_VERSION",
+    "build_presentation_ir_from_legacy_plan",
+    "detect_presentation_ir_storage_format",
+    "is_presentation_ir_payload",
+    "require_presentation_ir_payload",
     "deserialize_presentation_plan",
     "serialize_presentation_plan",
     "PresentationPlan",

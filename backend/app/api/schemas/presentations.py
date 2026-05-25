@@ -156,6 +156,9 @@ class PresentationApiPlanSnapshotResponseSchema(BaseModel):
     change_summary: str | None
     created_at: _datetime_for_api_v1
     schema_version: str
+    ir_schema_version: str
+    storage_format: Literal["presentation_ir", "legacy_plan_snapshot"]
+    version_number: int | None = None
     plan: dict[str, Any]
 
     model_config = ConfigDict(extra="forbid")
@@ -167,6 +170,45 @@ class PresentationApiSlidesResponseSchema(BaseModel):
     snapshot_id: str
     presentation_version_id: str | None
     schema_version: str
+    ir_schema_version: str
+    storage_format: Literal["presentation_ir", "legacy_plan_snapshot"]
+    version_number: int | None = None
     slides: list[dict[str, Any]]
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationIRVersionSummarySchema(BaseModel):
+    snapshot_id: str
+    presentation_id: str
+    presentation_version_id: str | None
+    created_from_task_id: str | None
+    change_summary: str | None
+    created_at: _datetime_for_api_v1
+    ir_schema_version: str
+    storage_format: Literal["presentation_ir", "legacy_plan_snapshot"]
+    version_number: int
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationIRVersionsResponseSchema(BaseModel):
+    api_version: str
+    presentation_id: str
+    ir_schema_version: str
+    versions: list[PresentationIRVersionSummarySchema]
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationIRSnapshotResponseSchema(BaseModel):
+    api_version: str
+    presentation_id: str
+    snapshot_id: str
+    presentation_version_id: str | None
+    ir_schema_version: str
+    storage_format: Literal["presentation_ir", "legacy_plan_snapshot"]
+    version_number: int | None = None
+    presentation_ir: dict[str, Any]
 
     model_config = ConfigDict(extra="forbid")
