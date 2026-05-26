@@ -37,7 +37,9 @@ claim evidence index persistence is a planner or render runtime;
 expose operator absolute paths from persisted offline evidence index manifests;
 claim final GigaChat PresentationIR planning runtime from KR-7F.1;
 claim prompt-only degraded planner drafts are source-backed;
-claim KR-7F.1 planner output has been rendered, exported, visually QA checked, or approved.
+claim KR-7F.1 planner output has been rendered, exported, visually QA checked, or approved;
+claim evidence-aware slide outline planning is final GigaChat planning runtime;
+claim unsupported slide outlines are source-backed.
 ```
 
 ## Runtime and deploy prohibitions

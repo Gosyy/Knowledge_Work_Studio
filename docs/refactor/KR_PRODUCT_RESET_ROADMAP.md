@@ -803,3 +803,34 @@ do not implement final GigaChat PresentationIR planning runtime, embeddings, web
 do not claim final GigaChat planning runtime from KR-7F.1;
 do not claim prompt-only degraded planner drafts are source-backed.
 ```
+
+### KR-7F.2 evidence-aware slide outline planning hardening
+
+Purpose:
+
+```text
+harden KR-7F planner foundation so it plans slide outlines against local evidence sections before building PresentationIR slides;
+introduce presentation_ir_outline.v1 records with slide role, title, intent query, expected terms, support status, coverage ratio, evidence bindings, missing terms, and warnings;
+make degraded/unsupported slide outlines explicit without pretending they are source-backed or final GigaChat planning runtime.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/presentation_ir_planner.py defines PRESENTATION_IR_OUTLINE_SCHEMA_VERSION and PresentationIRSlideOutline;
+PresentationIRPlannerResult includes slide_outlines and coverage_summary;
+PresentationIR slides include outline metadata and quality_contract records evidence_aware_outline_planning, outline_coverage_ratio, supported/unsupported slide counts;
+custom required_sections influence non-cover/non-closing slide roles without hardcoding source-free claims;
+low outline coverage returns degraded with outline_coverage_below_required_threshold instead of ready;
+prompt-only outlines mark every slide unsupported and remain degraded;
+scripts/kw_presentation_ir_planner_check.py verifies the KR-7F.2 surface;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement final GigaChat PresentationIR planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime in KR-7F.2;
+do not claim evidence-aware slide outline planning is final GigaChat planning runtime;
+do not claim unsupported slide outlines are source-backed.
+```

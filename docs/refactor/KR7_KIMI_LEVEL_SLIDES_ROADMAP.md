@@ -607,3 +607,22 @@ KR-7M UI
 KR-7N/R quality evaluator and public test harness
 KR-7P/Q/T clone/rewrite, source-backed generation, final acceptance
 ```
+## KR-7F.2 evidence-aware slide outline planning hardening
+
+KR-7F.2 hardens evidence-aware slide outline planning on top of the deterministic KR-7F.1 PresentationIR planner foundation. It adds `presentation_ir_outline.v1` slide outlines, role-specific evidence queries, per-slide support status, coverage ratios, missing terms, and explicit unsupported/weak slide outline warnings.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/presentation_ir_planner.py defines PRESENTATION_IR_OUTLINE_SCHEMA_VERSION and PresentationIRSlideOutline;
+PresentationIRPlannerResult exposes slide_outlines and coverage_summary;
+PresentationIR slides include outline metadata and quality_contract records evidence_aware_outline_planning and outline coverage counts;
+backend/tests/services/test_kr7f_presentation_ir_planner.py covers evidence-aware outlines, degraded low-coverage outlines, and prompt-only unsupported outlines;
+scripts/kw_presentation_ir_planner_check.py verifies the KR-7F.2 surface.
+```
+
+Important limitation:
+
+```text
+KR-7F.2 is planner hardening only. It does not implement final GigaChat PresentationIR planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime. Unsupported slide outlines must remain explicit and must not be treated as source-backed.
+```

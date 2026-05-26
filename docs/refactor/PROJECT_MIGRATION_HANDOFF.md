@@ -1436,3 +1436,22 @@ Important limitation:
 ```text
 KR-7F.1 is a planner foundation only. It does not implement final GigaChat PresentationIR planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime. Prompt-only degraded drafts must not be treated as source-backed. Missing required evidence must return blocked with evidence_required_but_index_empty rather than invented evidence.
 ```
+
+## KR-7F.2 evidence-aware slide outline planning hardening
+
+KR-7F.2 hardens the deterministic PresentationIR planner foundation by planning slide outlines against KR-7E offline evidence sections before constructing PresentationIR slides. It keeps the phase local, deterministic, and source-aware without claiming final GigaChat planner quality.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/presentation_ir_planner.py defines presentation_ir_outline.v1, PresentationIRSlideOutline, slide_outlines, coverage_summary, support_status, missing_terms, and evidence_aware_outline_planning;
+backend/tests/services/test_kr7f_presentation_ir_planner.py covers supported evidence-aware outlines, degraded low-coverage outlines, and prompt-only unsupported outlines;
+scripts/kw_presentation_ir_planner_check.py verifies the KR-7F.2 planner/checker/docs surface;
+scripts/kw_full_tests_with_proxy_runner.sh continues to run the KR-7F checker before production readiness.
+```
+
+Important limitation:
+
+```text
+KR-7F.2 is evidence-aware outline hardening only. It does not implement final GigaChat PresentationIR planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime. Unsupported slide outlines must remain explicit and must not be treated as source-backed.
+```

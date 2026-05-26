@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
@@ -13,8 +14,28 @@ from backend.app.services.slides_service.presentation_ir import (
 )
 
 PRESENTATION_IR_PLANNER_SCHEMA_VERSION = "presentation_ir_planner.v1"
+PRESENTATION_IR_OUTLINE_SCHEMA_VERSION = "presentation_ir_outline.v1"
 
 PlannerStatus = Literal["ready", "degraded", "blocked"]
+SlideSupportStatus = Literal["supported", "weak", "unsupported"]
+
+_TOKEN_RE = re.compile(r"[\wА-Яа-яЁё]{2,}", flags=re.UNICODE)
+_STOPWORDS = {
+    "and",
+    "the",
+    "for",
+    "of",
+    "to",
+    "in",
+    "with",
+    "show",
+    "source",
+    "backed",
+    "general",
+    "executive",
+    "summary",
+    "points",
+}
 
 
 @dataclass(frozen=True)
@@ -29,6 +50,8 @@ class PresentationIRPlannerRequest:
     tone: str = "professional"
     template_id: str = "business_clean"
     require_evidence: bool = True
+    required_sections: tuple[str, ...] = ()
+    min_outline_coverage_ratio: float = 0.6
 
 
 @dataclass(frozen=True)
@@ -48,12 +71,46 @@ class PresentationIREvidenceBinding:
 
 
 @dataclass(frozen=True)
+class PresentationIRSlideOutline:
+    schema_version: str
+    slide_id: str
+    slide_number: int
+    role: str
+    title: str
+    intent_query: str
+    expected_terms: tuple[str, ...]
+    support_status: SlideSupportStatus
+    coverage_ratio: float
+    evidence_bindings: tuple[PresentationIREvidenceBinding, ...] = ()
+    missing_terms: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "slide_id": self.slide_id,
+            "slide_number": self.slide_number,
+            "role": self.role,
+            "title": self.title,
+            "intent_query": self.intent_query,
+            "expected_terms": list(self.expected_terms),
+            "support_status": self.support_status,
+            "coverage_ratio": self.coverage_ratio,
+            "evidence_bindings": [binding.as_dict() for binding in self.evidence_bindings],
+            "missing_terms": list(self.missing_terms),
+            "warnings": list(self.warnings),
+        }
+
+
+@dataclass(frozen=True)
 class PresentationIRPlannerResult:
     schema_version: str
     status: PlannerStatus
     presentation_id: str
     presentation_ir: dict[str, Any] | None
     evidence_bindings: tuple[PresentationIREvidenceBinding, ...] = ()
+    slide_outlines: tuple[PresentationIRSlideOutline, ...] = ()
+    coverage_summary: dict[str, Any] = field(default_factory=dict)
     warnings: tuple[str, ...] = ()
     errors: tuple[str, ...] = ()
 
@@ -64,6 +121,8 @@ class PresentationIRPlannerResult:
             "presentation_id": self.presentation_id,
             "presentation_ir": self.presentation_ir,
             "evidence_bindings": [binding.as_dict() for binding in self.evidence_bindings],
+            "slide_outlines": [outline.as_dict() for outline in self.slide_outlines],
+            "coverage_summary": dict(self.coverage_summary),
             "warnings": list(self.warnings),
             "errors": list(self.errors),
         }
@@ -72,10 +131,10 @@ class PresentationIRPlannerResult:
 class PresentationIRPlannerFoundation:
     """Build a deterministic PresentationIR draft from offline local evidence.
 
-    KR-7F.1 is a planner foundation, not the final GigaChat planning runtime.
-    It consumes the KR-7E offline evidence index, emits a validated
-    PresentationIR draft, and fails closed when evidence is required but absent.
-    It does not call LLMs, embeddings, web research, render/export, visual QA,
+    KR-7F.2 hardens the KR-7F.1 foundation by planning slide outlines
+    against KR-7E local evidence sections before constructing slides. It is
+    still not the final GigaChat planning runtime. It does not call LLMs,
+    embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA,
     quality scoring, or UI runtime code.
     """
 
@@ -95,22 +154,30 @@ class PresentationIRPlannerFoundation:
                 errors=("Cannot build source-backed PresentationIR without offline evidence records.",),
             )
 
-        query = " ".join(part for part in (request.title, request.objective) if part).strip() or request.presentation_id
-        search_results = evidence_index.search(query, limit=max(1, normalized_slide_count * 2))
-        bindings = tuple(_binding_from_search_result(result) for result in search_results)
-        status: PlannerStatus = "ready" if bindings else "degraded"
-        warnings: list[str] = []
-        if not bindings:
-            warnings.append("prompt_only_degraded_planner_output_without_source_evidence")
-        if normalized_slide_count != request.slide_count:
-            warnings.append("slide_count_normalized_to_supported_range")
+        outlines = _build_slide_outlines(
+            request=request,
+            slide_count=normalized_slide_count,
+            evidence_index=evidence_index,
+        )
+        bindings = _unique_bindings(outline.evidence_bindings for outline in outlines)
+        coverage_summary = _coverage_summary(outlines=outlines, request=request)
+        status = _planner_status(request=request, outlines=outlines, bindings=bindings, coverage_summary=coverage_summary)
+        warnings = _planner_warnings(
+            request=request,
+            normalized_slide_count=normalized_slide_count,
+            status=status,
+            outlines=outlines,
+            coverage_summary=coverage_summary,
+        )
 
         presentation_ir = _build_presentation_ir(
             request=request,
             slide_count=normalized_slide_count,
             evidence_index=evidence_index,
+            outlines=outlines,
             bindings=bindings,
             status=status,
+            coverage_summary=coverage_summary,
         )
         return PresentationIRPlannerResult(
             schema_version=PRESENTATION_IR_PLANNER_SCHEMA_VERSION,
@@ -118,8 +185,15 @@ class PresentationIRPlannerFoundation:
             presentation_id=request.presentation_id,
             presentation_ir=presentation_ir,
             evidence_bindings=bindings,
-            warnings=tuple(warnings),
+            slide_outlines=outlines,
+            coverage_summary=coverage_summary,
+            warnings=warnings,
         )
+
+
+# Backward compatible alias for earlier KR-7F.1 wording used by some checks.
+# The implementation now builds evidence-aware slide outlines first.
+PresentationIRPlannerFoundation.plan_from_evidence.__doc__ = """Plan PresentationIR from offline evidence without LLM calls."""
 
 
 def _build_presentation_ir(
@@ -127,24 +201,25 @@ def _build_presentation_ir(
     request: PresentationIRPlannerRequest,
     slide_count: int,
     evidence_index: OfflineEvidenceIndex,
+    outlines: tuple[PresentationIRSlideOutline, ...],
     bindings: tuple[PresentationIREvidenceBinding, ...],
     status: PlannerStatus,
+    coverage_summary: dict[str, Any],
 ) -> dict[str, Any]:
     slides: list[dict[str, Any]] = []
-    for slide_number in range(1, slide_count + 1):
-        role = _slide_role_for_position(slide_number, slide_count)
-        slide_bindings = _bindings_for_slide(bindings, slide_number=slide_number, slide_count=slide_count)
+    for outline in outlines:
         slides.append(
             {
-                "slide_id": f"s{slide_number:03d}",
-                "slide_number": slide_number,
-                "role": role,
-                "title": _slide_title(request=request, role=role, slide_number=slide_number),
-                "takeaway": _slide_takeaway(request=request, role=role, bindings=slide_bindings),
-                "evidence": [binding.as_dict() for binding in slide_bindings],
-                "blocks": _slide_blocks(slide_id=f"s{slide_number:03d}", role=role, request=request, bindings=slide_bindings),
-                "visual_plan": _visual_plan_for_role(role, has_evidence=bool(slide_bindings)),
-                "speaker_notes": _speaker_notes_for_role(role, slide_bindings),
+                "slide_id": outline.slide_id,
+                "slide_number": outline.slide_number,
+                "role": outline.role,
+                "title": outline.title,
+                "takeaway": _slide_takeaway(request=request, outline=outline),
+                "evidence": [binding.as_dict() for binding in outline.evidence_bindings],
+                "outline": outline.as_dict(),
+                "blocks": _slide_blocks(slide_id=outline.slide_id, role=outline.role, request=request, outline=outline),
+                "visual_plan": _visual_plan_for_role(outline.role, has_evidence=bool(outline.evidence_bindings)),
+                "speaker_notes": _speaker_notes_for_outline(outline),
             }
         )
 
@@ -160,6 +235,7 @@ def _build_presentation_ir(
             "language": request.language,
             "slide_count": slide_count,
             "planner_schema_version": PRESENTATION_IR_PLANNER_SCHEMA_VERSION,
+            "outline_schema_version": PRESENTATION_IR_OUTLINE_SCHEMA_VERSION,
             "planner_status": status,
         },
         "theme": {
@@ -177,13 +253,61 @@ def _build_presentation_ir(
             "source_images_only": True,
             "native_editable_components": True,
             "planner_schema_version": PRESENTATION_IR_PLANNER_SCHEMA_VERSION,
+            "outline_schema_version": PRESENTATION_IR_OUTLINE_SCHEMA_VERSION,
             "planner_status": status,
             "requires_source_evidence": request.require_evidence,
             "evidence_records_indexed": len(evidence_index.records),
             "fallback_is_degraded_and_explicit": status == "degraded",
+            "evidence_aware_outline_planning": True,
+            "outline_coverage_ratio": coverage_summary["outline_coverage_ratio"],
+            "supported_slide_count": coverage_summary["supported_slide_count"],
+            "unsupported_slide_count": coverage_summary["unsupported_slide_count"],
         },
     }
     return require_presentation_ir_payload(payload)
+
+
+def _build_slide_outlines(
+    *,
+    request: PresentationIRPlannerRequest,
+    slide_count: int,
+    evidence_index: OfflineEvidenceIndex,
+) -> tuple[PresentationIRSlideOutline, ...]:
+    outlines: list[PresentationIRSlideOutline] = []
+    for slide_number in range(1, slide_count + 1):
+        role = _slide_role_for_position(slide_number, slide_count, required_sections=request.required_sections)
+        title = _slide_title(request=request, role=role, slide_number=slide_number)
+        query = _intent_query(request=request, role=role, title=title)
+        expected_terms = tuple(dict.fromkeys(_tokenize(query)))
+        results = evidence_index.search(query, limit=3)
+        bindings = tuple(_binding_from_search_result(result) for result in results)
+        matched_terms = set(term for binding in bindings for term in binding.matched_terms)
+        missing_terms = tuple(term for term in expected_terms if term not in matched_terms)
+        coverage_ratio = round((len(expected_terms) - len(missing_terms)) / max(1, len(expected_terms)), 6)
+        support_status = _support_status(bindings=bindings, coverage_ratio=coverage_ratio)
+        warnings = _outline_warnings(
+            role=role,
+            bindings=bindings,
+            missing_terms=missing_terms,
+            support_status=support_status,
+        )
+        outlines.append(
+            PresentationIRSlideOutline(
+                schema_version=PRESENTATION_IR_OUTLINE_SCHEMA_VERSION,
+                slide_id=f"s{slide_number:03d}",
+                slide_number=slide_number,
+                role=role,
+                title=title,
+                intent_query=query,
+                expected_terms=expected_terms,
+                support_status=support_status,
+                coverage_ratio=coverage_ratio,
+                evidence_bindings=bindings,
+                missing_terms=missing_terms,
+                warnings=warnings,
+            )
+        )
+    return tuple(outlines)
 
 
 def _presentation_ir_sources(evidence_index: OfflineEvidenceIndex) -> list[dict[str, Any]]:
@@ -235,7 +359,7 @@ def _slide_blocks(
     slide_id: str,
     role: str,
     request: PresentationIRPlannerRequest,
-    bindings: tuple[PresentationIREvidenceBinding, ...],
+    outline: PresentationIRSlideOutline,
 ) -> list[dict[str, Any]]:
     if role == "cover":
         return [
@@ -245,7 +369,7 @@ def _slide_blocks(
                 "semantic_role": "main_claim",
                 "content": {"text": request.title, "subtitle": request.objective},
                 "data_binding": None,
-                "source_refs": [binding.evidence_id for binding in bindings],
+                "source_refs": [binding.evidence_id for binding in outline.evidence_bindings],
             }
         ]
     items = [
@@ -253,19 +377,28 @@ def _slide_blocks(
             "text": _binding_statement(binding),
             "evidence_id": binding.evidence_id,
             "provenance_ref": binding.provenance_ref,
+            "section_id": binding.section_id,
+            "section_label": binding.section_label,
         }
-        for binding in bindings
+        for binding in outline.evidence_bindings
     ]
     if not items:
-        items = [{"text": "Source evidence is not attached to this planner draft.", "evidence_id": None, "provenance_ref": None}]
+        items = [
+            {
+                "text": "Source evidence is not attached to this slide outline.",
+                "evidence_id": None,
+                "provenance_ref": None,
+                "missing_terms": list(outline.missing_terms),
+            }
+        ]
     return [
         {
             "block_id": f"{slide_id}_evidence_bullets",
             "type": "bullets",
-            "semantic_role": "supporting_evidence" if bindings else "planner_gap",
+            "semantic_role": "supporting_evidence" if outline.evidence_bindings else "planner_gap",
             "content": {"items": items},
             "data_binding": None,
-            "source_refs": [binding.evidence_id for binding in bindings],
+            "source_refs": [binding.evidence_id for binding in outline.evidence_bindings],
         }
     ]
 
@@ -290,11 +423,13 @@ def _visual_plan_for_role(role: str, *, has_evidence: bool) -> dict[str, Any]:
     }
 
 
-def _slide_role_for_position(slide_number: int, slide_count: int) -> str:
+def _slide_role_for_position(slide_number: int, slide_count: int, *, required_sections: tuple[str, ...]) -> str:
     if slide_number == 1:
         return "cover"
     if slide_number == slide_count:
         return "closing"
+    if required_sections:
+        return _safe_role(required_sections[(slide_number - 2) % len(required_sections)])
     sequence = ["executive_summary", "insight", "data", "roadmap", "decision"]
     return sequence[(slide_number - 2) % len(sequence)]
 
@@ -309,42 +444,41 @@ def _slide_title(*, request: PresentationIRPlannerRequest, role: str, slide_numb
         "decision": "Decision considerations",
         "closing": "Next steps",
     }
-    return role_titles.get(role, f"Section {slide_number}")
+    if role in role_titles:
+        return role_titles[role]
+    return role.replace("_", " ").strip().title() or f"Section {slide_number}"
 
 
-def _slide_takeaway(
-    *,
-    request: PresentationIRPlannerRequest,
-    role: str,
-    bindings: tuple[PresentationIREvidenceBinding, ...],
-) -> str:
-    if role == "cover":
+def _intent_query(*, request: PresentationIRPlannerRequest, role: str, title: str) -> str:
+    role_terms = {
+        "cover": request.title,
+        "executive_summary": request.objective,
+        "insight": f"{request.objective} insight impact",
+        "data": f"{request.objective} data metrics evidence",
+        "roadmap": f"{request.objective} roadmap next steps",
+        "decision": f"{request.objective} decision risk tradeoff",
+        "closing": f"{request.objective} next steps recommendation",
+    }
+    return " ".join(part for part in (title, role_terms.get(role, role), request.audience) if part).strip()
+
+
+def _slide_takeaway(*, request: PresentationIRPlannerRequest, outline: PresentationIRSlideOutline) -> str:
+    if outline.role == "cover":
         return request.objective
-    if bindings:
-        return f"This slide is grounded in {len(bindings)} local evidence fragment(s)."
-    return "Evidence is not attached; this planner draft is degraded and must be reviewed."
+    if outline.support_status == "supported":
+        return f"This slide outline is grounded in {len(outline.evidence_bindings)} local evidence fragment(s)."
+    if outline.support_status == "weak":
+        return "This slide outline has partial local evidence and requires operator review."
+    return "Evidence is not attached; this slide outline is unsupported and must be revised."
 
 
-def _speaker_notes_for_role(role: str, bindings: tuple[PresentationIREvidenceBinding, ...]) -> str:
-    if bindings:
-        refs = ", ".join(binding.provenance_ref for binding in bindings)
+def _speaker_notes_for_outline(outline: PresentationIRSlideOutline) -> str:
+    if outline.evidence_bindings:
+        refs = ", ".join(binding.provenance_ref for binding in outline.evidence_bindings)
         return f"Evidence refs: {refs}"
-    return f"Planner note for {role}: attach source evidence before claiming support."
-
-
-def _bindings_for_slide(
-    bindings: tuple[PresentationIREvidenceBinding, ...],
-    *,
-    slide_number: int,
-    slide_count: int,
-) -> tuple[PresentationIREvidenceBinding, ...]:
-    if not bindings:
-        return ()
-    if slide_number == 1:
-        return bindings[:1]
-    bucket = slide_number - 2
-    bucket_count = max(1, slide_count - 2)
-    return tuple(binding for index, binding in enumerate(bindings) if index % bucket_count == bucket)[:3]
+    if outline.missing_terms:
+        return f"Unsupported outline terms: {', '.join(outline.missing_terms)}"
+    return f"Planner note for {outline.role}: attach source evidence before claiming support."
 
 
 def _binding_from_search_result(result: EvidenceSearchResult) -> PresentationIREvidenceBinding:
@@ -361,17 +495,123 @@ def _binding_from_search_result(result: EvidenceSearchResult) -> PresentationIRE
 
 def _binding_statement(binding: PresentationIREvidenceBinding) -> str:
     section = binding.section_label or binding.section_id or binding.source_id
-    return f"{section}: evidence score {binding.score:.2f}"
+    matched = ", ".join(binding.matched_terms) if binding.matched_terms else "no matched terms"
+    return f"{section}: evidence score {binding.score:.2f}; matched terms: {matched}"
+
+
+def _unique_bindings(binding_groups: tuple[PresentationIREvidenceBinding, ...] | list[tuple[PresentationIREvidenceBinding, ...]] | Any) -> tuple[PresentationIREvidenceBinding, ...]:
+    unique: dict[str, PresentationIREvidenceBinding] = {}
+    for group in binding_groups:
+        for binding in group:
+            unique.setdefault(binding.evidence_id, binding)
+    return tuple(unique.values())
+
+
+def _coverage_summary(*, outlines: tuple[PresentationIRSlideOutline, ...], request: PresentationIRPlannerRequest) -> dict[str, Any]:
+    supported = tuple(outline for outline in outlines if outline.support_status == "supported")
+    weak = tuple(outline for outline in outlines if outline.support_status == "weak")
+    unsupported = tuple(outline for outline in outlines if outline.support_status == "unsupported")
+    ratio = round(len(supported) / max(1, len(outlines)), 6)
+    return {
+        "schema_version": PRESENTATION_IR_OUTLINE_SCHEMA_VERSION,
+        "outline_coverage_ratio": ratio,
+        "required_outline_coverage_ratio": _normalize_coverage_threshold(request.min_outline_coverage_ratio),
+        "slide_count": len(outlines),
+        "supported_slide_count": len(supported),
+        "weak_slide_count": len(weak),
+        "unsupported_slide_count": len(unsupported),
+        "unsupported_slide_ids": [outline.slide_id for outline in unsupported],
+        "weak_slide_ids": [outline.slide_id for outline in weak],
+    }
+
+
+def _planner_status(
+    *,
+    request: PresentationIRPlannerRequest,
+    outlines: tuple[PresentationIRSlideOutline, ...],
+    bindings: tuple[PresentationIREvidenceBinding, ...],
+    coverage_summary: dict[str, Any],
+) -> PlannerStatus:
+    if not bindings:
+        return "degraded"
+    if coverage_summary["outline_coverage_ratio"] < coverage_summary["required_outline_coverage_ratio"]:
+        return "degraded"
+    if any(outline.support_status == "unsupported" for outline in outlines if outline.role not in {"cover", "closing"}):
+        return "degraded"
+    return "ready"
+
+
+def _planner_warnings(
+    *,
+    request: PresentationIRPlannerRequest,
+    normalized_slide_count: int,
+    status: PlannerStatus,
+    outlines: tuple[PresentationIRSlideOutline, ...],
+    coverage_summary: dict[str, Any],
+) -> tuple[str, ...]:
+    warnings: list[str] = []
+    if status == "degraded":
+        warnings.append("evidence_aware_outline_planner_degraded")
+    if not any(outline.evidence_bindings for outline in outlines):
+        warnings.append("prompt_only_degraded_planner_output_without_source_evidence")
+    if normalized_slide_count != request.slide_count:
+        warnings.append("slide_count_normalized_to_supported_range")
+    if coverage_summary["outline_coverage_ratio"] < coverage_summary["required_outline_coverage_ratio"]:
+        warnings.append("outline_coverage_below_required_threshold")
+    if coverage_summary["unsupported_slide_count"]:
+        warnings.append("outline_contains_unsupported_slides")
+    return tuple(dict.fromkeys(warnings))
+
+
+def _support_status(*, bindings: tuple[PresentationIREvidenceBinding, ...], coverage_ratio: float) -> SlideSupportStatus:
+    if not bindings:
+        return "unsupported"
+    if coverage_ratio >= 0.4:
+        return "supported"
+    return "weak"
+
+
+def _outline_warnings(
+    *,
+    role: str,
+    bindings: tuple[PresentationIREvidenceBinding, ...],
+    missing_terms: tuple[str, ...],
+    support_status: SlideSupportStatus,
+) -> tuple[str, ...]:
+    warnings: list[str] = []
+    if not bindings:
+        warnings.append("slide_outline_without_evidence")
+    if missing_terms:
+        warnings.append("slide_outline_missing_expected_terms")
+    if support_status == "weak":
+        warnings.append("slide_outline_weak_evidence_support")
+    if role == "data" and not bindings:
+        warnings.append("data_slide_without_source_data")
+    return tuple(warnings)
+
+
+def _tokenize(text: str) -> list[str]:
+    return [token.lower() for token in _TOKEN_RE.findall(text or "") if token.lower() not in _STOPWORDS]
+
+
+def _safe_role(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_]+", "_", value.strip().lower()).strip("_") or "section"
 
 
 def _normalize_slide_count(slide_count: int) -> int:
     return min(20, max(1, int(slide_count)))
 
 
+def _normalize_coverage_threshold(value: float) -> float:
+    return min(1.0, max(0.0, float(value)))
+
+
 __all__ = [
+    "PRESENTATION_IR_OUTLINE_SCHEMA_VERSION",
     "PRESENTATION_IR_PLANNER_SCHEMA_VERSION",
     "PresentationIREvidenceBinding",
     "PresentationIRPlannerFoundation",
     "PresentationIRPlannerRequest",
     "PresentationIRPlannerResult",
+    "PresentationIRSlideOutline",
 ]

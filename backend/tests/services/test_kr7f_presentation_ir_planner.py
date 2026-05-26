@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from backend.app.services.slides_service import (
+    PRESENTATION_IR_OUTLINE_SCHEMA_VERSION,
     PRESENTATION_IR_PLANNER_SCHEMA_VERSION,
     PRESENTATION_IR_SCHEMA_VERSION,
     OfflineEvidenceIndexBuilder,
@@ -108,3 +109,70 @@ def test_kr7f1_planner_does_not_require_images_or_fake_charts() -> None:
     assert payload["quality_contract"]["no_generated_images"] is True
     assert all(slide["visual_plan"]["requires_image"] is False for slide in payload["slides"])
     assert all(slide["visual_plan"]["requires_chart"] is False for slide in payload["slides"])
+
+def test_kr7f2_planner_emits_evidence_aware_slide_outlines() -> None:
+    index = _evidence_index()
+    request = PresentationIRPlannerRequest(
+        presentation_id="pres_outline",
+        title="Support automation results",
+        objective="Support automation retention risk",
+        slide_count=4,
+        required_sections=("retention", "risk"),
+        require_evidence=True,
+    )
+
+    result = PresentationIRPlannerFoundation().plan_from_evidence(request, index)
+
+    assert result.status == "ready"
+    assert result.slide_outlines
+    assert result.coverage_summary["schema_version"] == PRESENTATION_IR_OUTLINE_SCHEMA_VERSION
+    assert result.coverage_summary["outline_coverage_ratio"] >= result.coverage_summary["required_outline_coverage_ratio"]
+    assert all(outline.schema_version == PRESENTATION_IR_OUTLINE_SCHEMA_VERSION for outline in result.slide_outlines)
+    assert all(outline.intent_query for outline in result.slide_outlines)
+    assert all(outline.support_status == "supported" for outline in result.slide_outlines)
+    assert {outline.role for outline in result.slide_outlines} >= {"cover", "retention", "risk", "closing"}
+    assert result.presentation_ir is not None
+    slides = result.presentation_ir["slides"]
+    assert all(slide["outline"]["schema_version"] == PRESENTATION_IR_OUTLINE_SCHEMA_VERSION for slide in slides)
+    assert all(slide["outline"]["support_status"] == "supported" for slide in slides)
+
+
+def test_kr7f2_planner_degrades_when_outline_coverage_is_below_threshold() -> None:
+    index = _evidence_index()
+    request = PresentationIRPlannerRequest(
+        presentation_id="pres_degraded_outline",
+        title="European market growth",
+        objective="European market growth margin forecast",
+        slide_count=5,
+        require_evidence=True,
+        min_outline_coverage_ratio=1.0,
+    )
+
+    result = PresentationIRPlannerFoundation().plan_from_evidence(request, index)
+
+    assert result.status == "degraded"
+    assert "outline_coverage_below_required_threshold" in result.warnings
+    assert result.coverage_summary["outline_coverage_ratio"] < 1.0
+    assert any(outline.missing_terms for outline in result.slide_outlines)
+    assert result.presentation_ir is not None
+    assert result.presentation_ir["quality_contract"]["evidence_aware_outline_planning"] is True
+    assert result.presentation_ir["quality_contract"]["fallback_is_degraded_and_explicit"] is True
+
+
+def test_kr7f2_prompt_only_outline_marks_every_slide_unsupported() -> None:
+    empty_index = OfflineEvidenceIndexBuilder().build_index([])
+    request = PresentationIRPlannerRequest(
+        presentation_id="pres_prompt_only_outline",
+        title="Draft without sources",
+        objective="Create outline but mark missing evidence",
+        require_evidence=False,
+        slide_count=3,
+    )
+
+    result = PresentationIRPlannerFoundation().plan_from_evidence(request, empty_index)
+
+    assert result.status == "degraded"
+    assert result.coverage_summary["supported_slide_count"] == 0
+    assert result.coverage_summary["unsupported_slide_count"] == 3
+    assert all(outline.support_status == "unsupported" for outline in result.slide_outlines)
+    assert all("slide_outline_without_evidence" in outline.warnings for outline in result.slide_outlines)
