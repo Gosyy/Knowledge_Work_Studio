@@ -560,3 +560,33 @@ source attachment POST remains explicit 501 until mutation/runtime persistence e
 scripts/kw_presentation_api_contract_check.py verifies the source read path, schemas, and source helper phrases;
 full runner and Docker smoke pass before LOCAL ACCEPT.
 ```
+
+
+### KR-7D.1 Offline source ingestion engine foundation
+
+Purpose:
+
+```text
+start KR-7D by adding a deterministic offline source ingestion engine foundation for Presentation workflows;
+extract local source structure without public internet, LLMs, OCR, generated images, or hidden embedding services;
+produce provenance-first fragments, structured table candidates, and source asset registry reports that later KR-7E/F/J/K phases can consume.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/offline_source_ingestion.py defines offline_source_ingestion.v1 and source_asset_registry.v1 contracts;
+DOCX, PPTX, XLSX/CSV, Markdown/text ingestion produces fragments/tables/assets with provenance references;
+PDF extraction remains honest and dependency-gated: PyMuPDF/fitz may extract text when available, otherwise the report is unsupported rather than fake success;
+unsupported formats return unsupported reports instead of fallback text;
+scripts/kw_offline_source_ingestion_check.py verifies the runtime/checker/docs surface and is included in the full runner;
+test inventory classifies the KR-7D checker;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement KR-7E evidence retrieval, embeddings, OCR, source-to-slide planning, render/export, quality scoring, or UI source management in KR-7D.1;
+do not claim complete PDF/OCR readiness unless dependency-backed extraction proves it in logs.
+```

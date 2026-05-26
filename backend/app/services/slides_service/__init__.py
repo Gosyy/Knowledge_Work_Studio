@@ -57,6 +57,16 @@ from backend.app.services.slides_service.outline import (
     build_slides_outline,
     plan_to_outline,
 )
+from backend.app.services.slides_service.offline_source_ingestion import (
+    SOURCE_ASSET_REGISTRY_SCHEMA_VERSION,
+    SOURCE_INGESTION_SCHEMA_VERSION,
+    OfflineSourceIngestionEngine,
+    SourceAsset,
+    SourceIngestionFragment,
+    SourceIngestionReport,
+    SourceTableCandidate,
+    detect_source_kind,
+)
 from backend.app.services.slides_service.plan_snapshot import (
     PresentationPlanSnapshotService,
     deserialize_presentation_plan,
@@ -186,6 +196,14 @@ __all__ = [
     "PlannedSlide",
     "PresentationPlanSnapshotService",
     "PRESENTATION_IR_SCHEMA_VERSION",
+    "SOURCE_ASSET_REGISTRY_SCHEMA_VERSION",
+    "SOURCE_INGESTION_SCHEMA_VERSION",
+    "OfflineSourceIngestionEngine",
+    "SourceAsset",
+    "SourceIngestionFragment",
+    "SourceIngestionReport",
+    "SourceTableCandidate",
+    "detect_source_kind",
     "PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION",
     "build_presentation_ir_from_legacy_plan",
     "detect_presentation_ir_storage_format",

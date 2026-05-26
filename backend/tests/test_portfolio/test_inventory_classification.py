@@ -114,3 +114,14 @@ def test_kw_test_inventory_classifies_kr7b_llm_provider_scope_items(tmp_path: Pa
     assert scope_script["decision"] == "keep"
     assert scope_smoke["contract"] == "gigachat_runtime"
     assert scope_smoke["decision"] == "keep"
+
+
+def test_kw_test_inventory_classifies_kr7d_offline_source_ingestion_checker(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    inventory = _run_inventory(repo_root, tmp_path)
+    by_path = {entry["path"]: entry for entry in inventory["tests"]}
+
+    ingestion_script = by_path["scripts/kw_offline_source_ingestion_check.py"]
+    assert ingestion_script["contract"] == "source_mode_routing"
+    assert "source_mode_routing" in ingestion_script["contracts"]
+    assert ingestion_script["decision"] == "keep"

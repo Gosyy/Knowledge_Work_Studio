@@ -191,6 +191,16 @@ Acceptance:
 - tables become structured candidates;
 - unsupported extraction is reported honestly.
 
+Implementation note after KR-7D.1:
+
+```text
+KR-7D.1 introduces a deterministic offline source ingestion engine foundation.
+It extracts Markdown/text fragments, Markdown/CSV/XLSX table previews, DOCX paragraphs/tables/media assets, PPTX slide text/media assets, and XLSX formulas/table candidates with provenance references.
+It emits source_ingestion_provenance.v1 and source_asset_registry.v1 reports.
+PDF extraction is dependency-gated through PyMuPDF/fitz when available and returns unsupported instead of fake OCR/text when unavailable.
+It does not implement evidence retrieval, embeddings, OCR, source-to-slide planning, render, export, or quality scoring.
+```
+
 ## Phase KR-7E — offline evidence retrieval
 
 Goal: replace web research with local source-backed evidence.

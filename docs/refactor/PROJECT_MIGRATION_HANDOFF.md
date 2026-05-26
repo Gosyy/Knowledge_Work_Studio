@@ -1264,3 +1264,28 @@ Important limitation:
 ```text
 KR-7C.3 is a source attachment/read contract only. It must not be described as source ingestion/extraction. KR-7D is still responsible for extracting DOCX/PDF/XLSX/PPTX/Markdown structure, tables, images, and provenance assets.
 ```
+
+
+## KR-7D.1 Offline source ingestion engine foundation
+
+KR-7D.1 starts the runtime phase after the KR-7C API-first contracts. It adds a deterministic local `OfflineSourceIngestionEngine` for source bytes and keeps the result artifact/provenance-first rather than planner-first.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/offline_source_ingestion.py defines offline_source_ingestion.v1, source_ingestion_provenance.v1, and source_asset_registry.v1 reports;
+backend/tests/services/test_kr7d_offline_source_ingestion.py covers Markdown/text, DOCX, PPTX, XLSX/CSV-style tables, source assets, provenance references, and honest unsupported PDF behavior;
+scripts/kw_offline_source_ingestion_check.py verifies the KR-7D.1 runtime/checker/docs surface;
+scripts/kw_full_tests_with_proxy_runner.sh runs the KR-7D.1 checker before the production readiness gate;
+scripts/kw_test_inventory.py classifies the checker as source_mode_routing.
+```
+
+Important limitation:
+
+```text
+KR-7D.1 is an ingestion foundation only. It does not implement OCR, embeddings, evidence retrieval, source-to-slide planning, generated PresentationIR planning, render/export, quality scoring, or UI source management. PDF extraction is dependency-gated and must report unsupported when PyMuPDF/fitz is unavailable.
+```
+
+### KR-7D.1 offline source ingestion foundation limitation
+
+KR-7D.1 does not implement OCR, embeddings, evidence retrieval, or PresentationIR planning; those remain future KR-7D/KR-7E/KR-7F responsibilities. The patch is limited to deterministic offline ingestion reports, provenance fragments, structured table candidates, source asset metadata, and honest unsupported/failed extraction status.
