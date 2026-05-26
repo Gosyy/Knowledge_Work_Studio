@@ -590,3 +590,34 @@ Non-goals:
 do not implement KR-7E evidence retrieval, embeddings, OCR, source-to-slide planning, render/export, quality scoring, or UI source management in KR-7D.1;
 do not claim complete PDF/OCR readiness unless dependency-backed extraction proves it in logs.
 ```
+
+
+### KR-7D.2 SourceAssetRegistry persistence and extracted asset storage contract
+
+Purpose:
+
+```text
+turn KR-7D.1 extracted source asset metadata into a deterministic persistence contract;
+store extracted image/media bytes under a profile-neutral SourceAssetRegistry storage root;
+write source_asset_storage.v1 manifests with relative paths, source-asset URIs, checksums, sizes, provenance refs, and sanitized source package paths;
+keep the storage layer independent from KR-7E evidence retrieval, KR-7F PresentationIR planning, render/export, OCR, and UI source management.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/source_asset_registry.py defines source_asset_storage.v1 and SourceAssetRegistryStore;
+extracted asset bytes from DOCX/PPTX/XLSX packages can be persisted with checksum verification;
+public registry manifests expose relative paths and source-asset:// URIs, not operator absolute paths;
+ingestion report JSON written by the store is safe to serialize and does not contain raw content_bytes;
+empty asset reports are persisted as honest empty manifests, not fake success;
+scripts/kw_offline_source_ingestion_check.py verifies the storage/checker/docs surface;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement KR-7E evidence retrieval, OCR, embeddings, source-to-slide planning, render/export, quality scoring, or UI source management in KR-7D.2;
+do not claim complete SourceAssetRegistry product integration beyond the storage contract and manifest persistence layer.
+```

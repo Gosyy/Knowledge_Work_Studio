@@ -130,6 +130,13 @@ from backend.app.services.slides_service.saved_plan_retry import (
     retry_saved_plan_with_lifecycle,
 )
 from backend.app.services.slides_service.service import SlidesService, SlidesTransformOutput
+from backend.app.services.slides_service.source_asset_registry import (
+    SOURCE_ASSET_STORAGE_SCHEMA_VERSION,
+    SourceAssetRegistryPersistenceResult,
+    SourceAssetRegistryStore,
+    StoredSourceAsset,
+    build_source_asset_registry_manifest,
+)
 from backend.app.services.slides_service.source_grounding import (
     SlideCitation,
     SourceFragment,
@@ -197,6 +204,11 @@ __all__ = [
     "PresentationPlanSnapshotService",
     "PRESENTATION_IR_SCHEMA_VERSION",
     "SOURCE_ASSET_REGISTRY_SCHEMA_VERSION",
+    "SOURCE_ASSET_STORAGE_SCHEMA_VERSION",
+    "SourceAssetRegistryPersistenceResult",
+    "SourceAssetRegistryStore",
+    "StoredSourceAsset",
+    "build_source_asset_registry_manifest",
     "SOURCE_INGESTION_SCHEMA_VERSION",
     "OfflineSourceIngestionEngine",
     "SourceAsset",

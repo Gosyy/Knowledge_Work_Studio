@@ -24,7 +24,9 @@ make API-first mutation/render/export/quality endpoints look successful before t
 persist PresentationIR-compatible payloads without explicit schema_version and validation;
 expose PresentationIR payloads through API-first endpoints without version metadata and secret-safe sanitization;
 claim source ingestion/extraction is implemented when a patch only adds source attachment/read metadata;
-claim PDF/OCR extraction readiness when the extractor returned unsupported.
+claim PDF/OCR extraction readiness when the extractor returned unsupported;
+expose operator absolute storage paths in SourceAssetRegistry manifests;
+persist fake source asset bytes, fake checksums, or raw content_bytes in public ingestion report JSON.
 ```
 
 ## Runtime and deploy prohibitions

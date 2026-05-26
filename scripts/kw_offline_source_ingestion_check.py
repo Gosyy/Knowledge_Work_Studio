@@ -10,6 +10,7 @@ from typing import Any
 
 REQUIRED_FILES = [
     "backend/app/services/slides_service/offline_source_ingestion.py",
+    "backend/app/services/slides_service/source_asset_registry.py",
     "backend/tests/services/test_kr7d_offline_source_ingestion.py",
 ]
 
@@ -27,27 +28,41 @@ REQUIRED_PHRASES = {
         "provenance_manifest",
         "source_asset_registry",
     ],
+    "backend/app/services/slides_service/source_asset_registry.py": [
+        'SOURCE_ASSET_STORAGE_SCHEMA_VERSION = "source_asset_storage.v1"',
+        "class SourceAssetRegistryStore",
+        "def persist_report",
+        "source-asset://",
+        "relative_path",
+        "never the operator's absolute storage root",
+    ],
     "backend/tests/services/test_kr7d_offline_source_ingestion.py": [
         "test_kr7d_markdown_ingestion_extracts_headings_tables_and_provenance",
         "test_kr7d_docx_ingestion_extracts_paragraph_table_and_image_asset",
         "test_kr7d_pptx_ingestion_extracts_slide_text_and_media_assets",
         "test_kr7d_xlsx_ingestion_extracts_table_preview_and_formula_flag",
         "test_kr7d_pdf_without_runtime_dependency_reports_unsupported_not_fake_success",
+        "test_kr7d_source_asset_registry_persists_extracted_asset_bytes",
+        "test_kr7d_source_asset_registry_empty_report_is_honest",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7D.1 Offline source ingestion engine foundation",
         "DOCX, PPTX, XLSX/CSV, Markdown/text",
         "PDF extraction remains honest and dependency-gated",
+        "KR-7D.2 SourceAssetRegistry persistence and extracted asset storage contract",
     ],
     "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": [
         "KR-7D.1 Offline source ingestion engine foundation",
         "does not implement OCR, embeddings, evidence retrieval, or PresentationIR planning",
+        "KR-7D.2 SourceAssetRegistry persistence and extracted asset storage contract",
     ],
     "docs/QUALITY_MATRIX.md": [
         "KR-7D.1 adds offline source ingestion foundation",
+        "KR-7D.2 adds SourceAssetRegistry persistence",
     ],
     "docs/PROJECT_PROHIBITIONS.md": [
         "claim PDF/OCR extraction readiness when the extractor returned unsupported",
+        "expose operator absolute storage paths in SourceAssetRegistry manifests",
     ],
 }
 

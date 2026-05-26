@@ -124,3 +124,56 @@ def test_kr7d_detect_source_kind_uses_file_type_mime_and_title_without_network()
     assert detect_source_kind(file_type="", mime_type="text/markdown", title=None) == "markdown"
     assert detect_source_kind(file_type="", mime_type="", title="deck.pptx") == "pptx"
     assert detect_source_kind(file_type="unknown", mime_type="application/octet-stream", title=None) == "unknown"
+
+
+def test_kr7d_source_asset_registry_persists_extracted_asset_bytes(tmp_path) -> None:
+    import json
+    from pathlib import Path
+
+    from backend.app.services.slides_service.source_asset_registry import (
+        SOURCE_ASSET_STORAGE_SCHEMA_VERSION,
+        SourceAssetRegistryStore,
+    )
+
+    docx = _zip(
+        {
+            "word/document.xml": """
+            <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+              <w:body><w:p><w:r><w:t>Image source</w:t></w:r></w:p></w:body>
+            </w:document>
+            """,
+            "word/media/image1.png": b"png-bytes-for-storage",
+        }
+    )
+
+    report = OfflineSourceIngestionEngine().ingest_bytes(docx, source_id="src docx", file_type="docx")
+    result = SourceAssetRegistryStore(tmp_path / "source_assets").persist_report(report)
+
+    assert result.schema_version == SOURCE_ASSET_STORAGE_SCHEMA_VERSION
+    assert result.status == "ready"
+    assert len(result.assets) == 1
+    stored = result.assets[0]
+    assert stored.storage_uri == "source-asset://src_docx/src_docx_asset_001"
+    assert not Path(stored.relative_path).is_absolute()
+    assert stored.relative_path == "src_docx/assets/src_docx_asset_001.png"
+    assert (tmp_path / "source_assets" / stored.relative_path).read_bytes() == b"png-bytes-for-storage"
+
+    manifest_path = tmp_path / "source_assets" / result.registry_manifest_relative_path
+    report_path = tmp_path / "source_assets" / result.ingestion_report_relative_path
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    report_payload = json.loads(report_path.read_text(encoding="utf-8"))
+    assert manifest["schema_version"] == SOURCE_ASSET_STORAGE_SCHEMA_VERSION
+    assert manifest["assets"][0]["relative_path"] == stored.relative_path
+    assert "content_bytes" not in json.dumps(report_payload, ensure_ascii=False)
+    assert str(tmp_path) not in json.dumps(manifest, ensure_ascii=False)
+
+
+def test_kr7d_source_asset_registry_empty_report_is_honest(tmp_path) -> None:
+    from backend.app.services.slides_service.source_asset_registry import SourceAssetRegistryStore
+
+    report = OfflineSourceIngestionEngine().ingest_bytes(b"plain text only", source_id="src_text", file_type="txt")
+    result = SourceAssetRegistryStore(tmp_path / "source_assets").persist_report(report)
+
+    assert result.status == "empty"
+    assert result.assets == []
+    assert result.warnings == ["No extracted assets were present in the ingestion report."]

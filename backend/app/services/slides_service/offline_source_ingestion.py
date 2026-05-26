@@ -80,9 +80,12 @@ class SourceAsset:
     sheet_name: str | None = None
     width_px: int | None = None
     height_px: int | None = None
+    content_bytes: bytes | None = field(default=None, repr=False, compare=False)
 
     def as_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload.pop("content_bytes", None)
+        return payload
 
 
 @dataclass(frozen=True)
@@ -540,6 +543,7 @@ def _zip_media_assets(package: ZipFile, *, prefix: str, source_id: str) -> list[
                 checksum_sha256=hashlib.sha256(blob).hexdigest(),
                 size_bytes=len(blob),
                 mime_type=_mime_type_from_name(name),
+                content_bytes=blob,
             )
         )
     return assets

@@ -1289,3 +1289,24 @@ KR-7D.1 is an ingestion foundation only. It does not implement OCR, embeddings, 
 ### KR-7D.1 offline source ingestion foundation limitation
 
 KR-7D.1 does not implement OCR, embeddings, evidence retrieval, or PresentationIR planning; those remain future KR-7D/KR-7E/KR-7F responsibilities. The patch is limited to deterministic offline ingestion reports, provenance fragments, structured table candidates, source asset metadata, and honest unsupported/failed extraction status.
+
+
+## KR-7D.2 SourceAssetRegistry persistence and extracted asset storage contract
+
+KR-7D.2 extends the KR-7D.1 offline ingestion foundation by adding a profile-neutral persistence contract for extracted assets. It stores bytes already extracted from source packages and writes safe manifests for later evidence retrieval, planning, and render phases to consume.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/source_asset_registry.py defines source_asset_storage.v1, SourceAssetRegistryStore, StoredSourceAsset, and SourceAssetRegistryPersistenceResult;
+backend/app/services/slides_service/offline_source_ingestion.py keeps raw asset bytes internal and omits content_bytes from public report dictionaries;
+backend/tests/services/test_kr7d_offline_source_ingestion.py covers persistence, checksum verification, source-asset:// URIs, relative paths, empty reports, and raw-byte-safe JSON;
+scripts/kw_offline_source_ingestion_check.py verifies the KR-7D.2 storage/checker/docs surface;
+scripts/kw_full_tests_with_proxy_runner.sh continues to run the KR-7D checker before the production readiness gate.
+```
+
+Important limitation:
+
+```text
+KR-7D.2 is a SourceAssetRegistry persistence/storage contract only. It does not implement OCR, embeddings, evidence retrieval, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. Public manifests must not expose operator absolute storage paths or raw asset bytes.
+```

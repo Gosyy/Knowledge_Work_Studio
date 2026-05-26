@@ -201,6 +201,14 @@ PDF extraction is dependency-gated through PyMuPDF/fitz when available and retur
 It does not implement evidence retrieval, embeddings, OCR, source-to-slide planning, render, export, or quality scoring.
 ```
 
+Implementation note after KR-7D.2:
+
+```text
+KR-7D.2 adds SourceAssetRegistry persistence and extracted asset storage.
+It stores extracted asset bytes under a caller-provided storage root, writes source_asset_storage.v1 manifests, verifies checksums, exposes source-asset:// URIs and relative paths only, and keeps ingestion report JSON free of raw content bytes.
+It does not implement evidence retrieval, embeddings, OCR, source-to-slide planning, render, export, quality scoring, or UI source management.
+```
+
 ## Phase KR-7E — offline evidence retrieval
 
 Goal: replace web research with local source-backed evidence.
