@@ -209,6 +209,14 @@ It stores extracted asset bytes under a caller-provided storage root, writes sou
 It does not implement evidence retrieval, embeddings, OCR, source-to-slide planning, render, export, quality scoring, or UI source management.
 ```
 
+Implementation note after KR-7D.3:
+
+```text
+KR-7D.3 enriches offline document structure extraction inside the ingestion engine.
+It emits source_structure.v1 elements for Markdown headings/code/image refs, DOCX styles/captions/tables/images, PPTX slides/text boxes/tables/charts, XLSX worksheets/formulas/chart data candidates, and PDF page/text block coordinates when PyMuPDF/fitz is available.
+It does not implement KR-7E evidence retrieval, embeddings, OCR, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management.
+```
+
 ## Phase KR-7E — offline evidence retrieval
 
 Goal: replace web research with local source-backed evidence.

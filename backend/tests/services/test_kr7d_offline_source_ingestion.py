@@ -34,7 +34,23 @@ def test_kr7d_markdown_ingestion_extracts_headings_tables_and_provenance() -> No
     assert report.fragments[0].heading_level == 1
     assert report.tables[0].rows == [["KPI", "Value"], ["Cost", "42"]]
     assert report.provenance_manifest["fragment_count"] == 1
+    assert report.provenance_manifest["structure_count"] >= 2
     assert "src_md#markdown-table:1" in report.provenance_manifest["provenance_refs"]
+    assert {structure.element_type for structure in report.structures} >= {"heading", "table"}
+
+
+def test_kr7d_markdown_ingestion_extracts_code_blocks_and_image_refs() -> None:
+    report = OfflineSourceIngestionEngine().ingest_bytes(
+        b"# Dev note\n```python\nprint('ok')\n```\n![Diagram](assets/diagram.png)\n",
+        source_id="src_md_rich",
+        file_type="md",
+    )
+
+    by_type = {structure.element_type: structure for structure in report.structures}
+    assert by_type["code_block"].metadata["language"] == "python"
+    assert "print('ok')" in by_type["code_block"].text
+    assert by_type["image_ref"].metadata["target"] == "assets/diagram.png"
+    assert by_type["heading"].style == "h1"
 
 
 def test_kr7d_docx_ingestion_extracts_paragraph_table_and_image_asset() -> None:
@@ -45,6 +61,7 @@ def test_kr7d_docx_ingestion_extracts_paragraph_table_and_image_asset() -> None:
               <w:body>
                 <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Executive title</w:t></w:r></w:p>
                 <w:p><w:r><w:t>Body paragraph</w:t></w:r></w:p>
+                <w:p><w:pPr><w:pStyle w:val="Caption"/></w:pPr><w:r><w:t>Figure 1: Architecture image</w:t></w:r></w:p>
                 <w:tbl><w:tr><w:tc><w:p><w:r><w:t>A</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>B</w:t></w:r></w:p></w:tc></w:tr></w:tbl>
               </w:body>
             </w:document>
@@ -59,6 +76,8 @@ def test_kr7d_docx_ingestion_extracts_paragraph_table_and_image_asset() -> None:
     assert report.fragments[0].heading_level == 1
     assert report.fragments[1].text == "Body paragraph"
     assert report.tables[0].rows == [["A", "B"]]
+    assert any(structure.role == "caption" for structure in report.structures)
+    assert any(structure.element_type == "inline_image" for structure in report.structures)
     assert report.assets[0].path == "word/media/image1.png"
     assert report.assets[0].checksum_sha256
     assert report.source_asset_registry["schema_version"] == SOURCE_ASSET_REGISTRY_SCHEMA_VERSION
@@ -69,9 +88,13 @@ def test_kr7d_pptx_ingestion_extracts_slide_text_and_media_assets() -> None:
         {
             "ppt/slides/slide1.xml": """
             <p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-              <p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>Slide title</a:t></a:r></a:p><a:p><a:r><a:t>Point one</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld>
+              <p:cSld><p:spTree>
+                <p:sp><p:nvSpPr><p:cNvPr id="2" name="Title 1"/></p:nvSpPr><p:txBody><a:p><a:r><a:t>Slide title</a:t></a:r></a:p><a:p><a:r><a:t>Point one</a:t></a:r></a:p></p:txBody></p:sp>
+                <p:graphicFrame><a:graphic><a:graphicData><a:tbl><a:tr><a:tc><a:txBody><a:p><a:r><a:t>KPI</a:t></a:r></a:p></a:txBody></a:tc><a:tc><a:txBody><a:p><a:r><a:t>42</a:t></a:r></a:p></a:txBody></a:tc></a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame>
+              </p:spTree></p:cSld>
             </p:sld>
             """,
+            "ppt/charts/chart1.xml": """<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart><c:plotArea><c:barChart><c:ser><c:val><c:numRef><c:f>Sheet1!$B$2:$B$3</c:f></c:numRef></c:val></c:ser></c:barChart></c:plotArea></c:chart></c:chartSpace>""",
             "ppt/media/image1.jpeg": b"jpeg-bytes",
         }
     )
@@ -79,8 +102,12 @@ def test_kr7d_pptx_ingestion_extracts_slide_text_and_media_assets() -> None:
     report = OfflineSourceIngestionEngine().ingest_bytes(pptx, source_id="src_pptx", file_type="pptx")
 
     assert report.status == "ready"
-    assert [fragment.text for fragment in report.fragments] == ["Slide title", "Point one"]
+    assert [fragment.text for fragment in report.fragments[:2]] == ["Slide title", "Point one"]
     assert report.fragments[0].slide_number == 1
+    assert report.tables[0].rows == [["KPI", "42"]]
+    assert any(structure.element_type == "text_box" for structure in report.structures)
+    assert report.chart_candidates[0].chart_type == "barChart"
+    assert report.chart_candidates[0].data_refs == ["Sheet1!$B$2:$B$3"]
     assert report.assets[0].mime_type == "image/jpeg"
 
 
@@ -99,6 +126,7 @@ def test_kr7d_xlsx_ingestion_extracts_table_preview_and_formula_flag() -> None:
               <row r="2"><c r="A2" t="s"><v>1</v></c><c r="B2"><f>B1*0.5</f><v>50</v></c></row>
             </sheetData></worksheet>
             """,
+            "xl/charts/chart1.xml": """<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart><c:plotArea><c:lineChart><c:ser><c:val><c:numRef><c:f>Data!$B$1:$B$2</c:f></c:numRef></c:val></c:ser></c:lineChart></c:plotArea></c:chart></c:chartSpace>""",
         }
     )
 
@@ -109,6 +137,9 @@ def test_kr7d_xlsx_ingestion_extracts_table_preview_and_formula_flag() -> None:
     assert report.tables[0].rows == [["Revenue", "100"], ["Cost", "=B1*0.5"]]
     assert report.tables[0].has_formula is True
     assert report.fragments[0].role == "sheet_metadata"
+    assert any(structure.element_type == "formula" and structure.metadata["cell_ref"] == "B2" for structure in report.structures)
+    assert report.chart_candidates[0].chart_type == "lineChart"
+    assert report.chart_candidates[0].data_refs == ["Data!$B$1:$B$2"]
 
 
 def test_kr7d_pdf_without_runtime_dependency_reports_unsupported_not_fake_success() -> None:

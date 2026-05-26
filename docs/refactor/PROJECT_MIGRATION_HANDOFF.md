@@ -1310,3 +1310,27 @@ Important limitation:
 ```text
 KR-7D.2 is a SourceAssetRegistry persistence/storage contract only. It does not implement OCR, embeddings, evidence retrieval, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. Public manifests must not expose operator absolute storage paths or raw asset bytes.
 ```
+
+
+## KR-7D.3 Richer document structure extraction
+
+KR-7D.3 deepens the offline ingestion engine without crossing into KR-7E evidence retrieval or KR-7F planning. It adds structure-level metadata so later phases can reason over source layout and chart/table candidates instead of only raw text fragments.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/offline_source_ingestion.py defines source_structure.v1, SourceStructureElement, and SourceChartDataCandidate;
+Markdown ingestion emits structure elements for headings, code blocks, image refs, and tables;
+DOCX ingestion emits paragraph style/caption/table/inline-image structure;
+PPTX ingestion emits slide/text-box/table structure and chart data candidates;
+XLSX ingestion emits worksheet/formula structure and chart data candidates;
+PDF ingestion emits page/text-block coordinate structure when PyMuPDF/fitz is available and remains honest unsupported otherwise;
+backend/tests/services/test_kr7d_offline_source_ingestion.py covers richer structure and chart candidate behavior;
+scripts/kw_offline_source_ingestion_check.py verifies the KR-7D.3 structure/checker/docs surface.
+```
+
+Important limitation:
+
+```text
+KR-7D.3 is richer extraction metadata only. It does not implement OCR, embeddings, KR-7E evidence retrieval, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. source_structure.v1 and chart candidates are not relevance rankings and must not be described as generated slide evidence.
+```

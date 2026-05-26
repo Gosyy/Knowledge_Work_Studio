@@ -621,3 +621,34 @@ Non-goals:
 do not implement KR-7E evidence retrieval, OCR, embeddings, source-to-slide planning, render/export, quality scoring, or UI source management in KR-7D.2;
 do not claim complete SourceAssetRegistry product integration beyond the storage contract and manifest persistence layer.
 ```
+
+
+### KR-7D.3 Richer document structure extraction
+
+Purpose:
+
+```text
+deepen the KR-7D offline ingestion engine beyond first-pass text/table/media extraction;
+emit source_structure.v1 structure elements and chart candidates for DOCX/PPTX/XLSX/PDF/Markdown;
+make later KR-7E evidence retrieval and KR-7F planning consume richer provenance-ready structure without implementing those later phases now.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/offline_source_ingestion.py exposes SourceStructureElement, SourceChartDataCandidate, and SOURCE_STRUCTURE_SCHEMA_VERSION;
+Markdown ingestion reports headings, code blocks, image refs, and tables as structure elements;
+DOCX ingestion reports paragraph styles, captions, tables, and inline images as structure elements;
+PPTX ingestion reports slides, text boxes, tables, and chart data candidates;
+XLSX ingestion reports worksheet/formula structure and chart data candidates;
+PDF ingestion reports page/text block coordinate structure when PyMuPDF/fitz is available and remains honest unsupported otherwise;
+scripts/kw_offline_source_ingestion_check.py verifies the richer structure/checker/docs surface;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement KR-7E evidence retrieval, OCR, embeddings, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management in KR-7D.3;
+do not claim source_structure.v1 elements are evidence relevance rankings or user-visible source-backed slide planning.
+```

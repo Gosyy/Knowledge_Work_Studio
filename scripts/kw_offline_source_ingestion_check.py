@@ -27,6 +27,14 @@ REQUIRED_PHRASES = {
         "does not fake PDF text or OCR",
         "provenance_manifest",
         "source_asset_registry",
+        'SOURCE_STRUCTURE_SCHEMA_VERSION = "source_structure.v1"',
+        "class SourceStructureElement",
+        "class SourceChartDataCandidate",
+        "def _markdown_structures",
+        "def _docx_structures",
+        "def _pptx_chart_candidates",
+        "def _xlsx_chart_candidates",
+        "def _pdf_page_structures",
     ],
     "backend/app/services/slides_service/source_asset_registry.py": [
         'SOURCE_ASSET_STORAGE_SCHEMA_VERSION = "source_asset_storage.v1"',
@@ -44,25 +52,30 @@ REQUIRED_PHRASES = {
         "test_kr7d_pdf_without_runtime_dependency_reports_unsupported_not_fake_success",
         "test_kr7d_source_asset_registry_persists_extracted_asset_bytes",
         "test_kr7d_source_asset_registry_empty_report_is_honest",
+        "test_kr7d_markdown_ingestion_extracts_code_blocks_and_image_refs",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7D.1 Offline source ingestion engine foundation",
         "DOCX, PPTX, XLSX/CSV, Markdown/text",
         "PDF extraction remains honest and dependency-gated",
         "KR-7D.2 SourceAssetRegistry persistence and extracted asset storage contract",
+        "KR-7D.3 Richer document structure extraction",
     ],
     "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": [
         "KR-7D.1 Offline source ingestion engine foundation",
         "does not implement OCR, embeddings, evidence retrieval, or PresentationIR planning",
         "KR-7D.2 SourceAssetRegistry persistence and extracted asset storage contract",
+        "KR-7D.3 Richer document structure extraction",
     ],
     "docs/QUALITY_MATRIX.md": [
         "KR-7D.1 adds offline source ingestion foundation",
         "KR-7D.2 adds SourceAssetRegistry persistence",
+        "KR-7D.3 enriches document structure extraction",
     ],
     "docs/PROJECT_PROHIBITIONS.md": [
         "claim PDF/OCR extraction readiness when the extractor returned unsupported",
         "expose operator absolute storage paths in SourceAssetRegistry manifests",
+        "claim KR-7E evidence retrieval from KR-7D.3 structure metadata",
     ],
 }
 
