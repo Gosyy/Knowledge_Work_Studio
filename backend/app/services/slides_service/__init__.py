@@ -59,6 +59,7 @@ from backend.app.services.slides_service.outline import (
 )
 from backend.app.services.slides_service.offline_source_ingestion import (
     SOURCE_ASSET_REGISTRY_SCHEMA_VERSION,
+    SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION,
     SOURCE_INGESTION_SCHEMA_VERSION,
     SOURCE_STRUCTURE_SCHEMA_VERSION,
     OfflineSourceIngestionEngine,
@@ -208,6 +209,7 @@ __all__ = [
     "PRESENTATION_IR_SCHEMA_VERSION",
     "SOURCE_ASSET_REGISTRY_SCHEMA_VERSION",
     "SOURCE_ASSET_STORAGE_SCHEMA_VERSION",
+    "SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION",
     "SOURCE_STRUCTURE_SCHEMA_VERSION",
     "SourceAssetRegistryPersistenceResult",
     "SourceAssetRegistryStore",

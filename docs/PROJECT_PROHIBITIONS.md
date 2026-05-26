@@ -27,7 +27,8 @@ claim source ingestion/extraction is implemented when a patch only adds source a
 claim PDF/OCR extraction readiness when the extractor returned unsupported;
 expose operator absolute storage paths in SourceAssetRegistry manifests;
 persist fake source asset bytes, fake checksums, or raw content_bytes in public ingestion report JSON;
-claim KR-7E evidence retrieval from KR-7D.3 structure metadata or chart candidates.
+claim KR-7E evidence retrieval from KR-7D.3 structure metadata or chart candidates;
+claim dependency-backed extraction fidelity without dependency status metadata.
 ```
 
 ## Runtime and deploy prohibitions

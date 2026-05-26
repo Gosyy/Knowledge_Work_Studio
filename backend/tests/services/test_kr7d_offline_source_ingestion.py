@@ -5,6 +5,7 @@ from zipfile import ZipFile
 
 from backend.app.services.slides_service.offline_source_ingestion import (
     SOURCE_ASSET_REGISTRY_SCHEMA_VERSION,
+    SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION,
     SOURCE_INGESTION_SCHEMA_VERSION,
     OfflineSourceIngestionEngine,
     detect_source_kind,
@@ -66,6 +67,11 @@ def test_kr7d_docx_ingestion_extracts_paragraph_table_and_image_asset() -> None:
               </w:body>
             </w:document>
             """,
+            "word/_rels/document.xml.rels": """
+            <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+              <Relationship Id="rIdImage1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/>
+            </Relationships>
+            """,
             "word/media/image1.png": b"png-bytes",
         }
     )
@@ -79,7 +85,13 @@ def test_kr7d_docx_ingestion_extracts_paragraph_table_and_image_asset() -> None:
     assert any(structure.role == "caption" for structure in report.structures)
     assert any(structure.element_type == "inline_image" for structure in report.structures)
     assert report.assets[0].path == "word/media/image1.png"
+    assert report.assets[0].relationship_id == "rIdImage1"
+    assert report.assets[0].owner_part == "word/document.xml"
+    assert report.assets[0].metadata["relationship_role"] == "relationship_resolved"
     assert report.assets[0].checksum_sha256
+    assert report.extraction_fidelity["schema_version"] == SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION
+    assert report.extraction_fidelity["package_format"] == "OOXML DOCX"
+    assert report.extraction_fidelity["relationship_count"] == 1
     assert report.source_asset_registry["schema_version"] == SOURCE_ASSET_REGISTRY_SCHEMA_VERSION
 
 
@@ -95,6 +107,12 @@ def test_kr7d_pptx_ingestion_extracts_slide_text_and_media_assets() -> None:
             </p:sld>
             """,
             "ppt/charts/chart1.xml": """<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart><c:plotArea><c:barChart><c:ser><c:val><c:numRef><c:f>Sheet1!$B$2:$B$3</c:f></c:numRef></c:val></c:ser></c:barChart></c:plotArea></c:chart></c:chartSpace>""",
+            "ppt/slides/_rels/slide1.xml.rels": """
+            <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+              <Relationship Id="rIdImage1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.jpeg"/>
+              <Relationship Id="rIdChart1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/>
+            </Relationships>
+            """,
             "ppt/media/image1.jpeg": b"jpeg-bytes",
         }
     )
@@ -109,6 +127,11 @@ def test_kr7d_pptx_ingestion_extracts_slide_text_and_media_assets() -> None:
     assert report.chart_candidates[0].chart_type == "barChart"
     assert report.chart_candidates[0].data_refs == ["Sheet1!$B$2:$B$3"]
     assert report.assets[0].mime_type == "image/jpeg"
+    assert report.assets[0].slide_number == 1
+    assert report.assets[0].relationship_id == "rIdImage1"
+    assert report.assets[0].metadata["owner_part"] == "ppt/slides/slide1.xml"
+    assert report.extraction_fidelity["package_format"] == "OOXML PPTX"
+    assert report.extraction_fidelity["relationship_count"] == 2
 
 
 def test_kr7d_xlsx_ingestion_extracts_table_preview_and_formula_flag() -> None:
@@ -127,6 +150,11 @@ def test_kr7d_xlsx_ingestion_extracts_table_preview_and_formula_flag() -> None:
             </sheetData></worksheet>
             """,
             "xl/charts/chart1.xml": """<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart><c:plotArea><c:lineChart><c:ser><c:val><c:numRef><c:f>Data!$B$1:$B$2</c:f></c:numRef></c:val></c:ser></c:lineChart></c:plotArea></c:chart></c:chartSpace>""",
+            "xl/_rels/workbook.xml.rels": """
+            <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+              <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+            </Relationships>
+            """,
         }
     )
 
@@ -140,6 +168,9 @@ def test_kr7d_xlsx_ingestion_extracts_table_preview_and_formula_flag() -> None:
     assert any(structure.element_type == "formula" and structure.metadata["cell_ref"] == "B2" for structure in report.structures)
     assert report.chart_candidates[0].chart_type == "lineChart"
     assert report.chart_candidates[0].data_refs == ["Data!$B$1:$B$2"]
+    assert report.extraction_fidelity["package_format"] == "OOXML XLSX"
+    assert report.extraction_fidelity["relationship_count"] == 1
+    assert report.extraction_fidelity["dependency_backed_extractors"][0]["name"] == "openpyxl"
 
 
 def test_kr7d_pdf_without_runtime_dependency_reports_unsupported_not_fake_success() -> None:
@@ -149,6 +180,7 @@ def test_kr7d_pdf_without_runtime_dependency_reports_unsupported_not_fake_succes
     assert report.fragments == []
     assert report.tables == []
     assert report.provenance_manifest["fragment_count"] == 0
+    assert report.extraction_fidelity["schema_version"] == SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION
 
 
 def test_kr7d_detect_source_kind_uses_file_type_mime_and_title_without_network() -> None:

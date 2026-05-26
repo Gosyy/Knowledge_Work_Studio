@@ -28,6 +28,7 @@ REQUIRED_PHRASES = {
         "provenance_manifest",
         "source_asset_registry",
         'SOURCE_STRUCTURE_SCHEMA_VERSION = "source_structure.v1"',
+        'SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION = "source_extraction_fidelity.v1"',
         "class SourceStructureElement",
         "class SourceChartDataCandidate",
         "def _markdown_structures",
@@ -35,6 +36,11 @@ REQUIRED_PHRASES = {
         "def _pptx_chart_candidates",
         "def _xlsx_chart_candidates",
         "def _pdf_page_structures",
+        "def _ooxml_relationships",
+        "def _docx_media_assets",
+        "def _pptx_media_assets",
+        "def _dependency_probe",
+        "dependency_backed_extractors",
     ],
     "backend/app/services/slides_service/source_asset_registry.py": [
         'SOURCE_ASSET_STORAGE_SCHEMA_VERSION = "source_asset_storage.v1"',
@@ -53,6 +59,8 @@ REQUIRED_PHRASES = {
         "test_kr7d_source_asset_registry_persists_extracted_asset_bytes",
         "test_kr7d_source_asset_registry_empty_report_is_honest",
         "test_kr7d_markdown_ingestion_extracts_code_blocks_and_image_refs",
+        "relationship_count",
+        "SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7D.1 Offline source ingestion engine foundation",
@@ -60,22 +68,26 @@ REQUIRED_PHRASES = {
         "PDF extraction remains honest and dependency-gated",
         "KR-7D.2 SourceAssetRegistry persistence and extracted asset storage contract",
         "KR-7D.3 Richer document structure extraction",
+        "KR-7D.4 Real package extraction fidelity and dependency-backed extractors",
     ],
     "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": [
         "KR-7D.1 Offline source ingestion engine foundation",
         "does not implement OCR, embeddings, evidence retrieval, or PresentationIR planning",
         "KR-7D.2 SourceAssetRegistry persistence and extracted asset storage contract",
         "KR-7D.3 Richer document structure extraction",
+        "KR-7D.4 Real package extraction fidelity and dependency-backed extractors",
     ],
     "docs/QUALITY_MATRIX.md": [
         "KR-7D.1 adds offline source ingestion foundation",
         "KR-7D.2 adds SourceAssetRegistry persistence",
         "KR-7D.3 enriches document structure extraction",
+        "KR-7D.4 hardens real package extraction fidelity",
     ],
     "docs/PROJECT_PROHIBITIONS.md": [
         "claim PDF/OCR extraction readiness when the extractor returned unsupported",
         "expose operator absolute storage paths in SourceAssetRegistry manifests",
         "claim KR-7E evidence retrieval from KR-7D.3 structure metadata",
+        "claim dependency-backed extraction fidelity without dependency status metadata",
     ],
 }
 

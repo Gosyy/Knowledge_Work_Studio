@@ -652,3 +652,33 @@ Non-goals:
 do not implement KR-7E evidence retrieval, OCR, embeddings, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management in KR-7D.3;
 do not claim source_structure.v1 elements are evidence relevance rankings or user-visible source-backed slide planning.
 ```
+
+### KR-7D.4 Real package extraction fidelity and dependency-backed extractors
+
+Purpose:
+
+```text
+harden KR-7D extraction against real DOCX/PPTX/XLSX/PDF package structure;
+record source_extraction_fidelity.v1 metadata for every ingestion report;
+resolve OOXML relationships so embedded media and chart/package references remain traceable to their owner parts;
+record optional dependency status for dependency-backed extractors without requiring public internet or hidden services.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/offline_source_ingestion.py exposes SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION and extraction_fidelity report metadata;
+DOCX media assets preserve relationship id, owner part, relationship target/type, checksum, provenance ref, and optional image dimensions;
+PPTX media assets preserve slide number, owner part, relationship id, relationship target/type, checksum, provenance ref, and optional image dimensions;
+XLSX/PPTX/DOCX reports include package required-part and relationship-count metadata;
+PDF reports include PyMuPDF/fitz dependency status and remain unsupported/failed honestly when runtime extraction cannot prove content;
+scripts/kw_offline_source_ingestion_check.py verifies the fidelity/checker/docs surface;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement KR-7E evidence retrieval, OCR, embeddings, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management in KR-7D.4;
+do not claim complete dependency-backed extraction unless dependency status metadata and logs prove it.
+```

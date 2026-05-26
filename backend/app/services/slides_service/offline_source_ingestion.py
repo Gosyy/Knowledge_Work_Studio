@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import importlib.util
 import json
+import posixpath
 import re
 from dataclasses import asdict, dataclass, field
 from io import BytesIO, StringIO
@@ -13,6 +15,7 @@ from zipfile import BadZipFile, ZipFile
 SOURCE_INGESTION_SCHEMA_VERSION = "offline_source_ingestion.v1"
 SOURCE_ASSET_REGISTRY_SCHEMA_VERSION = "source_asset_registry.v1"
 SOURCE_STRUCTURE_SCHEMA_VERSION = "source_structure.v1"
+SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION = "source_extraction_fidelity.v1"
 
 SourceIngestionStatus = Literal["ready", "unsupported", "failed"]
 SourceKind = Literal["text", "markdown", "csv", "json", "yaml", "docx", "pdf", "xlsx", "pptx", "unknown"]
@@ -120,6 +123,9 @@ class SourceAsset:
     width_px: int | None = None
     height_px: int | None = None
     content_bytes: bytes | None = field(default=None, repr=False, compare=False)
+    relationship_id: str | None = None
+    owner_part: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -143,6 +149,7 @@ class SourceIngestionReport:
     errors: list[str] = field(default_factory=list)
     provenance_manifest: dict[str, Any] = field(default_factory=dict)
     source_asset_registry: dict[str, Any] = field(default_factory=dict)
+    extraction_fidelity: dict[str, Any] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -264,13 +271,20 @@ class OfflineSourceIngestionEngine:
             tables=tables,
             structures=structures,
             chart_candidates=chart_candidates,
+            extraction_fidelity=_basic_extraction_fidelity(
+                source_id=source_id,
+                source_kind=source_kind,
+                extractor="stdlib_utf8_text_parser",
+            ),
         )
 
     def _ingest_docx(self, raw_content: bytes, *, source_id: str, title: str | None) -> SourceIngestionReport:
         try:
             with ZipFile(BytesIO(raw_content)) as package:
                 document_xml = package.read("word/document.xml")
-                media_assets = _zip_media_assets(package, prefix="word/media/", source_id=source_id)
+                media_assets = _docx_media_assets(package, source_id=source_id)
+                package_parts = set(package.namelist())
+                relationship_count = _relationship_count(package, "word/_rels/document.xml.rels")
         except (BadZipFile, KeyError) as exc:
             return _unsupported_report(source_id=source_id, source_kind="docx", title=title, warning=f"Invalid DOCX package: {exc}")
 
@@ -290,6 +304,16 @@ class OfflineSourceIngestionEngine:
             tables=tables,
             assets=media_assets,
             structures=structures,
+            extraction_fidelity=_package_fidelity(
+                source_id=source_id,
+                source_kind="docx",
+                package_format="OOXML DOCX",
+                extractor="stdlib_zip_xml_relationships",
+                required_parts=["word/document.xml"],
+                present_parts=package_parts,
+                relationship_count=relationship_count,
+                dependency_probes=[_dependency_probe("docx", "python-docx")],
+            ),
         )
 
     def _ingest_pptx(self, raw_content: bytes, *, source_id: str, title: str | None) -> SourceIngestionReport:
@@ -301,7 +325,9 @@ class OfflineSourceIngestionEngine:
                 )
                 slide_xml = [(index, package.read(name)) for index, name in enumerate(slide_names, start=1)]
                 chart_xml = [(index, name, package.read(name)) for index, name in enumerate(sorted(path for path in package.namelist() if path.startswith("ppt/charts/chart") and path.endswith(".xml")), start=1)]
-                assets = _zip_media_assets(package, prefix="ppt/media/", source_id=source_id)
+                assets = _pptx_media_assets(package, slide_names=slide_names, source_id=source_id)
+                package_parts = set(package.namelist())
+                relationship_count = sum(_relationship_count(package, _slide_rels_path(name)) for name in slide_names)
         except BadZipFile as exc:
             return _unsupported_report(source_id=source_id, source_kind="pptx", title=title, warning=f"Invalid PPTX package: {exc}")
 
@@ -339,6 +365,16 @@ class OfflineSourceIngestionEngine:
             assets=assets,
             structures=structures,
             chart_candidates=chart_candidates,
+            extraction_fidelity=_package_fidelity(
+                source_id=source_id,
+                source_kind="pptx",
+                package_format="OOXML PPTX",
+                extractor="stdlib_zip_xml_relationships",
+                required_parts=slide_names,
+                present_parts=package_parts,
+                relationship_count=relationship_count,
+                dependency_probes=[_dependency_probe("pptx", "python-pptx")],
+            ),
         )
 
     def _ingest_xlsx(self, raw_content: bytes, *, source_id: str, title: str | None) -> SourceIngestionReport:
@@ -361,7 +397,9 @@ class OfflineSourceIngestionEngine:
                     for structure in _xlsx_sheet_structures(blob, source_id=source_id, sheet_name=sheet_names.get(index, f"Sheet{index}"), sheet_index=index, shared_strings=shared_strings)
                 ]
                 chart_candidates = _xlsx_chart_candidates(package, source_id=source_id)
-                assets = _zip_media_assets(package, prefix="xl/media/", source_id=source_id)
+                assets = _zip_media_assets(package, prefix="xl/media/", source_id=source_id, owner_part="xl/workbook.xml")
+                package_parts = set(package.namelist())
+                relationship_count = sum(_relationship_count(package, name) for name in package.namelist() if name.startswith("xl/") and name.endswith(".rels"))
         except BadZipFile as exc:
             return _unsupported_report(source_id=source_id, source_kind="xlsx", title=title, warning=f"Invalid XLSX package: {exc}")
 
@@ -392,6 +430,16 @@ class OfflineSourceIngestionEngine:
             assets=assets,
             structures=structures,
             chart_candidates=chart_candidates,
+            extraction_fidelity=_package_fidelity(
+                source_id=source_id,
+                source_kind="xlsx",
+                package_format="OOXML XLSX",
+                extractor="stdlib_zip_xml_relationships",
+                required_parts=["xl/workbook.xml"],
+                present_parts=package_parts,
+                relationship_count=relationship_count,
+                dependency_probes=[_dependency_probe("openpyxl", "openpyxl")],
+            ),
         )
 
     def _ingest_pdf(self, raw_content: bytes, *, source_id: str, title: str | None) -> SourceIngestionReport:
@@ -403,6 +451,13 @@ class OfflineSourceIngestionEngine:
                 source_kind="pdf",
                 title=title,
                 warning="PDF extraction requires PyMuPDF/fitz in this deployment; KR-7D.1 does not fake PDF text or OCR.",
+                extraction_fidelity=_package_fidelity(
+                    source_id=source_id,
+                    source_kind="pdf",
+                    package_format="PDF",
+                    extractor="missing_dependency",
+                    dependency_probes=[_dependency_probe("fitz", "PyMuPDF/fitz")],
+                ),
             )
         try:
             document = fitz.open(stream=raw_content, filetype="pdf")
@@ -434,6 +489,13 @@ class OfflineSourceIngestionEngine:
             title=title,
             fragments=fragments,
             structures=structures,
+            extraction_fidelity=_package_fidelity(
+                source_id=source_id,
+                source_kind="pdf",
+                package_format="PDF",
+                extractor="pymupdf_fitz",
+                dependency_probes=[_dependency_probe("fitz", "PyMuPDF/fitz")],
+            ),
         )
 
 
@@ -781,10 +843,87 @@ def _heading_level_from_style(style: str | None) -> int | None:
     return int(next(group for group in match.groups() if group))
 
 
-def _zip_media_assets(package: ZipFile, *, prefix: str, source_id: str) -> list[SourceAsset]:
+def _docx_media_assets(package: ZipFile, *, source_id: str) -> list[SourceAsset]:
+    relationships = _ooxml_relationships(package, "word/_rels/document.xml.rels", owner_part="word/document.xml")
+    by_path = _relationships_by_package_path(relationships)
+    return _zip_media_assets(
+        package,
+        prefix="word/media/",
+        source_id=source_id,
+        owner_part="word/document.xml",
+        relationships_by_package_path=by_path,
+    )
+
+
+def _pptx_media_assets(package: ZipFile, *, slide_names: list[str], source_id: str) -> list[SourceAsset]:
     assets: list[SourceAsset] = []
-    for index, name in enumerate(sorted(path for path in package.namelist() if path.startswith(prefix) and not path.endswith("/")), start=1):
+    seen: set[tuple[str, int | None, str | None]] = set()
+    for slide_number, slide_name in enumerate(slide_names, start=1):
+        relationships = _ooxml_relationships(package, _slide_rels_path(slide_name), owner_part=slide_name)
+        by_path = _relationships_by_package_path(relationships)
+        slide_assets = _zip_media_assets(
+            package,
+            prefix="ppt/media/",
+            source_id=source_id,
+            owner_part=slide_name,
+            relationships_by_package_path=by_path,
+            slide_number=slide_number,
+            asset_id_offset=len(assets),
+        )
+        for asset in slide_assets:
+            key = (asset.path, asset.slide_number, asset.relationship_id)
+            if key not in seen:
+                assets.append(asset)
+                seen.add(key)
+    # Preserve unreferenced media honestly as orphan assets instead of dropping bytes.
+    referenced_paths = {asset.path for asset in assets}
+    orphan_assets = _zip_media_assets(
+        package,
+        prefix="ppt/media/",
+        source_id=source_id,
+        owner_part="ppt/presentation.xml",
+        relationship_role="orphan_package_media",
+        asset_id_offset=len(assets),
+        exclude_paths=referenced_paths,
+    )
+    return [*assets, *orphan_assets]
+
+
+def _zip_media_assets(
+    package: ZipFile,
+    *,
+    prefix: str,
+    source_id: str,
+    owner_part: str | None = None,
+    relationships_by_package_path: dict[str, list[dict[str, str]]] | None = None,
+    relationship_role: str | None = None,
+    page_number: int | None = None,
+    slide_number: int | None = None,
+    sheet_name: str | None = None,
+    asset_id_offset: int = 0,
+    exclude_paths: set[str] | None = None,
+) -> list[SourceAsset]:
+    assets: list[SourceAsset] = []
+    excluded = exclude_paths or set()
+    relationships_by_package_path = relationships_by_package_path or {}
+    media_paths = sorted(
+        path
+        for path in package.namelist()
+        if path.startswith(prefix) and not path.endswith("/") and path not in excluded
+    )
+    for local_index, name in enumerate(media_paths, start=1):
+        index = asset_id_offset + local_index
         blob = package.read(name)
+        width_px, height_px, dimension_source = _image_dimensions_from_bytes(blob)
+        relationships = relationships_by_package_path.get(name, [])
+        relationship = relationships[0] if relationships else {}
+        metadata = {
+            "owner_part": owner_part,
+            "relationship_target": relationship.get("target"),
+            "relationship_type": relationship.get("type"),
+            "relationship_role": relationship_role or ("relationship_resolved" if relationship else "package_media"),
+            "dimension_source": dimension_source,
+        }
         assets.append(
             SourceAsset(
                 asset_id=f"{source_id}_asset_{index:03d}",
@@ -795,10 +934,83 @@ def _zip_media_assets(package: ZipFile, *, prefix: str, source_id: str) -> list[
                 checksum_sha256=hashlib.sha256(blob).hexdigest(),
                 size_bytes=len(blob),
                 mime_type=_mime_type_from_name(name),
+                page_number=page_number,
+                slide_number=slide_number,
+                sheet_name=sheet_name,
+                width_px=width_px,
+                height_px=height_px,
                 content_bytes=blob,
+                relationship_id=relationship.get("id"),
+                owner_part=owner_part,
+                metadata={key: value for key, value in metadata.items() if value is not None},
             )
         )
     return assets
+
+
+def _ooxml_relationships(package: ZipFile, rels_path: str, *, owner_part: str) -> dict[str, dict[str, str]]:
+    try:
+        rels_xml = package.read(rels_path)
+    except KeyError:
+        return {}
+    try:
+        root = ET.fromstring(rels_xml)
+    except ET.ParseError:
+        return {}
+    relationships: dict[str, dict[str, str]] = {}
+    for rel in root.findall("rel:Relationship", _REL_NS):
+        rel_id = rel.attrib.get("Id")
+        target = rel.attrib.get("Target", "")
+        if not rel_id or not target:
+            continue
+        relationships[rel_id] = {
+            "id": rel_id,
+            "target": target,
+            "type": rel.attrib.get("Type", ""),
+            "package_path": _normalize_ooxml_target(owner_part, target),
+        }
+    return relationships
+
+
+def _relationships_by_package_path(relationships: dict[str, dict[str, str]]) -> dict[str, list[dict[str, str]]]:
+    by_path: dict[str, list[dict[str, str]]] = {}
+    for relationship in relationships.values():
+        package_path = relationship.get("package_path")
+        if package_path:
+            by_path.setdefault(package_path, []).append(relationship)
+    return by_path
+
+
+def _normalize_ooxml_target(owner_part: str, target: str) -> str:
+    if target.startswith("/"):
+        return target.lstrip("/")
+    owner_dir = posixpath.dirname(owner_part)
+    return posixpath.normpath(posixpath.join(owner_dir, target)).lstrip("/")
+
+
+def _relationship_count(package: ZipFile, rels_path: str) -> int:
+    try:
+        root = ET.fromstring(package.read(rels_path))
+    except (KeyError, ET.ParseError):
+        return 0
+    return len(root.findall("rel:Relationship", _REL_NS))
+
+
+def _slide_rels_path(slide_name: str) -> str:
+    slide_file = slide_name.rsplit("/", 1)[-1]
+    return f"ppt/slides/_rels/{slide_file}.rels"
+
+
+def _image_dimensions_from_bytes(blob: bytes) -> tuple[int | None, int | None, str]:
+    try:
+        from PIL import Image  # type: ignore[import-not-found]
+    except Exception:
+        return None, None, "pillow_unavailable"
+    try:
+        with Image.open(BytesIO(blob)) as image:
+            return int(image.width), int(image.height), "pillow"
+    except Exception:
+        return None, None, "unreadable_image"
 
 
 def _pptx_slide_structures(root: ET.Element, *, source_id: str, slide_number: int) -> list[SourceStructureElement]:
@@ -1092,6 +1304,77 @@ def _sheet_sort_key(name: str) -> tuple[int, str]:
     return (int(suffix) if suffix.isdigit() else 10**9, name)
 
 
+
+def _dependency_probe(module_name: str, label: str) -> dict[str, Any]:
+    spec = importlib.util.find_spec(module_name)
+    return {"name": label, "module": module_name, "available": spec is not None}
+
+
+def _basic_extraction_fidelity(*, source_id: str, source_kind: SourceKind, extractor: str) -> dict[str, Any]:
+    return {
+        "schema_version": SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION,
+        "source_id": source_id,
+        "source_kind": source_kind,
+        "extractor": extractor,
+        "package_format": "plain_text",
+        "dependency_backed_extractors": [],
+        "required_parts": [],
+        "present_required_parts": [],
+        "missing_required_parts": [],
+        "relationship_count": 0,
+        "fidelity_notes": ["text-like extraction uses deterministic UTF-8 parsing only"],
+    }
+
+
+def _package_fidelity(
+    *,
+    source_id: str,
+    source_kind: SourceKind,
+    package_format: str,
+    extractor: str,
+    required_parts: list[str] | None = None,
+    present_parts: set[str] | None = None,
+    relationship_count: int = 0,
+    dependency_probes: list[dict[str, Any]] | None = None,
+    fidelity_notes: list[str] | None = None,
+) -> dict[str, Any]:
+    required = required_parts or []
+    present = sorted(part for part in required if present_parts is None or part in present_parts)
+    missing = sorted(part for part in required if present_parts is not None and part not in present_parts)
+    probes = dependency_probes or []
+    return {
+        "schema_version": SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION,
+        "source_id": source_id,
+        "source_kind": source_kind,
+        "extractor": extractor,
+        "package_format": package_format,
+        "dependency_backed_extractors": probes,
+        "required_parts": required,
+        "present_required_parts": present,
+        "missing_required_parts": missing,
+        "relationship_count": relationship_count,
+        "fidelity_notes": fidelity_notes or [
+            "package extraction resolves OOXML relationships when available",
+            "missing optional dependencies are reported through dependency_backed_extractors",
+        ],
+    }
+
+
+def _default_extraction_fidelity(report: SourceIngestionReport) -> dict[str, Any]:
+    return {
+        "schema_version": SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION,
+        "source_id": report.source_id,
+        "source_kind": report.source_kind,
+        "extractor": "default_report_wrapper",
+        "package_format": "unknown",
+        "dependency_backed_extractors": [],
+        "required_parts": [],
+        "present_required_parts": [],
+        "missing_required_parts": [],
+        "relationship_count": 0,
+        "fidelity_notes": ["no package-specific fidelity metadata was attached before manifest wrapping"],
+    }
+
 def _with_manifests(report: SourceIngestionReport) -> SourceIngestionReport:
     provenance_manifest = {
         "schema_version": "source_ingestion_provenance.v1",
@@ -1129,10 +1412,18 @@ def _with_manifests(report: SourceIngestionReport) -> SourceIngestionReport:
         errors=report.errors,
         provenance_manifest=provenance_manifest,
         source_asset_registry=source_asset_registry,
+        extraction_fidelity=report.extraction_fidelity or _default_extraction_fidelity(report),
     )
 
 
-def _unsupported_report(*, source_id: str, source_kind: SourceKind, title: str | None, warning: str) -> SourceIngestionReport:
+def _unsupported_report(
+    *,
+    source_id: str,
+    source_kind: SourceKind,
+    title: str | None,
+    warning: str,
+    extraction_fidelity: dict[str, Any] | None = None,
+) -> SourceIngestionReport:
     return _with_manifests(
         SourceIngestionReport(
             schema_version=SOURCE_INGESTION_SCHEMA_VERSION,
@@ -1141,6 +1432,7 @@ def _unsupported_report(*, source_id: str, source_kind: SourceKind, title: str |
             status="unsupported",
             title=title,
             warnings=[warning],
+            extraction_fidelity=extraction_fidelity or {},
         )
     )
 

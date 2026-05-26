@@ -217,6 +217,14 @@ It emits source_structure.v1 elements for Markdown headings/code/image refs, DOC
 It does not implement KR-7E evidence retrieval, embeddings, OCR, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management.
 ```
 
+Implementation note after KR-7D.4:
+
+```text
+KR-7D.4 hardens real package extraction fidelity and dependency-backed extractors.
+It adds source_extraction_fidelity.v1 metadata, records optional dependency availability, resolves OOXML package relationships for DOCX/PPTX media, preserves relationship-aware source asset metadata, and reports image dimensions when Pillow can read the embedded bytes.
+It does not implement KR-7E evidence retrieval, embeddings, OCR, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management.
+```
+
 ## Phase KR-7E — offline evidence retrieval
 
 Goal: replace web research with local source-backed evidence.
