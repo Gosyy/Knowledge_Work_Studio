@@ -13,9 +13,12 @@ from backend.app.repositories.sqlite import (
     SqliteStoredFileRepository,
 )
 from backend.app.services.slides_service import (
+    PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION,
     PRESENTATION_IR_SCHEMA_VERSION,
     PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
     PresentationPlanSnapshotService,
+    PresentationIRPlannerFoundation,
+    PresentationIRPlannerRequest,
     build_presentation_ir_from_legacy_plan,
     build_presentation_plan,
 )
@@ -158,6 +161,41 @@ def _seed_offline_evidence_index(tmp_path: Path) -> None:
     )
 
 
+def _seed_planner_presentation_ir_snapshot(repository_db_path: str) -> None:
+    from backend.app.services.slides_service import OfflineEvidenceIndexBuilder, OfflineSourceIngestionEngine
+
+    service = PresentationPlanSnapshotService(
+        snapshots=SqlitePresentationPlanSnapshotRepository(repository_db_path),
+        presentations=SqlitePresentationRepository(repository_db_path),
+        presentation_versions=SqlitePresentationVersionRepository(repository_db_path),
+    )
+    report = OfflineSourceIngestionEngine().ingest_bytes(
+        b"# Retention\n\nCustomer retention improved after support automation.\n\n# Risk\n\nDeployment risk decreased after rollout automation.",
+        source_id="src_planner_api",
+        file_type="md",
+    )
+    index = OfflineEvidenceIndexBuilder().build_index([report])
+    planner_result = PresentationIRPlannerFoundation().plan_from_evidence(
+        PresentationIRPlannerRequest(
+            presentation_id="pres_kr7c",
+            title="Support automation results",
+            objective="Support automation retention risk",
+            slide_count=4,
+            required_sections=("retention", "risk"),
+            require_evidence=True,
+        ),
+        index,
+    )
+    service.create_planner_presentation_ir_snapshot(
+        presentation_id="pres_kr7c",
+        presentation_version_id="presver_kr7c_v1",
+        planner_result=planner_result,
+        created_from_task_id="task_kr7c_v1",
+        change_summary="Planner PresentationIR snapshot",
+        snapshot_id="plansnap_planner_kr7f3_v1",
+    )
+
+
 def _seed_native_presentation_ir_snapshot(repository_db_path: str) -> None:
     service = PresentationPlanSnapshotService(
         snapshots=SqlitePresentationPlanSnapshotRepository(repository_db_path),
@@ -228,6 +266,7 @@ def test_kr7c_openapi_exposes_api_v1_presentation_contract_and_legacy_compatibil
     assert "PresentationEvidenceClaimAssessmentResponseSchema" in component_schemas
     assert "PresentationApiSourceRefSchema" in component_schemas
     assert "PresentationIRSnapshotResponseSchema" in component_schemas
+    assert "PresentationIRPlannerSnapshotMetadataSchema" in component_schemas
     assert "PresentationIRVersionSummarySchema" in component_schemas
     assert "PresentationIRVersionsResponseSchema" in component_schemas
     assert any(tag["name"] == "presentation-api-v1" for tag in schema["tags"])
@@ -364,6 +403,7 @@ def test_kr7c_persists_native_presentation_ir_and_lists_versions(
             "ir_schema_version": PRESENTATION_IR_SCHEMA_VERSION,
             "storage_format": "presentation_ir",
             "version_number": 1,
+            "planner_snapshot": None,
         }
     ]
 
@@ -525,3 +565,45 @@ def test_kr7e3_missing_persisted_evidence_index_fails_closed_through_api_v1(
 
     assert response.status_code == 404
     assert "no persisted offline evidence index" in response.json()["detail"]
+
+
+def test_kr7f3_reads_planner_snapshot_metadata_from_presentation_ir_api(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_planner_presentation_ir_snapshot(repository_db_path)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/ir")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["snapshot_id"] == "plansnap_planner_kr7f3_v1"
+    assert payload["planner_snapshot"]["schema_version"] == PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION
+    assert payload["planner_snapshot"]["status"] == "ready"
+    assert payload["planner_snapshot"]["slide_outline_count"] == 4
+    assert payload["planner_snapshot"]["evidence_binding_count"] > 0
+    assert payload["presentation_ir"]["quality_contract"]["planner_snapshot_persisted"] is True
+    assert str(tmp_path) not in str(payload)
+    assert "local://" not in str(payload)
+
+
+def test_kr7f3_lists_planner_snapshot_metadata_in_presentation_ir_versions(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_planner_presentation_ir_snapshot(repository_db_path)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/ir/versions")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["versions"][0]["planner_snapshot"]["schema_version"] == PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION
+    assert payload["versions"][0]["planner_snapshot"]["status"] == "ready"
+    assert payload["versions"][0]["planner_snapshot"]["slide_outline_count"] == 4
+    assert str(tmp_path) not in str(payload)

@@ -36,6 +36,7 @@ from backend.app.services.slides_service import (
     OFFLINE_EVIDENCE_INDEX_STORAGE_SCHEMA_VERSION,
     OfflineEvidenceIndexStore,
     PRESENTATION_IR_SCHEMA_VERSION,
+    presentation_ir_planner_snapshot_metadata_from_ir,
     PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
     PresentationPlanSnapshotService,
     detect_presentation_ir_storage_format,
@@ -280,6 +281,7 @@ def get_presentation_ir_v1(
             presentation_id=presentation_id,
             snapshot_id=snapshot.id,
         ),
+        planner_snapshot=presentation_ir_planner_snapshot_metadata_from_ir(safe_ir),
         presentation_ir=safe_ir,
     )
 
@@ -470,6 +472,7 @@ def _api_plan_snapshot_response(
             presentation_id=snapshot.presentation_id,
             snapshot_id=snapshot.id,
         ),
+        planner_snapshot=presentation_ir_planner_snapshot_metadata_from_ir(plan) if isinstance(plan, dict) else None,
         plan=plan,
     )
 

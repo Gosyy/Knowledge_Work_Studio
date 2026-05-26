@@ -181,6 +181,22 @@ class PresentationApiMetadataResponseSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class PresentationIRPlannerSnapshotMetadataSchema(BaseModel):
+    schema_version: str
+    planner_schema_version: str
+    outline_schema_version: str
+    status: Literal["ready", "degraded", "blocked"]
+    presentation_id: str
+    has_presentation_ir: bool
+    evidence_binding_count: int
+    slide_outline_count: int
+    coverage_summary: dict[str, Any]
+    warnings: list[str]
+    errors: list[str]
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class PresentationApiPlanSnapshotResponseSchema(BaseModel):
     api_version: str
     snapshot_id: str
@@ -193,6 +209,7 @@ class PresentationApiPlanSnapshotResponseSchema(BaseModel):
     ir_schema_version: str
     storage_format: Literal["presentation_ir", "legacy_plan_snapshot"]
     version_number: int | None = None
+    planner_snapshot: PresentationIRPlannerSnapshotMetadataSchema | None = None
     plan: dict[str, Any]
 
     model_config = ConfigDict(extra="forbid")
@@ -222,6 +239,7 @@ class PresentationIRVersionSummarySchema(BaseModel):
     ir_schema_version: str
     storage_format: Literal["presentation_ir", "legacy_plan_snapshot"]
     version_number: int
+    planner_snapshot: PresentationIRPlannerSnapshotMetadataSchema | None = None
 
     model_config = ConfigDict(extra="forbid")
 
@@ -243,6 +261,7 @@ class PresentationIRSnapshotResponseSchema(BaseModel):
     ir_schema_version: str
     storage_format: Literal["presentation_ir", "legacy_plan_snapshot"]
     version_number: int | None = None
+    planner_snapshot: PresentationIRPlannerSnapshotMetadataSchema | None = None
     presentation_ir: dict[str, Any]
 
     model_config = ConfigDict(extra="forbid")

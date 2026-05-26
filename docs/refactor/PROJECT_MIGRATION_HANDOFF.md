@@ -1455,3 +1455,24 @@ Important limitation:
 ```text
 KR-7F.2 is evidence-aware outline hardening only. It does not implement final GigaChat PresentationIR planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime. Unsupported slide outlines must remain explicit and must not be treated as source-backed.
 ```
+
+## KR-7F.3 planner persistence and PresentationIR snapshot API contract hardening
+
+KR-7F.3 hardens the deterministic planner foundation by defining a safe persistence contract for planner-backed PresentationIR snapshots. It adds `presentation_ir_planner_snapshot.v1` metadata, fail-closed blocked-result persistence checks, and public-safe read-side exposure through existing PresentationIR snapshot and version APIs.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/presentation_ir_planner.py defines PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION, presentation_ir_planner_snapshot_metadata(), presentation_ir_planner_snapshot_metadata_from_ir(), and require_persistable_presentation_ir_planner_result();
+backend/app/services/slides_service/plan_snapshot.py defines create_planner_presentation_ir_snapshot();
+backend/app/api/schemas/presentations.py defines PresentationIRPlannerSnapshotMetadataSchema and exposes planner_snapshot fields on IR snapshot/version/plan responses;
+backend/app/api/routes/presentation_api_v1.py returns planner_snapshot metadata from read-only PresentationIR APIs;
+backend/tests/services/test_kr7f_presentation_ir_planner.py and backend/tests/api/test_kr7c_presentation_api_contract.py cover persistence metadata, blocked-result fail-closed behavior, and public-safe API payloads;
+scripts/kw_presentation_ir_planner_check.py and scripts/kw_presentation_api_contract_check.py verify the KR-7F.3 surface.
+```
+
+Important limitation:
+
+```text
+KR-7F.3 is planner persistence/API hardening only. It does not implement final GigaChat planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime. Blocked planner results must not be persisted as successful PresentationIR snapshots.
+```

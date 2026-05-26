@@ -88,3 +88,5 @@ hardcode operator machine paths in product code, reusable tests, Dockerfiles, or
 move or delete docs/codex without controlled cleanup and replacement coverage;
 introduce unsupported claims or spelling drift in docs, CLI help, comments, or user-facing messages.
 ```
+
+claim blocked planner results are persistable PresentationIR snapshots.

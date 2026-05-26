@@ -27,6 +27,11 @@ from backend.app.services.slides_service.blocks import (
 from backend.app.services.slides_service.image_pipeline import ImageSpec, VisualIntent
 from backend.app.services.slides_service.media import ImageFitMode, SlideMediaAsset
 from backend.app.services.slides_service.outline import PlannedSlide, PresentationPlan, SlideType, StoryArcStage
+from backend.app.services.slides_service.presentation_ir_planner import (
+    PresentationIRPlannerResult,
+    presentation_ir_planner_snapshot_metadata_from_ir,
+    require_persistable_presentation_ir_planner_result,
+)
 from backend.app.services.slides_service.presentation_ir import (
     PRESENTATION_IR_SCHEMA_VERSION,
     build_presentation_ir_from_legacy_plan,
@@ -124,6 +129,29 @@ class PresentationPlanSnapshotService:
         )
         return self.snapshots.create(snapshot)
 
+
+    def create_planner_presentation_ir_snapshot(
+        self,
+        *,
+        presentation_id: str,
+        planner_result: PresentationIRPlannerResult,
+        presentation_version_id: str | None = None,
+        created_from_task_id: str | None = None,
+        change_summary: str | None = None,
+        snapshot_id: str | None = None,
+    ) -> PresentationPlanSnapshot:
+        payload = require_persistable_presentation_ir_planner_result(planner_result)
+        if payload.get("deck", {}).get("presentation_id") != presentation_id:
+            raise ValueError("Planner result presentation_id does not match snapshot presentation_id.")
+        return self.create_presentation_ir_snapshot(
+            presentation_id=presentation_id,
+            presentation_ir=payload,
+            presentation_version_id=presentation_version_id,
+            created_from_task_id=created_from_task_id,
+            change_summary=change_summary or "Persisted PresentationIR planner snapshot",
+            snapshot_id=snapshot_id,
+        )
+
     def get_latest_presentation_ir(self, presentation_id: str) -> dict[str, Any] | None:
         snapshot = self.get_latest_snapshot(presentation_id)
         if snapshot is None:
@@ -158,6 +186,9 @@ class PresentationPlanSnapshotService:
                     "ir_schema_version": PRESENTATION_IR_SCHEMA_VERSION,
                     "storage_format": detect_presentation_ir_storage_format(snapshot.snapshot_json),
                     "version_number": index,
+                    "planner_snapshot": presentation_ir_planner_snapshot_metadata_from_ir(
+                        self.get_presentation_ir_for_snapshot(snapshot)
+                    ),
                 }
             )
         return versions

@@ -15,6 +15,7 @@ from backend.app.services.slides_service.presentation_ir import (
 
 PRESENTATION_IR_PLANNER_SCHEMA_VERSION = "presentation_ir_planner.v1"
 PRESENTATION_IR_OUTLINE_SCHEMA_VERSION = "presentation_ir_outline.v1"
+PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION = "presentation_ir_planner_snapshot.v1"
 
 PlannerStatus = Literal["ready", "degraded", "blocked"]
 SlideSupportStatus = Literal["supported", "weak", "unsupported"]
@@ -189,6 +190,55 @@ class PresentationIRPlannerFoundation:
             coverage_summary=coverage_summary,
             warnings=warnings,
         )
+
+
+def presentation_ir_planner_snapshot_metadata(result: PresentationIRPlannerResult) -> dict[str, Any]:
+    return {
+        "schema_version": PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION,
+        "planner_schema_version": result.schema_version,
+        "outline_schema_version": PRESENTATION_IR_OUTLINE_SCHEMA_VERSION,
+        "status": result.status,
+        "presentation_id": result.presentation_id,
+        "has_presentation_ir": result.presentation_ir is not None,
+        "evidence_binding_count": len(result.evidence_bindings),
+        "slide_outline_count": len(result.slide_outlines),
+        "coverage_summary": dict(result.coverage_summary),
+        "warnings": list(result.warnings),
+        "errors": list(result.errors),
+    }
+
+
+def presentation_ir_planner_snapshot_metadata_from_ir(presentation_ir: dict[str, Any]) -> dict[str, Any] | None:
+    planner_snapshot = presentation_ir.get("planner_snapshot")
+    if not isinstance(planner_snapshot, dict):
+        return None
+    if planner_snapshot.get("schema_version") != PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION:
+        return None
+    safe_snapshot = {
+        "schema_version": PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION,
+        "planner_schema_version": str(planner_snapshot.get("planner_schema_version") or PRESENTATION_IR_PLANNER_SCHEMA_VERSION),
+        "outline_schema_version": str(planner_snapshot.get("outline_schema_version") or PRESENTATION_IR_OUTLINE_SCHEMA_VERSION),
+        "status": str(planner_snapshot.get("status") or "degraded"),
+        "presentation_id": str(planner_snapshot.get("presentation_id") or presentation_ir.get("deck", {}).get("presentation_id") or ""),
+        "has_presentation_ir": bool(planner_snapshot.get("has_presentation_ir", True)),
+        "evidence_binding_count": int(planner_snapshot.get("evidence_binding_count") or 0),
+        "slide_outline_count": int(planner_snapshot.get("slide_outline_count") or 0),
+        "coverage_summary": dict(planner_snapshot.get("coverage_summary") or {}),
+        "warnings": [str(item) for item in planner_snapshot.get("warnings", [])],
+        "errors": [str(item) for item in planner_snapshot.get("errors", [])],
+    }
+    return safe_snapshot
+
+
+def require_persistable_presentation_ir_planner_result(result: PresentationIRPlannerResult) -> dict[str, Any]:
+    if result.status == "blocked" or result.presentation_ir is None:
+        raise ValueError("Blocked PresentationIR planner results cannot be persisted as PresentationIR snapshots.")
+    payload = require_presentation_ir_payload(dict(result.presentation_ir))
+    payload["planner_snapshot"] = presentation_ir_planner_snapshot_metadata(result)
+    payload.setdefault("quality_contract", {})["planner_snapshot_schema_version"] = PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION
+    payload.setdefault("quality_contract", {})["planner_snapshot_persisted"] = True
+    payload.setdefault("deck", {})["planner_snapshot_schema_version"] = PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION
+    return require_presentation_ir_payload(payload)
 
 
 # Backward compatible alias for earlier KR-7F.1 wording used by some checks.
@@ -608,10 +658,14 @@ def _normalize_coverage_threshold(value: float) -> float:
 
 __all__ = [
     "PRESENTATION_IR_OUTLINE_SCHEMA_VERSION",
+    "PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION",
     "PRESENTATION_IR_PLANNER_SCHEMA_VERSION",
     "PresentationIREvidenceBinding",
     "PresentationIRPlannerFoundation",
     "PresentationIRPlannerRequest",
     "PresentationIRPlannerResult",
     "PresentationIRSlideOutline",
+    "presentation_ir_planner_snapshot_metadata",
+    "presentation_ir_planner_snapshot_metadata_from_ir",
+    "require_persistable_presentation_ir_planner_result",
 ]

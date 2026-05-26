@@ -626,3 +626,11 @@ Important limitation:
 ```text
 KR-7F.2 is planner hardening only. It does not implement final GigaChat PresentationIR planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime. Unsupported slide outlines must remain explicit and must not be treated as source-backed.
 ```
+
+Implementation note after KR-7F.3:
+
+```text
+KR-7F.3 hardens planner persistence and PresentationIR snapshot API contract.
+It adds presentation_ir_planner_snapshot.v1 metadata, persistable planner result validation, blocked-result fail-closed persistence, and read-side planner snapshot metadata in PresentationIR API responses and version summaries.
+It does not implement final GigaChat planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime.
+```

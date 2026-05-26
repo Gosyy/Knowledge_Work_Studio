@@ -834,3 +834,32 @@ do not implement final GigaChat PresentationIR planning runtime, embeddings, web
 do not claim evidence-aware slide outline planning is final GigaChat planning runtime;
 do not claim unsupported slide outlines are source-backed.
 ```
+
+### KR-7F.3 planner persistence and PresentationIR snapshot API contract hardening
+
+Purpose:
+
+```text
+harden persistence of deterministic planner output as PresentationIR snapshots;
+attach presentation_ir_planner_snapshot.v1 metadata to persisted PresentationIR payloads;
+expose planner snapshot metadata through existing read-only PresentationIR snapshot API responses and version summaries;
+fail closed when a blocked planner result is asked to become a persisted PresentationIR snapshot.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/presentation_ir_planner.py defines presentation_ir_planner_snapshot.v1 and persistable planner-result helpers;
+PresentationPlanSnapshotService can create planner-backed PresentationIR snapshots only when planner output is persistable;
+GET /api/v1/presentations/{presentation_id}/ir includes public-safe planner_snapshot metadata when present;
+GET /api/v1/presentations/{presentation_id}/ir/versions includes planner_snapshot metadata in version summaries;
+scripts/kw_presentation_ir_planner_check.py and scripts/kw_presentation_api_contract_check.py verify the KR-7F.3 surface;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement final GigaChat PresentationIR planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime in KR-7F.3;
+do not persist blocked planner results as successful PresentationIR snapshots.
+```

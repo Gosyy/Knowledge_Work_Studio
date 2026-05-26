@@ -3,11 +3,14 @@ from __future__ import annotations
 from backend.app.services.slides_service import (
     PRESENTATION_IR_OUTLINE_SCHEMA_VERSION,
     PRESENTATION_IR_PLANNER_SCHEMA_VERSION,
+    PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION,
     PRESENTATION_IR_SCHEMA_VERSION,
     OfflineEvidenceIndexBuilder,
     OfflineSourceIngestionEngine,
     PresentationIRPlannerFoundation,
     PresentationIRPlannerRequest,
+    presentation_ir_planner_snapshot_metadata,
+    require_persistable_presentation_ir_planner_result,
     require_presentation_ir_payload,
 )
 
@@ -176,3 +179,48 @@ def test_kr7f2_prompt_only_outline_marks_every_slide_unsupported() -> None:
     assert result.coverage_summary["unsupported_slide_count"] == 3
     assert all(outline.support_status == "unsupported" for outline in result.slide_outlines)
     assert all("slide_outline_without_evidence" in outline.warnings for outline in result.slide_outlines)
+
+
+def test_kr7f3_planner_result_embeds_persistable_snapshot_metadata() -> None:
+    index = _evidence_index()
+    request = PresentationIRPlannerRequest(
+        presentation_id="pres_snapshot",
+        title="Support automation results",
+        objective="Support automation retention risk",
+        slide_count=4,
+        required_sections=("retention", "risk"),
+        require_evidence=True,
+    )
+
+    result = PresentationIRPlannerFoundation().plan_from_evidence(request, index)
+    payload = require_persistable_presentation_ir_planner_result(result)
+    snapshot_metadata = presentation_ir_planner_snapshot_metadata(result)
+
+    assert snapshot_metadata["schema_version"] == PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION
+    assert snapshot_metadata["status"] == result.status
+    assert snapshot_metadata["slide_outline_count"] == len(result.slide_outlines)
+    assert payload["planner_snapshot"]["schema_version"] == PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION
+    assert payload["quality_contract"]["planner_snapshot_persisted"] is True
+    assert payload["deck"]["planner_snapshot_schema_version"] == PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION
+    assert "local://" not in str(payload)
+
+
+def test_kr7f3_blocked_planner_result_is_not_persistable_as_ir_snapshot() -> None:
+    empty_index = OfflineEvidenceIndexBuilder().build_index([])
+    request = PresentationIRPlannerRequest(
+        presentation_id="pres_blocked_snapshot",
+        title="Unsupported market claim",
+        objective="Do not persist blocked planner output",
+        require_evidence=True,
+    )
+
+    result = PresentationIRPlannerFoundation().plan_from_evidence(request, empty_index)
+
+    assert result.status == "blocked"
+    assert result.presentation_ir is None
+    try:
+        require_persistable_presentation_ir_planner_result(result)
+    except ValueError as exc:
+        assert "Blocked PresentationIR planner results" in str(exc)
+    else:
+        raise AssertionError("blocked planner result unexpectedly persisted")

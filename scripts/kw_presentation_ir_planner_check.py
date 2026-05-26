@@ -17,10 +17,14 @@ REQUIRED_PHRASES = {
     "backend/app/services/slides_service/presentation_ir_planner.py": [
         'PRESENTATION_IR_PLANNER_SCHEMA_VERSION = "presentation_ir_planner.v1"',
         'PRESENTATION_IR_OUTLINE_SCHEMA_VERSION = "presentation_ir_outline.v1"',
+        'PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION = "presentation_ir_planner_snapshot.v1"',
         "class PresentationIRPlannerFoundation",
         "class PresentationIRPlannerRequest",
         "class PresentationIRPlannerResult",
         "class PresentationIRSlideOutline",
+        "presentation_ir_planner_snapshot_metadata",
+        "presentation_ir_planner_snapshot_metadata_from_ir",
+        "require_persistable_presentation_ir_planner_result",
         "def plan_from_evidence",
         "require_presentation_ir_payload",
         "evidence_required_but_index_empty",
@@ -34,6 +38,7 @@ REQUIRED_PHRASES = {
         "requires_image",
         "does not call LLMs",
         "KR-7F.2 hardens",
+        "Blocked PresentationIR planner results cannot be persisted",
     ],
     "backend/tests/services/test_kr7f_presentation_ir_planner.py": [
         "test_kr7f1_planner_builds_valid_presentation_ir_from_offline_evidence",
@@ -43,10 +48,13 @@ REQUIRED_PHRASES = {
         "test_kr7f2_planner_emits_evidence_aware_slide_outlines",
         "test_kr7f2_planner_degrades_when_outline_coverage_is_below_threshold",
         "test_kr7f2_prompt_only_outline_marks_every_slide_unsupported",
+        "test_kr7f3_planner_result_embeds_persistable_snapshot_metadata",
+        "test_kr7f3_blocked_planner_result_is_not_persistable_as_ir_snapshot",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7F.1 PresentationIR planner foundation",
         "KR-7F.2 evidence-aware slide outline planning hardening",
+        "KR-7F.3 planner persistence and PresentationIR snapshot API contract hardening",
         "presentation_ir_planner.v1",
         "presentation_ir_outline.v1",
         "do not claim final GigaChat planning runtime from KR-7F.1",
@@ -54,21 +62,25 @@ REQUIRED_PHRASES = {
     "docs/refactor/KR7_KIMI_LEVEL_SLIDES_ROADMAP.md": [
         "KR-7F.1 introduces a deterministic PresentationIR planner foundation",
         "KR-7F.2 hardens evidence-aware slide outline planning",
+        "KR-7F.3 hardens planner persistence and PresentationIR snapshot API contract",
         "presentation_ir_planner.v1",
     ],
     "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": [
         "KR-7F.1 PresentationIR planner foundation",
         "KR-7F.2 evidence-aware slide outline planning hardening",
+        "KR-7F.3 planner persistence and PresentationIR snapshot API contract hardening",
         "evidence_required_but_index_empty",
     ],
     "docs/QUALITY_MATRIX.md": [
         "KR-7F.1 adds PresentationIR planner foundation",
         "KR-7F.2 hardens evidence-aware slide outline planning",
+        "KR-7F.3 hardens planner persistence and PresentationIR snapshot API contract",
     ],
     "docs/PROJECT_PROHIBITIONS.md": [
         "claim final GigaChat PresentationIR planning runtime from KR-7F.1",
         "claim prompt-only degraded planner drafts are source-backed",
         "claim evidence-aware slide outline planning is final GigaChat planning runtime",
+        "claim blocked planner results are persistable PresentationIR snapshots",
     ],
 }
 

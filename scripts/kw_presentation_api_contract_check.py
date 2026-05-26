@@ -50,6 +50,7 @@ REQUIRED_SCHEMA_NAMES = {
     "PresentationApiSlidesResponseSchema",
     "PresentationApiContractStatusSchema",
     "PresentationIRSnapshotResponseSchema",
+    "PresentationIRPlannerSnapshotMetadataSchema",
     "PresentationIRVersionSummarySchema",
     "PresentationIRVersionsResponseSchema",
 }

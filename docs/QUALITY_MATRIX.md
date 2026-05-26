@@ -45,3 +45,5 @@ profile-neutral tests and runners.
 ## Documentation maintenance rule
 
 When a patch changes workflow maturity, validation behavior, artifact bundle expectations, provenance coverage, render/QA behavior, or UI visibility, update this matrix in the same patch.
+
+KR-7F.3 hardens planner persistence and PresentationIR snapshot API contract with presentation_ir_planner_snapshot.v1 metadata, blocked-result fail-closed persistence, and read-side planner snapshot exposure.
