@@ -59,11 +59,14 @@ from backend.app.services.slides_service.outline import (
 )
 from backend.app.services.slides_service.offline_evidence_index import (
     OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION,
+    OFFLINE_UNSUPPORTED_CLAIM_REPORT_SCHEMA_VERSION,
     ClaimEvidenceAssessment,
     EvidenceFragmentRecord,
     EvidenceSearchResult,
+    EvidenceSectionScore,
     OfflineEvidenceIndex,
     OfflineEvidenceIndexBuilder,
+    UnsupportedClaimReport,
 )
 from backend.app.services.slides_service.offline_source_ingestion import (
     SOURCE_ASSET_REGISTRY_SCHEMA_VERSION,
@@ -215,11 +218,14 @@ __all__ = [
     "PlannedSlide",
     "PresentationPlanSnapshotService",
     "OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION",
+    "OFFLINE_UNSUPPORTED_CLAIM_REPORT_SCHEMA_VERSION",
     "ClaimEvidenceAssessment",
     "EvidenceFragmentRecord",
     "EvidenceSearchResult",
+    "EvidenceSectionScore",
     "OfflineEvidenceIndex",
     "OfflineEvidenceIndexBuilder",
+    "UnsupportedClaimReport",
     "PRESENTATION_IR_SCHEMA_VERSION",
     "SOURCE_ASSET_REGISTRY_SCHEMA_VERSION",
     "SOURCE_ASSET_STORAGE_SCHEMA_VERSION",

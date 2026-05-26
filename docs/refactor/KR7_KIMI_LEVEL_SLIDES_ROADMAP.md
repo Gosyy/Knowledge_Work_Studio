@@ -252,6 +252,14 @@ It flags unsupported claims, preserves provenance refs, and ensures prompt-only 
 It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management.
 ```
 
+Implementation note after KR-7E.2:
+
+```text
+KR-7E.2 hardens evidence-to-source-section scoring and unsupported-claim reporting.
+It adds source section scores, claim-term coverage ratios, missing-term detection, and offline_unsupported_claim_report.v1 payloads with candidate sections and required operator action.
+It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management.
+```
+
 ## Phase KR-7F — PresentationIR planner
 
 Goal: use GigaChat to produce professional deck architecture.

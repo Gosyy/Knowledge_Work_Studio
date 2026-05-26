@@ -1376,3 +1376,22 @@ Important limitation:
 ```text
 KR-7E.1 is an offline evidence index foundation only. It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. prompt-only decks must not be treated as research-backed, and unsupported claims must fail closed.
 ```
+
+## KR-7E.2 evidence-to-source-section scoring and unsupported-claim reporting hardening
+
+KR-7E.2 hardens the offline evidence index after KR-7E.1 by scoring evidence at source-section level and by producing structured unsupported-claim reports instead of only a short unsupported reason.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/offline_evidence_index.py defines EvidenceSectionScore, UnsupportedClaimReport, search_sections(), section_index, coverage_ratio, missing_terms, and offline_unsupported_claim_report.v1;
+backend/tests/services/test_kr7e_offline_evidence_index.py covers section scores, claim-term coverage, missing terms, top candidate sections, and prompt-only unsupported reports;
+scripts/kw_offline_evidence_index_check.py verifies the KR-7E.2 evidence-section/checker/docs surface;
+scripts/kw_full_tests_with_proxy_runner.sh continues to run the KR-7E checker before the production readiness gate.
+```
+
+Important limitation:
+
+```text
+KR-7E.2 is evidence index hardening only. It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. Claims with missing required terms must remain unsupported unless later phases add stronger source-backed support.
+```

@@ -9,6 +9,7 @@ from typing import Any, Iterable
 from backend.app.services.slides_service.offline_source_ingestion import SourceIngestionReport
 
 OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION = "offline_evidence_index.v1"
+OFFLINE_UNSUPPORTED_CLAIM_REPORT_SCHEMA_VERSION = "offline_unsupported_claim_report.v1"
 
 _TOKEN_RE = re.compile(r"[\wА-Яа-яЁё]{2,}", flags=re.UNICODE)
 _STOPWORDS = {
@@ -50,11 +51,31 @@ class EvidenceFragmentRecord:
     page_number: int | None = None
     slide_number: int | None = None
     sheet_name: str | None = None
+    section_id: str | None = None
+    section_label: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["keywords"] = list(self.keywords)
+        return payload
+
+
+@dataclass(frozen=True)
+class EvidenceSectionScore:
+    section_id: str
+    source_id: str
+    section_label: str
+    score: float
+    matched_terms: tuple[str, ...]
+    evidence_ids: tuple[str, ...]
+    provenance_refs: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["matched_terms"] = list(self.matched_terms)
+        payload["evidence_ids"] = list(self.evidence_ids)
+        payload["provenance_refs"] = list(self.provenance_refs)
         return payload
 
 
@@ -67,6 +88,10 @@ class EvidenceSearchResult:
     score: float
     matched_terms: tuple[str, ...]
     evidence_type: str
+    coverage_ratio: float = 0.0
+    section_id: str | None = None
+    section_label: str | None = None
+    section_score: float = 0.0
     page_number: int | None = None
     slide_number: int | None = None
     sheet_name: str | None = None
@@ -78,15 +103,39 @@ class EvidenceSearchResult:
 
 
 @dataclass(frozen=True)
+class UnsupportedClaimReport:
+    schema_version: str
+    claim: str
+    reason: str
+    claim_terms: tuple[str, ...]
+    matched_terms: tuple[str, ...]
+    missing_terms: tuple[str, ...]
+    top_candidate_sections: tuple[EvidenceSectionScore, ...] = ()
+    unsupported_sources: tuple[dict[str, Any], ...] = ()
+    required_action: str = "attach_source_or_revise_claim"
+
+    def as_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["claim_terms"] = list(self.claim_terms)
+        payload["matched_terms"] = list(self.matched_terms)
+        payload["missing_terms"] = list(self.missing_terms)
+        payload["top_candidate_sections"] = [section.as_dict() for section in self.top_candidate_sections]
+        payload["unsupported_sources"] = list(self.unsupported_sources)
+        return payload
+
+
+@dataclass(frozen=True)
 class ClaimEvidenceAssessment:
     claim: str
     status: str
     reason: str
     results: tuple[EvidenceSearchResult, ...] = ()
+    unsupported_report: UnsupportedClaimReport | None = None
 
     def as_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["results"] = [result.as_dict() for result in self.results]
+        payload["unsupported_report"] = self.unsupported_report.as_dict() if self.unsupported_report else None
         return payload
 
 
@@ -97,6 +146,7 @@ class OfflineEvidenceIndex:
     unsupported_sources: tuple[dict[str, Any], ...]
     source_count: int
     retrieval_contract: dict[str, Any]
+    section_index: dict[str, tuple[str, ...]] = field(default_factory=dict)
     inverted_index: dict[str, tuple[str, ...]] = field(default_factory=dict)
     document_frequency: dict[str, int] = field(default_factory=dict)
 
@@ -108,6 +158,7 @@ class OfflineEvidenceIndex:
             "records": [record.as_dict() for record in self.records],
             "unsupported_sources": list(self.unsupported_sources),
             "retrieval_contract": self.retrieval_contract,
+            "section_index": {section_id: list(ids) for section_id, ids in sorted(self.section_index.items())},
             "inverted_index": {term: list(ids) for term, ids in sorted(self.inverted_index.items())},
             "document_frequency": dict(sorted(self.document_frequency.items())),
         }
@@ -116,16 +167,11 @@ class OfflineEvidenceIndex:
         query_terms = tuple(_tokenize(query))
         if not query_terms:
             return ()
-        idf = _idf_by_term(self.document_frequency, document_count=max(1, len(self.records)))
-        scored: list[EvidenceSearchResult] = []
-        for record in self.records:
-            term_counts = Counter(record.keywords)
-            matched_terms = tuple(term for term in query_terms if term in term_counts)
-            if not matched_terms:
-                continue
-            base = sum((1.0 + math.log(term_counts[term])) * idf.get(term, 1.0) for term in set(matched_terms))
-            score = round(base * _section_boost(record), 6)
-            scored.append(
+        scored_records, section_scores = self._score_query(query_terms)
+        results: list[EvidenceSearchResult] = []
+        for record, score, matched_terms, coverage_ratio in scored_records:
+            section_score = section_scores.get(record.section_id or "", None)
+            results.append(
                 EvidenceSearchResult(
                     evidence_id=record.evidence_id,
                     source_id=record.source_id,
@@ -134,33 +180,124 @@ class OfflineEvidenceIndex:
                     score=score,
                     matched_terms=tuple(sorted(set(matched_terms))),
                     evidence_type=record.evidence_type,
+                    coverage_ratio=coverage_ratio,
+                    section_id=record.section_id,
+                    section_label=record.section_label,
+                    section_score=section_score.score if section_score else 0.0,
                     page_number=record.page_number,
                     slide_number=record.slide_number,
                     sheet_name=record.sheet_name,
                 )
             )
-        return tuple(sorted(scored, key=lambda item: (-item.score, item.evidence_id))[:limit])
+        return tuple(sorted(results, key=lambda item: (-item.score, -item.section_score, item.evidence_id))[:limit])
 
-    def assess_claim(self, claim: str, *, min_score: float = 1.0, limit: int = 5) -> ClaimEvidenceAssessment:
+    def search_sections(self, query: str, *, limit: int = 5) -> tuple[EvidenceSectionScore, ...]:
+        query_terms = tuple(_tokenize(query))
+        if not query_terms:
+            return ()
+        _, section_scores = self._score_query(query_terms)
+        return tuple(sorted(section_scores.values(), key=lambda item: (-item.score, item.section_id))[:limit])
+
+    def assess_claim(
+        self,
+        claim: str,
+        *,
+        min_score: float = 1.0,
+        min_coverage_ratio: float = 0.5,
+        limit: int = 5,
+    ) -> ClaimEvidenceAssessment:
+        claim_terms = tuple(_tokenize(claim))
         if not self.records:
+            reason = "No local source evidence is indexed; prompt-only decks must not be treated as research-backed."
             return ClaimEvidenceAssessment(
                 claim=claim,
                 status="unsupported",
-                reason="No local source evidence is indexed; prompt-only decks must not be treated as research-backed.",
+                reason=reason,
+                unsupported_report=self._unsupported_claim_report(claim, claim_terms=claim_terms, reason=reason),
             )
         results = self.search(claim, limit=limit)
-        if not results or results[0].score < min_score:
+        matched_terms = tuple(sorted({term for result in results for term in result.matched_terms}))
+        missing_terms = _missing_terms(claim_terms, matched_terms)
+        best = results[0] if results else None
+        if best is None or best.score < min_score or best.coverage_ratio < min_coverage_ratio:
+            reason = "No indexed local evidence section met the lexical score and coverage thresholds."
             return ClaimEvidenceAssessment(
                 claim=claim,
                 status="unsupported",
-                reason="No indexed local evidence fragment met the lexical support threshold.",
+                reason=reason,
                 results=results,
+                unsupported_report=self._unsupported_claim_report(
+                    claim,
+                    claim_terms=claim_terms,
+                    matched_terms=matched_terms,
+                    missing_terms=missing_terms,
+                    reason=reason,
+                ),
             )
         return ClaimEvidenceAssessment(
             claim=claim,
             status="supported",
-            reason="At least one indexed local evidence fragment matched the lexical support threshold.",
+            reason="At least one indexed local evidence section met the lexical score and coverage thresholds.",
             results=results,
+        )
+
+    def _score_query(
+        self,
+        query_terms: tuple[str, ...],
+    ) -> tuple[list[tuple[EvidenceFragmentRecord, float, tuple[str, ...], float]], dict[str, EvidenceSectionScore]]:
+        unique_query_terms = tuple(dict.fromkeys(query_terms))
+        idf = _idf_by_term(self.document_frequency, document_count=max(1, len(self.records)))
+        scored_records: list[tuple[EvidenceFragmentRecord, float, tuple[str, ...], float]] = []
+        section_terms: dict[str, set[str]] = defaultdict(set)
+        section_scores: Counter[str] = Counter()
+        section_records: dict[str, list[EvidenceFragmentRecord]] = defaultdict(list)
+        for record in self.records:
+            term_counts = Counter(record.keywords)
+            matched_terms = tuple(term for term in unique_query_terms if term in term_counts)
+            if not matched_terms:
+                continue
+            coverage_ratio = len(set(matched_terms)) / max(1, len(set(unique_query_terms)))
+            base = sum((1.0 + math.log(term_counts[term])) * idf.get(term, 1.0) for term in set(matched_terms))
+            score = round(base * _section_boost(record) * (1.0 + coverage_ratio), 6)
+            scored_records.append((record, score, matched_terms, round(coverage_ratio, 6)))
+            section_id = record.section_id or _section_id(record)
+            section_scores[section_id] += score
+            section_terms[section_id].update(matched_terms)
+            section_records[section_id].append(record)
+        section_payload: dict[str, EvidenceSectionScore] = {}
+        for section_id, score in section_scores.items():
+            records = section_records[section_id]
+            first = records[0]
+            section_payload[section_id] = EvidenceSectionScore(
+                section_id=section_id,
+                source_id=first.source_id,
+                section_label=first.section_label or section_id,
+                score=round(float(score), 6),
+                matched_terms=tuple(sorted(section_terms[section_id])),
+                evidence_ids=tuple(record.evidence_id for record in records),
+                provenance_refs=tuple(dict.fromkeys(record.provenance_ref for record in records)),
+            )
+        return scored_records, section_payload
+
+    def _unsupported_claim_report(
+        self,
+        claim: str,
+        *,
+        claim_terms: tuple[str, ...],
+        reason: str,
+        matched_terms: tuple[str, ...] = (),
+        missing_terms: tuple[str, ...] | None = None,
+    ) -> UnsupportedClaimReport:
+        missing = missing_terms if missing_terms is not None else _missing_terms(claim_terms, matched_terms)
+        return UnsupportedClaimReport(
+            schema_version=OFFLINE_UNSUPPORTED_CLAIM_REPORT_SCHEMA_VERSION,
+            claim=claim,
+            reason=reason,
+            claim_terms=tuple(dict.fromkeys(claim_terms)),
+            matched_terms=tuple(dict.fromkeys(matched_terms)),
+            missing_terms=missing,
+            top_candidate_sections=self.search_sections(claim, limit=3),
+            unsupported_sources=self.unsupported_sources,
         )
 
 
@@ -190,9 +327,12 @@ class OfflineEvidenceIndexBuilder:
                 continue
             records.extend(_records_from_report(report))
 
+        section_index: dict[str, set[str]] = defaultdict(set)
         inverted: dict[str, set[str]] = defaultdict(set)
         document_frequency: Counter[str] = Counter()
         for record in records:
+            if record.section_id:
+                section_index[record.section_id].add(record.evidence_id)
             unique_terms = set(record.keywords)
             for term in unique_terms:
                 inverted[term].add(record.evidence_id)
@@ -203,12 +343,15 @@ class OfflineEvidenceIndexBuilder:
             unsupported_sources=tuple(unsupported_sources),
             source_count=len(reports),
             retrieval_contract={
-                "methods": ["lexical_token_index", "bm25_like_idf_scoring", "source_section_boosting"],
+                "methods": ["lexical_token_index", "bm25_like_idf_scoring", "source_section_boosting", "claim_term_coverage", "unsupported_claim_report"],
                 "no_hidden_embedding_dependency": True,
                 "no_web_research": True,
                 "postgres_fts_runtime": "planned_not_claimed_in_kr7e1",
                 "unsupported_claims_fail_closed": True,
+                "section_scoring_hardened": True,
+                "unsupported_claim_report_schema": OFFLINE_UNSUPPORTED_CLAIM_REPORT_SCHEMA_VERSION,
             },
+            section_index={section_id: tuple(sorted(ids)) for section_id, ids in section_index.items()},
             inverted_index={term: tuple(sorted(ids)) for term, ids in inverted.items()},
             document_frequency=dict(document_frequency),
         )
@@ -323,8 +466,84 @@ def _record(
         page_number=page_number,
         slide_number=slide_number,
         sheet_name=sheet_name,
+        section_id=_section_id_from_fields(
+            source_id=report.source_id,
+            page_number=page_number,
+            slide_number=slide_number,
+            sheet_name=sheet_name,
+            role=role,
+            evidence_type=evidence_type,
+        ),
+        section_label=_section_label(
+            source_id=report.source_id,
+            page_number=page_number,
+            slide_number=slide_number,
+            sheet_name=sheet_name,
+            role=role,
+            evidence_type=evidence_type,
+        ),
         metadata={"local_id": local_id, **(metadata or {})},
     )
+
+
+def _missing_terms(claim_terms: tuple[str, ...], matched_terms: tuple[str, ...]) -> tuple[str, ...]:
+    matched = set(matched_terms)
+    return tuple(term for term in dict.fromkeys(claim_terms) if term not in matched)
+
+
+def _section_id(record: EvidenceFragmentRecord) -> str:
+    return record.section_id or _section_id_from_fields(
+        source_id=record.source_id,
+        page_number=record.page_number,
+        slide_number=record.slide_number,
+        sheet_name=record.sheet_name,
+        role=record.role,
+        evidence_type=record.evidence_type,
+    )
+
+
+def _section_id_from_fields(
+    *,
+    source_id: str,
+    page_number: int | None,
+    slide_number: int | None,
+    sheet_name: str | None,
+    role: str | None,
+    evidence_type: str,
+) -> str:
+    if page_number is not None:
+        return f"{source_id}#page:{page_number}"
+    if slide_number is not None:
+        return f"{source_id}#slide:{slide_number}"
+    if sheet_name:
+        return f"{source_id}#sheet:{_safe_section_component(sheet_name)}"
+    if role in {"heading", "caption", "title"}:
+        return f"{source_id}#section:{role}"
+    return f"{source_id}#section:{evidence_type}"
+
+
+def _section_label(
+    *,
+    source_id: str,
+    page_number: int | None,
+    slide_number: int | None,
+    sheet_name: str | None,
+    role: str | None,
+    evidence_type: str,
+) -> str:
+    if page_number is not None:
+        return f"{source_id} page {page_number}"
+    if slide_number is not None:
+        return f"{source_id} slide {slide_number}"
+    if sheet_name:
+        return f"{source_id} sheet {sheet_name}"
+    if role in {"heading", "caption", "title"}:
+        return f"{source_id} {role}"
+    return f"{source_id} {evidence_type}"
+
+
+def _safe_section_component(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", value.strip()).strip("._-") or "section"
 
 
 def _tokenize(text: str) -> list[str]:
@@ -361,8 +580,10 @@ def _section_boost(record: EvidenceFragmentRecord) -> float:
 __all__ = [
     "OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION",
     "ClaimEvidenceAssessment",
+    "EvidenceSectionScore",
     "EvidenceFragmentRecord",
     "EvidenceSearchResult",
     "OfflineEvidenceIndex",
     "OfflineEvidenceIndexBuilder",
+    "UnsupportedClaimReport",
 ]

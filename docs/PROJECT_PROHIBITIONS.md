@@ -31,7 +31,8 @@ claim KR-7E evidence retrieval from KR-7D.3 structure metadata or chart candidat
 claim dependency-backed extraction fidelity without dependency status metadata;
 claim research-backed evidence for prompt-only decks;
 claim embeddings or PostgreSQL FTS runtime from KR-7E.1 lexical index foundation;
-claim web research or autonomous browsing evidence from offline evidence index results.
+claim web research or autonomous browsing evidence from offline evidence index results;
+claim a supported claim when required claim terms are missing from local evidence sections.
 ```
 
 ## Runtime and deploy prohibitions

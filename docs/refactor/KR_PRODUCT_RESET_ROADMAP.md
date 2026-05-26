@@ -713,3 +713,31 @@ Non-goals:
 do not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management in KR-7E.1;
 do not claim complete evidence retrieval quality beyond the deterministic lexical foundation and unsupported-claim guardrails.
 ```
+
+### KR-7E.2 evidence-to-source-section scoring and unsupported-claim reporting hardening
+
+Purpose:
+
+```text
+harden the KR-7E offline evidence index so claim support is evaluated against source sections, not only individual lexical fragments;
+add section-level scores, claim-term coverage ratios, missing-term reporting, and structured unsupported-claim reports;
+keep the implementation deterministic and local-source-only, without embeddings, web research, PostgreSQL FTS runtime claims, planner integration, render/export, or UI work.
+```
+
+Acceptance:
+
+```text
+OfflineEvidenceIndex exposes search_sections(query) and section_index metadata;
+EvidenceSearchResult includes coverage_ratio, section_id, section_label, and section_score;
+ClaimEvidenceAssessment includes offline_unsupported_claim_report.v1 when a claim is unsupported;
+unsupported reports list claim_terms, matched_terms, missing_terms, top_candidate_sections, unsupported_sources, and required_action;
+scripts/kw_offline_evidence_index_check.py verifies the KR-7E.2 surface;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management in KR-7E.2;
+do not claim a supported result when required claim terms are missing from local evidence sections.
+```

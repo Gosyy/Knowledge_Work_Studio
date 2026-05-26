@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate KR-7E offline evidence index foundation guardrails."""
+"""Validate KR-7E offline evidence index and unsupported-claim guardrails."""
 
 from __future__ import annotations
 
@@ -20,6 +20,14 @@ REQUIRED_PHRASES = {
         "def build_index",
         "def search",
         "def assess_claim",
+        "def search_sections",
+        "class EvidenceSectionScore",
+        "class UnsupportedClaimReport",
+        "OFFLINE_UNSUPPORTED_CLAIM_REPORT_SCHEMA_VERSION",
+        "coverage_ratio",
+        "missing_terms",
+        "section_scoring_hardened",
+        "unsupported_claim_report_schema",
         "no_hidden_embedding_dependency",
         "no_web_research",
         "postgres_fts_runtime",
@@ -31,9 +39,13 @@ REQUIRED_PHRASES = {
         "test_kr7e_evidence_index_assesses_supported_and_unsupported_claims",
         "test_kr7e_prompt_only_index_does_not_claim_research_backing",
         "test_kr7e_unsupported_sources_are_reported_honestly",
+        "test_kr7e2_search_results_include_section_scores_and_coverage",
+        "test_kr7e2_unsupported_claim_report_lists_missing_terms_and_candidate_sections",
+        "test_kr7e2_prompt_only_unsupported_report_is_structured",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7E.1 Offline evidence index foundation",
+        "KR-7E.2 evidence-to-source-section scoring and unsupported-claim reporting hardening",
         "offline_evidence_index.v1",
         "no hidden embedding dependency",
     ],
@@ -41,13 +53,16 @@ REQUIRED_PHRASES = {
         "KR-7E.1 introduces an offline evidence index foundation",
         "lexical_token_index",
         "BM25-like IDF scoring",
+        "KR-7E.2 hardens evidence-to-source-section scoring",
     ],
     "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": [
         "KR-7E.1 Offline evidence index foundation",
         "prompt-only decks must not be treated as research-backed",
+        "KR-7E.2 evidence-to-source-section scoring and unsupported-claim reporting hardening",
     ],
     "docs/QUALITY_MATRIX.md": [
         "KR-7E.1 adds offline evidence index foundation",
+        "KR-7E.2 hardens section scoring",
     ],
     "docs/PROJECT_PROHIBITIONS.md": [
         "claim research-backed evidence for prompt-only decks",

@@ -83,3 +83,57 @@ def test_kr7e_unsupported_sources_are_reported_honestly() -> None:
     assert index.records == ()
     assert index.unsupported_sources[0]["source_id"] == "src_bin"
     assert index.unsupported_sources[0]["status"] == "unsupported"
+
+
+def test_kr7e2_search_results_include_section_scores_and_coverage() -> None:
+    report = OfflineSourceIngestionEngine().ingest_bytes(
+        b"# Finance\n\nRevenue retention improved after automation.\n\n# Operations\n\nDeployment risk decreased.",
+        source_id="src_sections",
+        file_type="md",
+    )
+    index = OfflineEvidenceIndexBuilder().build_index([report])
+
+    results = index.search("revenue retention automation", limit=3)
+    sections = index.search_sections("revenue retention automation", limit=3)
+
+    assert results
+    assert results[0].coverage_ratio >= 0.5
+    assert results[0].section_id
+    assert results[0].section_label
+    assert results[0].section_score >= results[0].score
+    assert sections
+    assert sections[0].section_id == results[0].section_id
+    assert "revenue" in sections[0].matched_terms
+    assert results[0].evidence_id in sections[0].evidence_ids
+
+
+def test_kr7e2_unsupported_claim_report_lists_missing_terms_and_candidate_sections() -> None:
+    report = OfflineSourceIngestionEngine().ingest_bytes(
+        b"Customer churn decreased after support automation.",
+        source_id="src_support",
+        file_type="txt",
+    )
+    index = OfflineEvidenceIndexBuilder().build_index([report])
+
+    assessment = index.assess_claim("customer churn decreased in Europe", min_coverage_ratio=0.9)
+
+    assert assessment.status == "unsupported"
+    assert assessment.unsupported_report is not None
+    assert assessment.unsupported_report.schema_version == "offline_unsupported_claim_report.v1"
+    assert "europe" in assessment.unsupported_report.missing_terms
+    assert "customer" in assessment.unsupported_report.matched_terms
+    assert assessment.unsupported_report.top_candidate_sections
+    assert assessment.unsupported_report.required_action == "attach_source_or_revise_claim"
+
+
+def test_kr7e2_prompt_only_unsupported_report_is_structured() -> None:
+    index = OfflineEvidenceIndexBuilder().build_index([])
+
+    assessment = index.assess_claim("market share increased")
+
+    assert assessment.status == "unsupported"
+    assert assessment.unsupported_report is not None
+    assert assessment.unsupported_report.claim_terms == ("market", "share", "increased")
+    assert assessment.unsupported_report.matched_terms == ()
+    assert assessment.unsupported_report.missing_terms == ("market", "share", "increased")
+    assert assessment.unsupported_report.top_candidate_sections == ()
