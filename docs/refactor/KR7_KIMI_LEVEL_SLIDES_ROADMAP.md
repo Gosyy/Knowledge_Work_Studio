@@ -243,6 +243,15 @@ Acceptance:
 - unsupported claims are flagged;
 - no research-backed claim is made for prompt-only decks without sources.
 
+Implementation note after KR-7E.1:
+
+```text
+KR-7E.1 introduces an offline evidence index foundation.
+It builds offline_evidence_index.v1 from KR-7D ingestion reports using lexical_token_index, BM25-like IDF scoring, and source section scoring over local fragments, tables, structures, and chart candidates.
+It flags unsupported claims, preserves provenance refs, and ensures prompt-only decks must not be treated as research-backed.
+It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management.
+```
+
 ## Phase KR-7F — PresentationIR planner
 
 Goal: use GigaChat to produce professional deck architecture.

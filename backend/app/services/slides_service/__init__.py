@@ -57,6 +57,14 @@ from backend.app.services.slides_service.outline import (
     build_slides_outline,
     plan_to_outline,
 )
+from backend.app.services.slides_service.offline_evidence_index import (
+    OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION,
+    ClaimEvidenceAssessment,
+    EvidenceFragmentRecord,
+    EvidenceSearchResult,
+    OfflineEvidenceIndex,
+    OfflineEvidenceIndexBuilder,
+)
 from backend.app.services.slides_service.offline_source_ingestion import (
     SOURCE_ASSET_REGISTRY_SCHEMA_VERSION,
     SOURCE_EXTRACTION_FIDELITY_SCHEMA_VERSION,
@@ -206,6 +214,12 @@ __all__ = [
     "ImageSpec",
     "PlannedSlide",
     "PresentationPlanSnapshotService",
+    "OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION",
+    "ClaimEvidenceAssessment",
+    "EvidenceFragmentRecord",
+    "EvidenceSearchResult",
+    "OfflineEvidenceIndex",
+    "OfflineEvidenceIndexBuilder",
     "PRESENTATION_IR_SCHEMA_VERSION",
     "SOURCE_ASSET_REGISTRY_SCHEMA_VERSION",
     "SOURCE_ASSET_STORAGE_SCHEMA_VERSION",

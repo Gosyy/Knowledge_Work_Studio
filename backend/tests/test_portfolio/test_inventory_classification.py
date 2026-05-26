@@ -125,3 +125,13 @@ def test_kw_test_inventory_classifies_kr7d_offline_source_ingestion_checker(tmp_
     assert ingestion_script["contract"] == "source_mode_routing"
     assert "source_mode_routing" in ingestion_script["contracts"]
     assert ingestion_script["decision"] == "keep"
+
+def test_kw_test_inventory_classifies_kr7e_offline_evidence_index_checker(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    inventory = _run_inventory(repo_root, tmp_path)
+    by_path = {entry["path"]: entry for entry in inventory["tests"]}
+
+    evidence_script = by_path["scripts/kw_offline_evidence_index_check.py"]
+    assert evidence_script["contract"] == "source_mode_routing"
+    assert "source_mode_routing" in evidence_script["contracts"]
+    assert evidence_script["decision"] == "keep"

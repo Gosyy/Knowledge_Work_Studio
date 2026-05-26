@@ -1355,3 +1355,24 @@ Important limitation:
 ```text
 KR-7D.4 is package extraction fidelity only. It does not implement OCR, embeddings, KR-7E evidence retrieval, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. Dependency-backed extraction must not be claimed without dependency status metadata and validation logs.
 ```
+
+
+## KR-7E.1 Offline evidence index foundation
+
+KR-7E.1 starts offline evidence retrieval after the accepted KR-7D ingestion layers. It builds a deterministic local `offline_evidence_index.v1` from KR-7D ingestion reports so later planning phases can consume source-backed evidence without public web research or hidden embedding dependencies.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/offline_evidence_index.py defines OfflineEvidenceIndexBuilder, OfflineEvidenceIndex, EvidenceFragmentRecord, EvidenceSearchResult, and ClaimEvidenceAssessment;
+backend/tests/services/test_kr7e_offline_evidence_index.py covers lexical indexing, search, claim assessment, prompt-only unsupported behavior, and unsupported source reporting;
+scripts/kw_offline_evidence_index_check.py verifies the KR-7E.1 evidence-index/checker/docs surface;
+scripts/kw_full_tests_with_proxy_runner.sh runs the KR-7E checker before the production readiness gate;
+scripts/kw_test_inventory.py classifies the KR-7E checker as source_mode_routing.
+```
+
+Important limitation:
+
+```text
+KR-7E.1 is an offline evidence index foundation only. It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. prompt-only decks must not be treated as research-backed, and unsupported claims must fail closed.
+```

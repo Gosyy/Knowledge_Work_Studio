@@ -682,3 +682,34 @@ Non-goals:
 do not implement KR-7E evidence retrieval, OCR, embeddings, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management in KR-7D.4;
 do not claim complete dependency-backed extraction unless dependency status metadata and logs prove it.
 ```
+
+
+### KR-7E.1 Offline evidence index foundation
+
+Purpose:
+
+```text
+start KR-7E by replacing web research assumptions with a deterministic local evidence index;
+build offline_evidence_index.v1 from KR-7D ingestion reports;
+index source fragments, tables, structure elements, and chart candidates with provenance refs;
+provide lexical_token_index, BM25-like IDF scoring, and source section scoring with no hidden embedding dependency;
+fail closed for unsupported claims and prompt-only decks with no local sources.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/offline_evidence_index.py defines offline_evidence_index.v1 and OfflineEvidenceIndexBuilder;
+search results return evidence ids, source ids, provenance refs, matched terms, scores, and location metadata;
+claim assessment reports supported/unsupported status without pretending prompt-only decks are research-backed;
+scripts/kw_offline_evidence_index_check.py verifies the evidence-index/checker/docs surface;
+scripts/kw_full_tests_with_proxy_runner.sh runs the KR-7E checker before the production readiness gate;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management in KR-7E.1;
+do not claim complete evidence retrieval quality beyond the deterministic lexical foundation and unsupported-claim guardrails.
+```
