@@ -289,6 +289,14 @@ Acceptance:
 - fallback is degraded and explicit;
 - no invented evidence.
 
+Implementation note after KR-7F.1:
+
+```text
+KR-7F.1 introduces a deterministic PresentationIR planner foundation through presentation_ir_planner.v1.
+It consumes KR-7E offline evidence, emits validated presentation_ir.v1 drafts with slide roles, takeaways, blocks, visual plans, evidence bindings, and explicit ready/degraded/blocked status.
+It does not implement final GigaChat planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime.
+```
+
 ## Phase KR-7G — visual grammar library
 
 Goal: first professional editable blocks.

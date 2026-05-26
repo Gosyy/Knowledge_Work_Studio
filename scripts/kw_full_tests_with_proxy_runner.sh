@@ -146,6 +146,7 @@ run_shell_step "29b-llm-provider-scope-check" "cd '${REPO_ROOT}' && source .venv
 run_shell_step "29c-presentation-api-contract-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_presentation_api_contract_check.py --repo-root . --require-ready"
 run_shell_step "29d-offline-source-ingestion-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_offline_source_ingestion_check.py --repo-root . --require-ready"
 run_shell_step "29e-offline-evidence-index-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_offline_evidence_index_check.py --repo-root . --require-ready"
+run_shell_step "29f-presentation-ir-planner-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_presentation_ir_planner_check.py --repo-root . --require-ready"
 run_shell_step "30-production-readiness-gate" "cd '${REPO_ROOT}' && source .venv/bin/activate && export NO_PROXY='${LOCAL_NO_PROXY}' no_proxy='${LOCAL_NO_PROXY}' && unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy && python scripts/kw_production_readiness_gate.py --repo-root ."
 run_shell_step "40-docker-compose-check-only" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_fullstack_compose_smoke.py --repo-root . --check-only --timeout 1200"
 run_shell_step "99-git-status-after" "cd '${REPO_ROOT}' && git status --short && git branch --show-current && git rev-parse HEAD"

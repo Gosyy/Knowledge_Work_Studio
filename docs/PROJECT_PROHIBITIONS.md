@@ -34,7 +34,10 @@ claim embeddings or PostgreSQL FTS runtime from KR-7E.1 lexical index foundation
 claim web research or autonomous browsing evidence from offline evidence index results;
 claim a supported claim when required claim terms are missing from local evidence sections;
 claim evidence index persistence is a planner or render runtime;
-expose operator absolute paths from persisted offline evidence index manifests.
+expose operator absolute paths from persisted offline evidence index manifests;
+claim final GigaChat PresentationIR planning runtime from KR-7F.1;
+claim prompt-only degraded planner drafts are source-backed;
+claim KR-7F.1 planner output has been rendered, exported, visually QA checked, or approved.
 ```
 
 ## Runtime and deploy prohibitions

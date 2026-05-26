@@ -1416,3 +1416,23 @@ Important limitation:
 ```text
 KR-7E.3 is evidence persistence and read API contract only. It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. Persisted manifests and API payloads must not expose operator absolute storage paths.
 ```
+
+## KR-7F.1 PresentationIR planner foundation
+
+KR-7F.1 starts the PresentationIR planner phase after accepted KR-7E evidence persistence. It introduces a deterministic `presentation_ir_planner.v1` foundation that consumes `OfflineEvidenceIndex` and emits validated `presentation_ir.v1` drafts with slide roles, takeaways, blocks, visual plans, and evidence bindings.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/presentation_ir_planner.py defines PresentationIRPlannerFoundation, PresentationIRPlannerRequest, PresentationIRPlannerResult, and evidence binding records;
+backend/tests/services/test_kr7f_presentation_ir_planner.py covers valid source-backed drafts, fail-closed missing evidence, explicit degraded prompt-only output, and no fake chart/image requirements;
+scripts/kw_presentation_ir_planner_check.py verifies the KR-7F.1 planner/checker/docs surface;
+scripts/kw_full_tests_with_proxy_runner.sh runs the KR-7F planner checker before production readiness;
+scripts/kw_test_inventory.py classifies the KR-7F checker as slides_workflow.
+```
+
+Important limitation:
+
+```text
+KR-7F.1 is a planner foundation only. It does not implement final GigaChat PresentationIR planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime. Prompt-only degraded drafts must not be treated as source-backed. Missing required evidence must return blocked with evidence_required_but_index_empty rather than invented evidence.
+```

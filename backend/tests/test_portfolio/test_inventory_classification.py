@@ -135,3 +135,13 @@ def test_kw_test_inventory_classifies_kr7e_offline_evidence_index_checker(tmp_pa
     assert evidence_script["contract"] == "source_mode_routing"
     assert "source_mode_routing" in evidence_script["contracts"]
     assert evidence_script["decision"] == "keep"
+
+def test_kw_test_inventory_classifies_kr7f_presentation_ir_planner_checker(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    inventory = _run_inventory(repo_root, tmp_path)
+    by_path = {entry["path"]: entry for entry in inventory["tests"]}
+
+    planner_script = by_path["scripts/kw_presentation_ir_planner_check.py"]
+    assert planner_script["contract"] == "slides_workflow"
+    assert "slides_workflow" in planner_script["contracts"]
+    assert planner_script["decision"] == "keep"

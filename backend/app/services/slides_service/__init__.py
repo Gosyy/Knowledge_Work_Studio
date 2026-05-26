@@ -91,6 +91,13 @@ from backend.app.services.slides_service.plan_snapshot import (
     deserialize_presentation_plan,
     serialize_presentation_plan,
 )
+from backend.app.services.slides_service.presentation_ir_planner import (
+    PRESENTATION_IR_PLANNER_SCHEMA_VERSION,
+    PresentationIREvidenceBinding,
+    PresentationIRPlannerFoundation,
+    PresentationIRPlannerRequest,
+    PresentationIRPlannerResult,
+)
 from backend.app.services.slides_service.presentation_ir import (
     PRESENTATION_IR_SCHEMA_VERSION,
     PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
@@ -234,6 +241,11 @@ __all__ = [
     "OfflineEvidenceIndexBuilder",
     "UnsupportedClaimReport",
     "offline_evidence_index_from_dict",
+    "PRESENTATION_IR_PLANNER_SCHEMA_VERSION",
+    "PresentationIREvidenceBinding",
+    "PresentationIRPlannerFoundation",
+    "PresentationIRPlannerRequest",
+    "PresentationIRPlannerResult",
     "PRESENTATION_IR_SCHEMA_VERSION",
     "SOURCE_ASSET_REGISTRY_SCHEMA_VERSION",
     "SOURCE_ASSET_STORAGE_SCHEMA_VERSION",
