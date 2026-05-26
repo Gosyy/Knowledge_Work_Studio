@@ -27,6 +27,9 @@ _V1_PATHS = {
     "/api/v1/presentations": {"post"},
     "/api/v1/presentations/{presentation_id}": {"get"},
     "/api/v1/presentations/{presentation_id}/sources": {"get", "post"},
+    "/api/v1/presentations/{presentation_id}/evidence": {"get"},
+    "/api/v1/presentations/{presentation_id}/evidence/search": {"get"},
+    "/api/v1/presentations/{presentation_id}/evidence/claims": {"get"},
     "/api/v1/presentations/{presentation_id}/plan": {"get", "post"},
     "/api/v1/presentations/{presentation_id}/ir": {"get"},
     "/api/v1/presentations/{presentation_id}/ir/versions": {"get"},
@@ -46,6 +49,7 @@ def _reset_app_state() -> None:
         "task_queue_service",
         "llm_provider",
         "llm_text_service",
+        "offline_evidence_index_store",
     ):
         if hasattr(app.state, attribute):
             delattr(app.state, attribute)
@@ -135,6 +139,25 @@ def _seed_plan_snapshot(repository_db_path: str) -> None:
     )
 
 
+def _seed_offline_evidence_index(tmp_path: Path) -> None:
+    from backend.app.services.slides_service import (
+        OfflineEvidenceIndexBuilder,
+        OfflineEvidenceIndexStore,
+        OfflineSourceIngestionEngine,
+    )
+
+    report = OfflineSourceIngestionEngine().ingest_bytes(
+        b"# Retention\n\nCustomer retention improved after support automation.",
+        source_id="src_evidence",
+        file_type="md",
+    )
+    index = OfflineEvidenceIndexBuilder().build_index([report])
+    OfflineEvidenceIndexStore(tmp_path / "presentation_evidence_indexes").persist_index(
+        presentation_id="pres_kr7c",
+        index=index,
+    )
+
+
 def _seed_native_presentation_ir_snapshot(repository_db_path: str) -> None:
     service = PresentationPlanSnapshotService(
         snapshots=SqlitePresentationPlanSnapshotRepository(repository_db_path),
@@ -200,6 +223,9 @@ def test_kr7c_openapi_exposes_api_v1_presentation_contract_and_legacy_compatibil
     assert "PresentationApiPlanSnapshotResponseSchema" in component_schemas
     assert "PresentationApiSlidesResponseSchema" in component_schemas
     assert "PresentationApiSourcesResponseSchema" in component_schemas
+    assert "PresentationEvidenceIndexResponseSchema" in component_schemas
+    assert "PresentationEvidenceSearchResponseSchema" in component_schemas
+    assert "PresentationEvidenceClaimAssessmentResponseSchema" in component_schemas
     assert "PresentationApiSourceRefSchema" in component_schemas
     assert "PresentationIRSnapshotResponseSchema" in component_schemas
     assert "PresentationIRVersionSummarySchema" in component_schemas
@@ -420,3 +446,82 @@ def test_kr7c_future_mutation_endpoints_fail_closed() -> None:
         json={"title": "New title", "content": {"bullets": ["A"]}},
     )
     assert patch_response.status_code == 501
+
+
+def test_kr7e3_reads_persisted_evidence_index_manifest_through_api_v1(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_offline_evidence_index(tmp_path)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/evidence")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["api_version"] == "presentation_api.v1"
+    assert payload["presentation_id"] == "pres_kr7c"
+    assert payload["evidence_index_schema_version"] == "offline_evidence_index.v1"
+    assert payload["storage_schema_version"] == "offline_evidence_index_storage.v1"
+    assert payload["record_count"] > 0
+    assert payload["manifest"]["checksum_verified"] is True
+    assert not payload["manifest"]["index_relative_path"].startswith("/")
+    assert str(tmp_path) not in str(payload)
+
+
+def test_kr7e3_searches_persisted_evidence_index_through_api_v1(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_offline_evidence_index(tmp_path)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/evidence/search", params={"query": "customer retention"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["query"] == "customer retention"
+    assert payload["results"]
+    assert payload["results"][0]["source_id"] == "src_evidence"
+    assert "retention" in payload["results"][0]["matched_terms"]
+    assert payload["sections"]
+
+
+def test_kr7e3_assesses_persisted_evidence_claims_through_api_v1(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_offline_evidence_index(tmp_path)
+
+    response = client.get(
+        "/api/v1/presentations/pres_kr7c/evidence/claims",
+        params={"claim": "customer retention improved in Europe", "min_coverage_ratio": 0.9},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "unsupported"
+    assert payload["unsupported_report"]["schema_version"] == "offline_unsupported_claim_report.v1"
+    assert "europe" in payload["unsupported_report"]["missing_terms"]
+    assert payload["unsupported_report"]["required_action"] == "attach_source_or_revise_claim"
+
+
+def test_kr7e3_missing_persisted_evidence_index_fails_closed_through_api_v1(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/evidence")
+
+    assert response.status_code == 404
+    assert "no persisted offline evidence index" in response.json()["detail"]

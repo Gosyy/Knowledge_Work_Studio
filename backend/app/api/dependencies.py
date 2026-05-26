@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import Header, HTTPException, Request, status
 
 from backend.app.composition import (
@@ -15,7 +17,7 @@ from backend.app.integrations.llm import LLMProvider
 from backend.app.orchestrator.execution import OrchestratorExecutionCoordinator
 from backend.app.services import ArtifactService, LLMTextService, PresentationCatalogService, SessionTaskService, TaskQueueService
 from backend.app.services.task_source_service import TaskSourceService
-from backend.app.services.slides_service import DeckRevisionService, PresentationPlanSnapshotService
+from backend.app.services.slides_service import DeckRevisionService, OfflineEvidenceIndexStore, PresentationPlanSnapshotService
 
 DEFAULT_CURRENT_USER_ID = "user_local_default"
 
@@ -68,6 +70,15 @@ def get_presentation_catalog_service(request: Request) -> PresentationCatalogSer
     if service is None:
         raise RuntimeError("Presentation catalog service is not configured in the application container.")
     return service
+
+
+def get_offline_evidence_index_store(request: Request) -> OfflineEvidenceIndexStore:
+    if not hasattr(request.app.state, "offline_evidence_index_store"):
+        settings = get_app_settings()
+        request.app.state.offline_evidence_index_store = OfflineEvidenceIndexStore(
+            Path(settings.storage_root) / "presentation_evidence_indexes"
+        )
+    return request.app.state.offline_evidence_index_store
 
 
 def get_task_source_service(request: Request) -> TaskSourceService:

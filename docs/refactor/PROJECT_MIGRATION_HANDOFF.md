@@ -1395,3 +1395,24 @@ Important limitation:
 ```text
 KR-7E.2 is evidence index hardening only. It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. Claims with missing required terms must remain unsupported unless later phases add stronger source-backed support.
 ```
+
+## KR-7E.3 evidence index persistence and retrieval API read contract
+
+KR-7E.3 persists the offline evidence index after KR-7E.1/KR-7E.2 and exposes read-only API-first retrieval endpoints for presentation evidence. It keeps the implementation deterministic and local-source-only; the patch is not a planner, renderer, UI, PostgreSQL FTS runtime, embedding layer, or web research layer.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/offline_evidence_index.py defines offline_evidence_index_storage.v1, OfflineEvidenceIndexStore, OfflineEvidenceIndexPersistenceResult, and offline_evidence_index_from_dict;
+backend/app/api/routes/presentation_api_v1.py exposes GET /api/v1/presentations/{presentation_id}/evidence, /evidence/search, and /evidence/claims;
+backend/app/api/schemas/presentations.py defines evidence index/search/claim response schemas;
+backend/tests/services/test_kr7e_offline_evidence_index.py covers persistence, load, checksum verification, and unsupported report preservation;
+backend/tests/api/test_kr7c_presentation_api_contract.py covers OpenAPI exposure and read-only API behavior;
+scripts/kw_offline_evidence_index_check.py and scripts/kw_presentation_api_contract_check.py verify the checker/docs/API surface.
+```
+
+Important limitation:
+
+```text
+KR-7E.3 is evidence persistence and read API contract only. It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management. Persisted manifests and API payloads must not expose operator absolute storage paths.
+```

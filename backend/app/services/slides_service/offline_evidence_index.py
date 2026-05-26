@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 import re
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any, Iterable
 
 from backend.app.services.slides_service.offline_source_ingestion import SourceIngestionReport
 
 OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION = "offline_evidence_index.v1"
 OFFLINE_UNSUPPORTED_CLAIM_REPORT_SCHEMA_VERSION = "offline_unsupported_claim_report.v1"
+OFFLINE_EVIDENCE_INDEX_STORAGE_SCHEMA_VERSION = "offline_evidence_index_storage.v1"
 
 _TOKEN_RE = re.compile(r"[\wА-Яа-яЁё]{2,}", flags=re.UNICODE)
 _STOPWORDS = {
@@ -136,6 +140,96 @@ class ClaimEvidenceAssessment:
         payload = asdict(self)
         payload["results"] = [result.as_dict() for result in self.results]
         payload["unsupported_report"] = self.unsupported_report.as_dict() if self.unsupported_report else None
+        return payload
+
+
+@dataclass(frozen=True)
+class OfflineEvidenceIndexPersistenceResult:
+    schema_version: str
+    index_schema_version: str
+    presentation_id: str
+    status: str
+    record_count: int
+    source_count: int
+    unsupported_source_count: int
+    index_relative_path: str
+    manifest_relative_path: str
+    checksum_sha256: str
+    size_bytes: int
+    retrieval_contract: dict[str, Any]
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+class OfflineEvidenceIndexStore:
+    """Persist and read offline evidence indexes without exposing operator paths.
+
+    KR-7E.3 stores deterministic indexes produced by KR-7E.1/KR-7E.2.
+    It is a read/persistence contract only: no web research, embeddings,
+    PostgreSQL FTS runtime, PresentationIR planning, rendering, export, or UI
+    source management is implemented here.
+    """
+
+    def __init__(self, storage_root: str | Path) -> None:
+        self.storage_root = Path(storage_root)
+
+    def persist_index(
+        self,
+        *,
+        presentation_id: str,
+        index: "OfflineEvidenceIndex",
+    ) -> OfflineEvidenceIndexPersistenceResult:
+        presentation_component = _safe_storage_component(presentation_id)
+        index_relative_path = f"{presentation_component}/offline_evidence_index.json"
+        manifest_relative_path = f"{presentation_component}/offline_evidence_index_manifest.json"
+        index_path = self.storage_root / index_relative_path
+        manifest_path = self.storage_root / manifest_relative_path
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        index_payload = index.as_dict()
+        encoded = json.dumps(index_payload, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8")
+        index_path.write_bytes(encoded)
+        checksum = hashlib.sha256(encoded).hexdigest()
+        result = OfflineEvidenceIndexPersistenceResult(
+            schema_version=OFFLINE_EVIDENCE_INDEX_STORAGE_SCHEMA_VERSION,
+            index_schema_version=index.schema_version,
+            presentation_id=presentation_id,
+            status="ready",
+            record_count=len(index.records),
+            source_count=index.source_count,
+            unsupported_source_count=len(index.unsupported_sources),
+            index_relative_path=index_relative_path,
+            manifest_relative_path=manifest_relative_path,
+            checksum_sha256=checksum,
+            size_bytes=len(encoded),
+            retrieval_contract=dict(index.retrieval_contract),
+        )
+        manifest_path.write_text(
+            json.dumps(result.as_dict(), ensure_ascii=False, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+        return result
+
+    def load_index(self, presentation_id: str) -> "OfflineEvidenceIndex | None":
+        presentation_component = _safe_storage_component(presentation_id)
+        index_path = self.storage_root / presentation_component / "offline_evidence_index.json"
+        if not index_path.is_file():
+            return None
+        payload = json.loads(index_path.read_text(encoding="utf-8"))
+        return offline_evidence_index_from_dict(payload)
+
+    def load_manifest(self, presentation_id: str) -> dict[str, Any] | None:
+        presentation_component = _safe_storage_component(presentation_id)
+        manifest_path = self.storage_root / presentation_component / "offline_evidence_index_manifest.json"
+        if not manifest_path.is_file():
+            return None
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        encoded_index_path = self.storage_root / payload.get("index_relative_path", "")
+        if encoded_index_path.is_file():
+            checksum = hashlib.sha256(encoded_index_path.read_bytes()).hexdigest()
+            payload["checksum_verified"] = checksum == payload.get("checksum_sha256")
+        else:
+            payload["checksum_verified"] = False
         return payload
 
 
@@ -355,6 +449,51 @@ class OfflineEvidenceIndexBuilder:
             inverted_index={term: tuple(sorted(ids)) for term, ids in inverted.items()},
             document_frequency=dict(document_frequency),
         )
+
+
+def offline_evidence_index_from_dict(payload: dict[str, Any]) -> OfflineEvidenceIndex:
+    if payload.get("schema_version") != OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION:
+        raise ValueError(f"Unsupported offline evidence index schema_version: {payload.get('schema_version')}")
+    records = tuple(_record_from_payload(item) for item in payload.get("records", []))
+    return OfflineEvidenceIndex(
+        schema_version=payload["schema_version"],
+        records=records,
+        unsupported_sources=tuple(dict(item) for item in payload.get("unsupported_sources", [])),
+        source_count=int(payload.get("source_count", 0)),
+        retrieval_contract=dict(payload.get("retrieval_contract", {})),
+        section_index={str(key): tuple(value) for key, value in payload.get("section_index", {}).items()},
+        inverted_index={str(key): tuple(value) for key, value in payload.get("inverted_index", {}).items()},
+        document_frequency={str(key): int(value) for key, value in payload.get("document_frequency", {}).items()},
+    )
+
+
+def _record_from_payload(payload: dict[str, Any]) -> EvidenceFragmentRecord:
+    return EvidenceFragmentRecord(
+        evidence_id=str(payload["evidence_id"]),
+        source_id=str(payload["source_id"]),
+        source_kind=str(payload["source_kind"]),
+        evidence_type=str(payload["evidence_type"]),
+        text=str(payload.get("text") or ""),
+        provenance_ref=str(payload["provenance_ref"]),
+        keywords=tuple(payload.get("keywords", [])),
+        fragment_id=payload.get("fragment_id"),
+        table_id=payload.get("table_id"),
+        structure_id=payload.get("structure_id"),
+        chart_candidate_id=payload.get("chart_candidate_id"),
+        role=payload.get("role"),
+        page_number=payload.get("page_number"),
+        slide_number=payload.get("slide_number"),
+        sheet_name=payload.get("sheet_name"),
+        section_id=payload.get("section_id"),
+        section_label=payload.get("section_label"),
+        metadata=dict(payload.get("metadata", {})),
+    )
+
+
+def _safe_storage_component(value: str) -> str:
+    normalized = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(value).strip())
+    normalized = normalized.strip("._-")
+    return normalized or "unknown"
 
 
 def _records_from_report(report: SourceIngestionReport) -> list[EvidenceFragmentRecord]:
@@ -579,11 +718,15 @@ def _section_boost(record: EvidenceFragmentRecord) -> float:
 
 __all__ = [
     "OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION",
+    "OFFLINE_EVIDENCE_INDEX_STORAGE_SCHEMA_VERSION",
     "ClaimEvidenceAssessment",
     "EvidenceSectionScore",
     "EvidenceFragmentRecord",
     "EvidenceSearchResult",
     "OfflineEvidenceIndex",
     "OfflineEvidenceIndexBuilder",
+    "OfflineEvidenceIndexPersistenceResult",
+    "OfflineEvidenceIndexStore",
     "UnsupportedClaimReport",
+    "offline_evidence_index_from_dict",
 ]

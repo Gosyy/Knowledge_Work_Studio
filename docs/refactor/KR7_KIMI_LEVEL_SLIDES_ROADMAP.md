@@ -260,6 +260,14 @@ It adds source section scores, claim-term coverage ratios, missing-term detectio
 It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management.
 ```
 
+Implementation note after KR-7E.3:
+
+```text
+KR-7E.3 adds evidence index persistence and retrieval API read contract.
+It persists offline_evidence_index.v1 to offline_evidence_index_storage.v1 manifests, verifies checksums, exposes safe read-only /api/v1/presentations/{id}/evidence endpoints, and keeps evidence search/claim assessment backed by persisted local source evidence.
+It does not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management.
+```
+
 ## Phase KR-7F — PresentationIR planner
 
 Goal: use GigaChat to produce professional deck architecture.

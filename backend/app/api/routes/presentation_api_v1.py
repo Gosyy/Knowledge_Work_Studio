@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Any, NoReturn
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from backend.app.api.dependencies import (
     get_current_user_id,
+    get_offline_evidence_index_store,
     get_presentation_catalog_service,
     get_presentation_plan_snapshot_service,
 )
@@ -13,6 +14,9 @@ from backend.app.api.schemas import (
     PresentationApiContractStatusSchema,
     PresentationApiCreateRequestSchema,
     PresentationApiMetadataResponseSchema,
+    PresentationEvidenceClaimAssessmentResponseSchema,
+    PresentationEvidenceIndexResponseSchema,
+    PresentationEvidenceSearchResponseSchema,
     PresentationApiPlanRequestSchema,
     PresentationApiPlanSnapshotResponseSchema,
     PresentationApiRenderRequestSchema,
@@ -28,6 +32,9 @@ from backend.app.api.schemas import (
 from backend.app.domain import PresentationPlanSnapshot
 from backend.app.services import PresentationCatalogService
 from backend.app.services.slides_service import (
+    OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION,
+    OFFLINE_EVIDENCE_INDEX_STORAGE_SCHEMA_VERSION,
+    OfflineEvidenceIndexStore,
     PRESENTATION_IR_SCHEMA_VERSION,
     PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
     PresentationPlanSnapshotService,
@@ -117,6 +124,91 @@ def list_presentation_sources_v1(
         attachment_contract_version=PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
         extraction_runtime_implemented=False,
         sources=presentation_ir_source_attachments(safe_ir),
+    )
+
+
+@router.get(
+    "/presentations/{presentation_id}/evidence",
+    response_model=PresentationEvidenceIndexResponseSchema,
+    summary="Read the persisted offline evidence index manifest for a presentation.",
+)
+def get_presentation_evidence_index_v1(
+    presentation_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+    catalog_service: PresentationCatalogService = Depends(get_presentation_catalog_service),
+    evidence_store: OfflineEvidenceIndexStore = Depends(get_offline_evidence_index_store),
+) -> PresentationEvidenceIndexResponseSchema:
+    catalog_service.get_presentation_for_user(presentation_id=presentation_id, owner_user_id=current_user_id)
+    index = _load_presentation_evidence_index(presentation_id, evidence_store=evidence_store)
+    manifest = _load_presentation_evidence_manifest(presentation_id, evidence_store=evidence_store)
+    return PresentationEvidenceIndexResponseSchema(
+        api_version=_API_VERSION,
+        presentation_id=presentation_id,
+        evidence_index_schema_version=OFFLINE_EVIDENCE_INDEX_SCHEMA_VERSION,
+        storage_schema_version=OFFLINE_EVIDENCE_INDEX_STORAGE_SCHEMA_VERSION,
+        record_count=len(index.records),
+        source_count=index.source_count,
+        unsupported_source_count=len(index.unsupported_sources),
+        retrieval_contract=index.retrieval_contract,
+        manifest=manifest,
+    )
+
+
+@router.get(
+    "/presentations/{presentation_id}/evidence/search",
+    response_model=PresentationEvidenceSearchResponseSchema,
+    summary="Search the persisted offline evidence index for a presentation.",
+)
+def search_presentation_evidence_v1(
+    presentation_id: str,
+    query: str = Query(min_length=1),
+    limit: int = Query(default=5, ge=1, le=50),
+    current_user_id: str = Depends(get_current_user_id),
+    catalog_service: PresentationCatalogService = Depends(get_presentation_catalog_service),
+    evidence_store: OfflineEvidenceIndexStore = Depends(get_offline_evidence_index_store),
+) -> PresentationEvidenceSearchResponseSchema:
+    catalog_service.get_presentation_for_user(presentation_id=presentation_id, owner_user_id=current_user_id)
+    index = _load_presentation_evidence_index(presentation_id, evidence_store=evidence_store)
+    return PresentationEvidenceSearchResponseSchema(
+        api_version=_API_VERSION,
+        presentation_id=presentation_id,
+        query=query,
+        results=[result.as_dict() for result in index.search(query, limit=limit)],
+        sections=[section.as_dict() for section in index.search_sections(query, limit=limit)],
+    )
+
+
+@router.get(
+    "/presentations/{presentation_id}/evidence/claims",
+    response_model=PresentationEvidenceClaimAssessmentResponseSchema,
+    summary="Assess a claim against the persisted offline evidence index for a presentation.",
+)
+def assess_presentation_evidence_claim_v1(
+    presentation_id: str,
+    claim: str = Query(min_length=1),
+    min_score: float = Query(default=1.0, ge=0.0),
+    min_coverage_ratio: float = Query(default=0.5, ge=0.0, le=1.0),
+    limit: int = Query(default=5, ge=1, le=50),
+    current_user_id: str = Depends(get_current_user_id),
+    catalog_service: PresentationCatalogService = Depends(get_presentation_catalog_service),
+    evidence_store: OfflineEvidenceIndexStore = Depends(get_offline_evidence_index_store),
+) -> PresentationEvidenceClaimAssessmentResponseSchema:
+    catalog_service.get_presentation_for_user(presentation_id=presentation_id, owner_user_id=current_user_id)
+    index = _load_presentation_evidence_index(presentation_id, evidence_store=evidence_store)
+    assessment = index.assess_claim(
+        claim,
+        min_score=min_score,
+        min_coverage_ratio=min_coverage_ratio,
+        limit=limit,
+    )
+    return PresentationEvidenceClaimAssessmentResponseSchema(
+        api_version=_API_VERSION,
+        presentation_id=presentation_id,
+        claim=assessment.claim,
+        status=assessment.status,
+        reason=assessment.reason,
+        results=[result.as_dict() for result in assessment.results],
+        unsupported_report=assessment.unsupported_report.as_dict() if assessment.unsupported_report else None,
     )
 
 
@@ -321,6 +413,36 @@ def export_presentation_v1(
 )
 def get_presentation_quality_v1(presentation_id: str) -> PresentationApiContractStatusSchema:
     _not_implemented()
+
+
+def _load_presentation_evidence_index(
+    presentation_id: str,
+    *,
+    evidence_store: OfflineEvidenceIndexStore,
+):
+    index = evidence_store.load_index(presentation_id)
+    if index is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Presentation '{presentation_id}' has no persisted offline evidence index yet.",
+        )
+    return index
+
+
+def _load_presentation_evidence_manifest(
+    presentation_id: str,
+    *,
+    evidence_store: OfflineEvidenceIndexStore,
+) -> dict[str, Any]:
+    manifest = evidence_store.load_manifest(presentation_id)
+    if manifest is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Presentation '{presentation_id}' has no persisted offline evidence index manifest yet.",
+        )
+    if "storage_root" in str(manifest) or "local://" in str(manifest):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Offline evidence manifest is not public safe.")
+    return manifest
 
 
 def _api_plan_snapshot_response(

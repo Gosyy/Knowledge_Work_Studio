@@ -741,3 +741,31 @@ Non-goals:
 do not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management in KR-7E.2;
 do not claim a supported result when required claim terms are missing from local evidence sections.
 ```
+
+### KR-7E.3 evidence index persistence and retrieval API read contract
+
+Purpose:
+
+```text
+persist deterministic offline evidence indexes so API clients can read evidence metadata, search results, and claim assessments without coupling to a specific UI;
+expose read-only /api/v1 Presentation evidence endpoints while keeping generation/planning/rendering out of scope;
+keep persisted manifests public-safe with relative paths, checksums, source evidence schema versions, and no operator absolute storage paths.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/offline_evidence_index.py defines offline_evidence_index_storage.v1 and OfflineEvidenceIndexStore;
+GET /api/v1/presentations/{presentation_id}/evidence reads persisted index metadata;
+GET /api/v1/presentations/{presentation_id}/evidence/search searches persisted local evidence;
+GET /api/v1/presentations/{presentation_id}/evidence/claims returns persisted-index claim assessments and structured unsupported reports;
+scripts/kw_offline_evidence_index_check.py and scripts/kw_presentation_api_contract_check.py verify the KR-7E.3 surface;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement PostgreSQL FTS runtime, embeddings, web research, source-to-slide planning, PresentationIR planning, render/export, quality scoring, or UI source management in KR-7E.3;
+do not expose operator absolute paths or treat evidence persistence as planner/render runtime.
+```

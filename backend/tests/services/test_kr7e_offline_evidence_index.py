@@ -137,3 +137,55 @@ def test_kr7e2_prompt_only_unsupported_report_is_structured() -> None:
     assert assessment.unsupported_report.matched_terms == ()
     assert assessment.unsupported_report.missing_terms == ("market", "share", "increased")
     assert assessment.unsupported_report.top_candidate_sections == ()
+
+
+def test_kr7e3_persists_and_loads_offline_evidence_index_without_absolute_paths(tmp_path) -> None:
+    from backend.app.services.slides_service.offline_evidence_index import (
+        OFFLINE_EVIDENCE_INDEX_STORAGE_SCHEMA_VERSION,
+        OfflineEvidenceIndexStore,
+    )
+
+    report = OfflineSourceIngestionEngine().ingest_bytes(
+        b"# Evidence\n\nCustomer retention improved after support automation.",
+        source_id="src_persist",
+        file_type="md",
+    )
+    index = OfflineEvidenceIndexBuilder().build_index([report])
+
+    store = OfflineEvidenceIndexStore(tmp_path / "evidence_indexes")
+    result = store.persist_index(presentation_id="pres persist", index=index)
+    loaded = store.load_index("pres persist")
+    manifest = store.load_manifest("pres persist")
+
+    assert result.schema_version == OFFLINE_EVIDENCE_INDEX_STORAGE_SCHEMA_VERSION
+    assert result.status == "ready"
+    assert result.index_relative_path == "pres_persist/offline_evidence_index.json"
+    assert result.manifest_relative_path == "pres_persist/offline_evidence_index_manifest.json"
+    assert loaded is not None
+    assert loaded.schema_version == index.schema_version
+    assert loaded.search("customer retention")
+    assert manifest is not None
+    assert manifest["checksum_verified"] is True
+    assert str(tmp_path) not in str(manifest)
+
+
+def test_kr7e3_loaded_evidence_index_preserves_unsupported_claim_reports(tmp_path) -> None:
+    from backend.app.services.slides_service.offline_evidence_index import OfflineEvidenceIndexStore
+
+    report = OfflineSourceIngestionEngine().ingest_bytes(
+        b"Pipeline deployment risk decreased after automation.",
+        source_id="src_loaded",
+        file_type="txt",
+    )
+    index = OfflineEvidenceIndexBuilder().build_index([report])
+    store = OfflineEvidenceIndexStore(tmp_path / "evidence_indexes")
+    store.persist_index(presentation_id="pres_loaded", index=index)
+
+    loaded = store.load_index("pres_loaded")
+    assert loaded is not None
+    assessment = loaded.assess_claim("deployment risk decreased in Europe", min_coverage_ratio=0.9)
+
+    assert assessment.status == "unsupported"
+    assert assessment.unsupported_report is not None
+    assert "europe" in assessment.unsupported_report.missing_terms
+    assert assessment.unsupported_report.required_action == "attach_source_or_revise_claim"

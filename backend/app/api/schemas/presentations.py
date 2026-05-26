@@ -246,3 +246,102 @@ class PresentationIRSnapshotResponseSchema(BaseModel):
     presentation_ir: dict[str, Any]
 
     model_config = ConfigDict(extra="forbid")
+
+
+class PresentationEvidenceIndexManifestSchema(BaseModel):
+    schema_version: str
+    index_schema_version: str
+    presentation_id: str
+    status: Literal["ready"]
+    record_count: int
+    source_count: int
+    unsupported_source_count: int
+    index_relative_path: str
+    manifest_relative_path: str
+    checksum_sha256: str
+    checksum_verified: bool = False
+    size_bytes: int
+    retrieval_contract: dict[str, Any]
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationEvidenceSearchResultSchema(BaseModel):
+    evidence_id: str
+    source_id: str
+    provenance_ref: str
+    text_preview: str
+    score: float
+    matched_terms: list[str]
+    evidence_type: str
+    coverage_ratio: float
+    section_id: str | None = None
+    section_label: str | None = None
+    section_score: float
+    page_number: int | None = None
+    slide_number: int | None = None
+    sheet_name: str | None = None
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationEvidenceSectionScoreSchema(BaseModel):
+    section_id: str
+    source_id: str
+    section_label: str
+    score: float
+    matched_terms: list[str]
+    evidence_ids: list[str]
+    provenance_refs: list[str]
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationUnsupportedClaimReportSchema(BaseModel):
+    schema_version: str
+    claim: str
+    reason: str
+    claim_terms: list[str]
+    matched_terms: list[str]
+    missing_terms: list[str]
+    top_candidate_sections: list[PresentationEvidenceSectionScoreSchema]
+    unsupported_sources: list[dict[str, Any]]
+    required_action: str
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationEvidenceIndexResponseSchema(BaseModel):
+    api_version: str
+    presentation_id: str
+    evidence_index_schema_version: str
+    storage_schema_version: str
+    record_count: int
+    source_count: int
+    unsupported_source_count: int
+    retrieval_contract: dict[str, Any]
+    manifest: PresentationEvidenceIndexManifestSchema
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationEvidenceSearchResponseSchema(BaseModel):
+    api_version: str
+    presentation_id: str
+    query: str
+    results: list[PresentationEvidenceSearchResultSchema]
+    sections: list[PresentationEvidenceSectionScoreSchema]
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationEvidenceClaimAssessmentResponseSchema(BaseModel):
+    api_version: str
+    presentation_id: str
+    claim: str
+    status: Literal["supported", "unsupported"]
+    reason: str
+    results: list[PresentationEvidenceSearchResultSchema]
+    unsupported_report: PresentationUnsupportedClaimReportSchema | None = None
+
+    model_config = ConfigDict(extra="forbid")
