@@ -113,6 +113,14 @@ from backend.app.services.slides_service.presentation_ir import (
     presentation_ir_source_attachments,
     require_presentation_ir_payload,
 )
+from backend.app.services.slides_service.visual_grammar import (
+    VISUAL_GRAMMAR_SCHEMA_VERSION,
+    PresentationVisualGrammarLibrary,
+    VisualGrammarBlockSpec,
+    VisualGrammarValidationIssue,
+    VisualGrammarValidationResult,
+    visual_grammar_catalog_payload,
+)
 from backend.app.services.slides_service.provenance_manifest_runtime import (
     PROVENANCE_MANIFEST_CONTENT_TYPE,
     SlidesGenerationProvenanceRuntimeResult,
@@ -258,6 +266,12 @@ __all__ = [
     "presentation_ir_planner_snapshot_metadata",
     "presentation_ir_planner_snapshot_metadata_from_ir",
     "require_persistable_presentation_ir_planner_result",
+    "VISUAL_GRAMMAR_SCHEMA_VERSION",
+    "PresentationVisualGrammarLibrary",
+    "VisualGrammarBlockSpec",
+    "VisualGrammarValidationIssue",
+    "VisualGrammarValidationResult",
+    "visual_grammar_catalog_payload",
     "PRESENTATION_IR_SCHEMA_VERSION",
     "SOURCE_ASSET_REGISTRY_SCHEMA_VERSION",
     "SOURCE_ASSET_STORAGE_SCHEMA_VERSION",

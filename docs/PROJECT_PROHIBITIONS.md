@@ -39,7 +39,11 @@ claim final GigaChat PresentationIR planning runtime from KR-7F.1;
 claim prompt-only degraded planner drafts are source-backed;
 claim KR-7F.1 planner output has been rendered, exported, visually QA checked, or approved;
 claim evidence-aware slide outline planning is final GigaChat planning runtime;
-claim unsupported slide outlines are source-backed.
+claim unsupported slide outlines are source-backed;
+claim blocked planner results are persistable PresentationIR snapshots;
+claim KR-7G.1 renders PPTX or native visuals;
+accept native_chart visual grammar blocks without real numeric source data and source data refs;
+claim visual grammar validators prove renderer output quality.
 ```
 
 ## Runtime and deploy prohibitions

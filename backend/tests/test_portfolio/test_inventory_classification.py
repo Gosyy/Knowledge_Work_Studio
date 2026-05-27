@@ -145,3 +145,13 @@ def test_kw_test_inventory_classifies_kr7f_presentation_ir_planner_checker(tmp_p
     assert planner_script["contract"] == "slides_workflow"
     assert "slides_workflow" in planner_script["contracts"]
     assert planner_script["decision"] == "keep"
+
+def test_kw_test_inventory_classifies_kr7g_visual_grammar_checker(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    inventory = _run_inventory(repo_root, tmp_path)
+    by_path = {entry["path"]: entry for entry in inventory["tests"]}
+
+    visual_grammar_script = by_path["scripts/kw_visual_grammar_check.py"]
+    assert visual_grammar_script["contract"] == "slides_workflow"
+    assert "slides_workflow" in visual_grammar_script["contracts"]
+    assert visual_grammar_script["decision"] == "keep"

@@ -863,3 +863,34 @@ Non-goals:
 do not implement final GigaChat PresentationIR planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime in KR-7F.3;
 do not persist blocked planner results as successful PresentationIR snapshots.
 ```
+
+### KR-7G.1 visual grammar library foundation
+
+Purpose:
+
+```text
+start KR-7G by defining the first professional editable visual grammar library;
+introduce presentation_visual_grammar.v1 block specs and validators for executive summary cards, KPI cards, process flow, roadmap, timeline, 2x2 matrix, SWOT, comparison table, decision matrix, risk matrix, architecture diagram, funnel, data table, and native chart from real data;
+enforce semantic purpose, source refs, diagram nodes/items, and native chart real numeric source data refs without claiming renderer output.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/visual_grammar.py defines presentation_visual_grammar.v1, PresentationVisualGrammarLibrary, VisualGrammarBlockSpec, and VisualGrammarValidationResult;
+every block has semantic purpose and validator;
+every catalog block has semantic purpose and a validator;
+native chart blocks require real numeric data and source data refs;
+native chart blocks require real numeric series plus source_ref/data_ref and fail closed without them;
+diagram-like blocks require nodes, edges, steps, phases, stages, or items;
+scripts/kw_visual_grammar_check.py verifies the KR-7G.1 surface and is included in the full runner;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime in KR-7G.1;
+do not claim visual grammar validators prove renderer output quality;
+do not accept native_chart visual grammar blocks without real numeric source data and source data refs.
+```

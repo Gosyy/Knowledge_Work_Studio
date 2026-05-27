@@ -325,6 +325,15 @@ Acceptance:
 - diagram has nodes/edges/items;
 - fake chart values are forbidden.
 
+Implementation note after KR-7G.1:
+
+```text
+KR-7G.1 introduces presentation_visual_grammar.v1 as the first visual grammar library foundation.
+It defines professional editable block specs and validators for executive summary cards, KPI cards, process flow, roadmap, timeline, 2x2 matrix, SWOT, comparison table, decision matrix, risk matrix, architecture diagram, funnel, data table, and native chart from real data.
+It enforces semantic purpose, source refs, diagram nodes/items, and native_chart real numeric source data refs; fake chart values are forbidden.
+It does not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, or UI runtime.
+```
+
 ## Phase KR-7H — native PPTX renderer worker
 
 Goal: move professional render path to a renderer capable of native components.

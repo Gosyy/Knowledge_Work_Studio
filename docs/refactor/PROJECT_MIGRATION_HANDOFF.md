@@ -1476,3 +1476,23 @@ Important limitation:
 ```text
 KR-7F.3 is planner persistence/API hardening only. It does not implement final GigaChat planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime. Blocked planner results must not be persisted as successful PresentationIR snapshots.
 ```
+
+## KR-7G.1 visual grammar library foundation
+
+KR-7G.1 starts the visual grammar phase after accepted KR-7F planner/snapshot contracts. It defines `presentation_visual_grammar.v1` as a deterministic library of professional editable block specs and validators. The patch makes visual block contracts visible before renderer work begins and keeps fake chart/data claims forbidden.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/visual_grammar.py defines VISUAL_GRAMMAR_SCHEMA_VERSION, PresentationVisualGrammarLibrary, VisualGrammarBlockSpec, VisualGrammarValidationIssue, VisualGrammarValidationResult, and visual_grammar_catalog_payload();
+backend/tests/services/test_kr7g_visual_grammar.py covers catalog completeness, source-backed card validation, native_chart_requires_real_numeric_data fail-closed behavior without real numeric source data, valid native_chart source refs, and diagram nodes/items validation;
+scripts/kw_visual_grammar_check.py verifies the KR-7G.1 visual grammar/checker/docs surface;
+scripts/kw_full_tests_with_proxy_runner.sh runs the KR-7G checker before production readiness;
+scripts/kw_test_inventory.py classifies the KR-7G checker as slides_workflow.
+```
+
+Important limitation:
+
+```text
+KR-7G.1 is a visual grammar contract/validator foundation only. It does not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime. Native chart grammar blocks must fail closed unless they have real numeric series and source data refs.
+```
