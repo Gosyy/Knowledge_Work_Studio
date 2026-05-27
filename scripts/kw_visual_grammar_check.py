@@ -12,6 +12,8 @@ REQUIRED_FILES = [
     "backend/app/services/slides_service/visual_grammar.py",
     "backend/tests/services/test_kr7g_visual_grammar.py",
     "backend/app/services/slides_service/presentation_ir_planner.py",
+    "backend/app/api/routes/presentation_api_v1.py",
+    "backend/app/api/schemas/presentations.py",
 ]
 
 REQUIRED_PHRASES = {
@@ -50,6 +52,20 @@ REQUIRED_PHRASES = {
         "visual_grammar_binding_status",
         "unsupported_outline_without_source_evidence",
     ],
+    "backend/app/api/routes/presentation_api_v1.py": [
+        "def get_presentation_visual_grammar_catalog_v1",
+        "def get_presentation_visual_grammar_v1",
+        "_visual_grammar_bindings_from_ir",
+        "renderer_runtime_implemented=False",
+        "PresentationVisualGrammarLibrary",
+    ],
+    "backend/app/api/schemas/presentations.py": [
+        "class PresentationVisualGrammarCatalogResponseSchema",
+        "class PresentationVisualGrammarReadResponseSchema",
+        "class PresentationVisualGrammarBindingReadSchema",
+        "class PresentationVisualGrammarValidationResultSchema",
+        "presentation_visual_grammar_catalog_read.v1",
+    ],
     "backend/tests/services/test_kr7g_visual_grammar.py": [
         "test_kr7g1_visual_grammar_catalog_contains_required_editable_blocks",
         "test_kr7g1_visual_grammar_validates_source_backed_cards",
@@ -57,34 +73,47 @@ REQUIRED_PHRASES = {
         "test_kr7g1_visual_grammar_accepts_native_chart_with_source_data_ref_and_numeric_series",
         "test_kr7g1_visual_grammar_validates_diagram_nodes_or_items",
     ],
+    "backend/tests/api/test_kr7c_presentation_api_contract.py": [
+        "test_kr7g3_visual_grammar_catalog_api_exposes_read_only_contract",
+        "test_kr7g3_visual_grammar_read_api_validates_presentation_ir_bindings",
+    ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7G.1 visual grammar library foundation",
         "KR-7G.2 bind visual grammar blocks into PresentationIR planner output",
+        "KR-7G.3 visual grammar API/catalog/read contract hardening",
+        "KR-7G.3 visual grammar API/catalog/read contract hardening",
         "presentation_visual_grammar.v1",
         "every block has semantic purpose and validator",
         "native chart blocks require real numeric data and source data refs",
         "KR-7G.2 bind visual grammar blocks into PresentationIR planner output",
+        "KR-7G.3 visual grammar API/catalog/read contract hardening",
+        "KR-7G.3 visual grammar API/catalog/read contract hardening",
     ],
     "docs/refactor/KR7_KIMI_LEVEL_SLIDES_ROADMAP.md": [
         "Phase KR-7G — visual grammar library",
         "KR-7G.1 introduces presentation_visual_grammar.v1",
         "KR-7G.2 binds presentation_visual_grammar.v1 blocks",
+        "KR-7G.3 exposes read-only visual grammar catalog and binding validation APIs",
         "fake chart values are forbidden",
     ],
     "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": [
         "KR-7G.1 visual grammar library foundation",
         "KR-7G.2 bind visual grammar blocks into PresentationIR planner output",
+        "KR-7G.3 visual grammar API/catalog/read contract hardening",
+        "KR-7G.3 visual grammar API/catalog/read contract hardening",
         "presentation_visual_grammar.v1",
         "native_chart_requires_real_numeric_data",
     ],
     "docs/QUALITY_MATRIX.md": [
         "KR-7G.1 adds visual grammar library foundation",
         "KR-7G.2 binds visual grammar blocks",
+        "KR-7G.3 exposes visual grammar read contracts without renderer claims",
     ],
     "docs/PROJECT_PROHIBITIONS.md": [
         "claim KR-7G.1 renders PPTX or native visuals",
         "accept native_chart visual grammar blocks without real numeric source data",
         "claim visual grammar blocks are source-backed when planner output has no evidence bindings",
+        "claim visual grammar catalog/read APIs render PPTX or generate visual output",
     ],
 }
 

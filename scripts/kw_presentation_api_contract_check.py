@@ -25,6 +25,8 @@ REQUIRED_API_V1_METHODS: dict[str, set[str]] = {
     "/api/v1/presentations/{presentation_id}/render": {"post"},
     "/api/v1/presentations/{presentation_id}/export": {"post"},
     "/api/v1/presentations/{presentation_id}/quality": {"get"},
+    "/api/v1/presentation-visual-grammar/catalog": {"get"},
+    "/api/v1/presentations/{presentation_id}/visual-grammar": {"get"},
 }
 
 LEGACY_COMPATIBILITY_METHODS: dict[str, set[str]] = {
@@ -53,6 +55,10 @@ REQUIRED_SCHEMA_NAMES = {
     "PresentationIRPlannerSnapshotMetadataSchema",
     "PresentationIRVersionSummarySchema",
     "PresentationIRVersionsResponseSchema",
+    "PresentationVisualGrammarCatalogResponseSchema",
+    "PresentationVisualGrammarReadResponseSchema",
+    "PresentationVisualGrammarBindingReadSchema",
+    "PresentationVisualGrammarValidationResultSchema",
 }
 
 REQUIRED_PRESENTATION_IR_SOURCE_PHRASES = {

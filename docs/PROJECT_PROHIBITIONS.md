@@ -95,3 +95,5 @@ introduce unsupported claims or spelling drift in docs, CLI help, comments, or u
 
 claim blocked planner results are persistable PresentationIR snapshots.
 claim visual grammar blocks are source-backed when planner output has no evidence bindings.
+
+claim visual grammar catalog/read APIs render PPTX or generate visual output.

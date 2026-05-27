@@ -607,3 +607,68 @@ def test_kr7f3_lists_planner_snapshot_metadata_in_presentation_ir_versions(
     assert payload["versions"][0]["planner_snapshot"]["status"] == "ready"
     assert payload["versions"][0]["planner_snapshot"]["slide_outline_count"] == 4
     assert str(tmp_path) not in str(payload)
+
+
+def test_kr7g3_visual_grammar_catalog_api_exposes_read_only_contract() -> None:
+    response = client.get("/api/v1/presentation-visual-grammar/catalog")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["api_version"] == "presentation_api.v1"
+    assert payload["schema_version"] == "presentation_visual_grammar.v1"
+    assert payload["catalog_read_contract_version"] == "presentation_visual_grammar_catalog_read.v1"
+    assert payload["renderer_runtime_implemented"] is False
+    assert payload["block_count"] >= 14
+    assert "no_pptx_rendering" in payload["non_goals"]
+    assert "no_fake_charts_or_values" in payload["non_goals"]
+    block_types = {block["block_type"] for block in payload["blocks"]}
+    assert "native_chart" in block_types
+    native_chart = next(block for block in payload["blocks"] if block["block_type"] == "native_chart")
+    assert native_chart["requires_numeric_data"] is True
+    assert native_chart["renderer_readiness"] == "contract_only"
+
+
+def test_kr7g3_visual_grammar_read_api_validates_presentation_ir_bindings(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_planner_presentation_ir_snapshot(repository_db_path)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/visual-grammar")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["api_version"] == "presentation_api.v1"
+    assert payload["visual_grammar_schema_version"] == "presentation_visual_grammar.v1"
+    assert payload["binding_schema_version"] == "presentation_ir_visual_grammar_binding.v1"
+    assert payload["renderer_runtime_implemented"] is False
+    assert payload["status"] == "ready"
+    assert payload["bound_block_count"] > 0
+    assert payload["blocked_block_count"] == 0
+    assert payload["bindings"]
+    assert payload["bindings"][0]["validation"]["status"] == "ready"
+    assert str(tmp_path) not in str(payload)
+    assert "local://" not in str(payload)
+
+
+def test_kr7g3_visual_grammar_read_api_returns_empty_for_legacy_snapshot_without_runtime_claim(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository_db_path = _configure_sqlite_test_env(monkeypatch, tmp_path)
+    session_id = _create_session()
+    _register_presentation(repository_db_path=repository_db_path, session_id=session_id)
+    _seed_plan_snapshot(repository_db_path)
+
+    response = client.get("/api/v1/presentations/pres_kr7c/visual-grammar")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["storage_format"] == "legacy_plan_snapshot"
+    assert payload["renderer_runtime_implemented"] is False
+    assert payload["status"] == "empty"
+    assert payload["bound_block_count"] == 0
+    assert payload["bindings"] == []

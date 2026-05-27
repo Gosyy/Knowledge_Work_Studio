@@ -28,6 +28,8 @@ from backend.app.api.schemas import (
     PresentationIRVersionSummarySchema,
     PresentationIRVersionsResponseSchema,
     PresentationSchema,
+    PresentationVisualGrammarCatalogResponseSchema,
+    PresentationVisualGrammarReadResponseSchema,
 )
 from backend.app.domain import PresentationPlanSnapshot
 from backend.app.services import PresentationCatalogService
@@ -39,8 +41,12 @@ from backend.app.services.slides_service import (
     presentation_ir_planner_snapshot_metadata_from_ir,
     PRESENTATION_IR_SOURCE_ATTACHMENT_CONTRACT_VERSION,
     PresentationPlanSnapshotService,
+    PresentationVisualGrammarLibrary,
+    PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION,
+    VISUAL_GRAMMAR_SCHEMA_VERSION,
     detect_presentation_ir_storage_format,
     presentation_ir_source_attachments,
+    visual_grammar_catalog_payload,
 )
 from backend.app.api.routes.presentations import _sanitize_public_plan_payload
 
@@ -65,6 +71,78 @@ def _not_implemented() -> NoReturn:
 def create_presentation_v1(_request: PresentationApiCreateRequestSchema) -> PresentationApiContractStatusSchema:
     _not_implemented()
 
+
+
+
+@router.get(
+    "/presentation-visual-grammar/catalog",
+    response_model=PresentationVisualGrammarCatalogResponseSchema,
+    summary="Read the KR-7G visual grammar catalog contract without renderer runtime claims.",
+)
+def get_presentation_visual_grammar_catalog_v1() -> PresentationVisualGrammarCatalogResponseSchema:
+    catalog = visual_grammar_catalog_payload()
+    return PresentationVisualGrammarCatalogResponseSchema(
+        api_version=_API_VERSION,
+        schema_version=str(catalog["schema_version"]),
+        block_count=int(catalog["block_count"]),
+        renderer_runtime_implemented=False,
+        blocks=catalog["blocks"],
+        non_goals=catalog["non_goals"],
+    )
+
+
+@router.get(
+    "/presentations/{presentation_id}/visual-grammar",
+    response_model=PresentationVisualGrammarReadResponseSchema,
+    summary="Read and validate visual grammar bindings from the latest public-safe PresentationIR snapshot.",
+)
+def get_presentation_visual_grammar_v1(
+    presentation_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+    catalog_service: PresentationCatalogService = Depends(get_presentation_catalog_service),
+    plan_snapshot_service: PresentationPlanSnapshotService = Depends(get_presentation_plan_snapshot_service),
+) -> PresentationVisualGrammarReadResponseSchema:
+    catalog_service.get_presentation_for_user(presentation_id=presentation_id, owner_user_id=current_user_id)
+    snapshot = plan_snapshot_service.get_latest_snapshot(presentation_id)
+    if snapshot is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Presentation '{presentation_id}' has no PresentationIR snapshot yet.",
+        )
+    presentation_ir = plan_snapshot_service.get_presentation_ir_for_snapshot(snapshot)
+    safe_ir = _sanitize_public_plan_payload(presentation_ir)
+    if not isinstance(safe_ir, dict):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="PresentationIR snapshot is not a JSON object.")
+
+    bindings = _visual_grammar_bindings_from_ir(safe_ir)
+    blocked_count = sum(1 for item in bindings if item["validation"]["status"] == "blocked")
+    if bindings and blocked_count:
+        read_status = "blocked"
+    elif bindings:
+        read_status = "ready"
+    else:
+        read_status = "empty"
+
+    return PresentationVisualGrammarReadResponseSchema(
+        api_version=_API_VERSION,
+        presentation_id=presentation_id,
+        snapshot_id=snapshot.id,
+        presentation_version_id=snapshot.presentation_version_id,
+        ir_schema_version=PRESENTATION_IR_SCHEMA_VERSION,
+        visual_grammar_schema_version=VISUAL_GRAMMAR_SCHEMA_VERSION,
+        binding_schema_version=PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION,
+        storage_format=detect_presentation_ir_storage_format(snapshot.snapshot_json),
+        version_number=_snapshot_version_number(
+            plan_snapshot_service=plan_snapshot_service,
+            presentation_id=presentation_id,
+            snapshot_id=snapshot.id,
+        ),
+        renderer_runtime_implemented=False,
+        status=read_status,
+        bound_block_count=len(bindings),
+        blocked_block_count=blocked_count,
+        bindings=bindings,
+    )
 
 @router.get(
     "/presentations/{presentation_id}",
@@ -415,6 +493,39 @@ def export_presentation_v1(
 )
 def get_presentation_quality_v1(presentation_id: str) -> PresentationApiContractStatusSchema:
     _not_implemented()
+
+
+def _visual_grammar_bindings_from_ir(presentation_ir: dict[str, Any]) -> list[dict[str, Any]]:
+    library = PresentationVisualGrammarLibrary()
+    bindings: list[dict[str, Any]] = []
+    slides = presentation_ir.get("slides")
+    if not isinstance(slides, list):
+        return bindings
+    for slide in slides:
+        if not isinstance(slide, dict):
+            continue
+        slide_id = str(slide.get("slide_id") or slide.get("id") or "").strip() or None
+        blocks = slide.get("blocks")
+        if not isinstance(blocks, list):
+            continue
+        for block in blocks:
+            if not isinstance(block, dict):
+                continue
+            binding = block.get("visual_grammar_binding")
+            if not isinstance(binding, dict):
+                continue
+            validation = library.validate_block(block).as_dict()
+            bindings.append(
+                {
+                    "slide_id": slide_id,
+                    "block_id": block.get("block_id"),
+                    "block_type": str(block.get("type") or binding.get("block_type") or "unknown"),
+                    "semantic_role": block.get("semantic_role"),
+                    "binding": binding,
+                    "validation": validation,
+                }
+            )
+    return bindings
 
 
 def _load_presentation_evidence_index(

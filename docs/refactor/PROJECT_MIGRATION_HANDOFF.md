@@ -1515,3 +1515,22 @@ Important limitation:
 ```text
 KR-7G.2 does not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime. It binds contracts into PresentationIR only and fails closed when source evidence bindings are absent.
 ```
+
+## KR-7G.3 visual grammar API/catalog/read contract hardening
+
+KR-7G.3 makes the KR-7G visual grammar contract inspectable through read-only API v1 endpoints without claiming renderer runtime. The catalog endpoint exposes `presentation_visual_grammar.v1`; the presentation read endpoint extracts `presentation_ir_visual_grammar_binding.v1` metadata from the latest public-safe PresentationIR snapshot and revalidates each bound block through `PresentationVisualGrammarLibrary`.
+
+Validation surface:
+
+```text
+backend/app/api/routes/presentation_api_v1.py defines get_presentation_visual_grammar_catalog_v1(), get_presentation_visual_grammar_v1(), and _visual_grammar_bindings_from_ir();
+backend/app/api/schemas/presentations.py defines PresentationVisualGrammarCatalogResponseSchema, PresentationVisualGrammarReadResponseSchema, PresentationVisualGrammarBindingReadSchema, and validation issue/result schemas;
+backend/tests/api/test_kr7c_presentation_api_contract.py covers catalog exposure, read-side binding validation, legacy empty-state behavior, and public-safe output;
+scripts/kw_visual_grammar_check.py and scripts/kw_presentation_api_contract_check.py verify the KR-7G.3 API/read contract surface.
+```
+
+Important limitation:
+
+```text
+KR-7G.3 does not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime. API responses must keep renderer_runtime_implemented=false and must not imply that visual grammar contracts are rendered output quality.
+```

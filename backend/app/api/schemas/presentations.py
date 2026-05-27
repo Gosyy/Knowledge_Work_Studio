@@ -267,6 +267,83 @@ class PresentationIRSnapshotResponseSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+
+
+class PresentationVisualGrammarBlockSpecSchema(BaseModel):
+    block_type: str
+    semantic_purpose: str
+    required_content_keys: list[str]
+    required_data_binding_keys: list[str] = Field(default_factory=list)
+    requires_source_ref: bool = True
+    requires_numeric_data: bool = False
+    requires_nodes_or_items: bool = False
+    renderer_readiness: Literal["contract_only", "renderer_ready"] = "contract_only"
+    prohibited_claims: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationVisualGrammarCatalogResponseSchema(BaseModel):
+    api_version: str
+    schema_version: str
+    block_count: int
+    renderer_runtime_implemented: bool = False
+    catalog_read_contract_version: str = "presentation_visual_grammar_catalog_read.v1"
+    blocks: list[PresentationVisualGrammarBlockSpecSchema]
+    non_goals: list[str]
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationVisualGrammarValidationIssueSchema(BaseModel):
+    code: str
+    message: str
+    block_id: str | None = None
+    block_type: str | None = None
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationVisualGrammarValidationResultSchema(BaseModel):
+    schema_version: str
+    status: Literal["ready", "blocked"]
+    block_type: str
+    block_id: str | None = None
+    issues: list[PresentationVisualGrammarValidationIssueSchema] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationVisualGrammarBindingReadSchema(BaseModel):
+    slide_id: str | None = None
+    block_id: str | None = None
+    block_type: str
+    semantic_role: str | None = None
+    binding: dict[str, Any]
+    validation: PresentationVisualGrammarValidationResultSchema
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PresentationVisualGrammarReadResponseSchema(BaseModel):
+    api_version: str
+    presentation_id: str
+    snapshot_id: str
+    presentation_version_id: str | None
+    ir_schema_version: str
+    visual_grammar_schema_version: str
+    binding_schema_version: str
+    storage_format: Literal["presentation_ir", "legacy_plan_snapshot"]
+    version_number: int | None = None
+    renderer_runtime_implemented: bool = False
+    status: Literal["ready", "blocked", "empty"]
+    bound_block_count: int
+    blocked_block_count: int
+    bindings: list[PresentationVisualGrammarBindingReadSchema]
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class PresentationEvidenceIndexManifestSchema(BaseModel):
     schema_version: str
     index_schema_version: str

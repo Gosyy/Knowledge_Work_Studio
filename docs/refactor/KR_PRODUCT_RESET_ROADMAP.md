@@ -923,3 +923,30 @@ Non-goals:
 do not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime in KR-7G.2;
 do not claim visual grammar blocks are source-backed when planner output has no evidence bindings.
 ```
+
+### KR-7G.3 visual grammar API/catalog/read contract hardening
+
+Purpose:
+
+```text
+expose presentation_visual_grammar.v1 through read-only API v1 surfaces;
+make the catalog and PresentationIR visual grammar bindings visible to clients without implying renderer runtime;
+validate read-side bindings with PresentationVisualGrammarLibrary before returning status metadata.
+```
+
+Acceptance:
+
+```text
+GET /api/v1/presentation-visual-grammar/catalog returns the catalog, block specs, non-goals, and renderer_runtime_implemented=false;
+GET /api/v1/presentations/{presentation_id}/visual-grammar reads the latest public-safe PresentationIR snapshot and returns validated binding status;
+legacy snapshots without visual grammar bindings return status=empty instead of pretending runtime output exists;
+OpenAPI exposes visual grammar schemas and endpoints;
+scripts/kw_visual_grammar_check.py and scripts/kw_presentation_api_contract_check.py verify the API/catalog/read contract surface.
+```
+
+Non-goals:
+
+```text
+do not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime in KR-7G.3;
+do not claim catalog/read APIs render editable visuals or prove PPTX output quality.
+```

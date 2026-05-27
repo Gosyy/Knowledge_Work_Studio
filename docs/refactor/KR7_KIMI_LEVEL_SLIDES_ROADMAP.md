@@ -651,3 +651,10 @@ KR-7G.2 binds visual grammar blocks into PresentationIR planner output. KR-7G.2 
 It uses source-backed visual grammar blocks only when slide outlines have evidence bindings, records visual grammar validation status in block metadata and quality_contract, and keeps prompt-only/unsupported outlines explicitly blocked instead of pretending visual blocks are source-backed.
 It does not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime.
 ```
+
+Implementation note after KR-7G.3:
+
+```text
+KR-7G.3 exposes read-only visual grammar catalog and binding validation APIs. It adds /api/v1/presentation-visual-grammar/catalog and /api/v1/presentations/{presentation_id}/visual-grammar so clients can inspect presentation_visual_grammar.v1 block specs and validated presentation_ir_visual_grammar_binding.v1 metadata from the latest public-safe PresentationIR snapshot.
+The endpoints explicitly report renderer_runtime_implemented=false and do not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime.
+```
