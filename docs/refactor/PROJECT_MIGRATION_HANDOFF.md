@@ -1496,3 +1496,22 @@ Important limitation:
 ```text
 KR-7G.1 is a visual grammar contract/validator foundation only. It does not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime. Native chart grammar blocks must fail closed unless they have real numeric series and source data refs.
 ```
+
+## KR-7G.2 bind visual grammar blocks into PresentationIR planner output
+
+KR-7G.2 connects the KR-7G visual grammar library to the KR-7F deterministic planner. Source-backed slide outlines now emit editable visual grammar blocks with `presentation_ir_visual_grammar_binding.v1` metadata, while unsupported/prompt-only outlines remain explicit planner gaps instead of fake source-backed visual blocks.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/presentation_ir_planner.py imports PresentationVisualGrammarLibrary and records visual grammar binding metadata;
+backend/tests/services/test_kr7f_presentation_ir_planner.py covers source-backed visual grammar block binding, data_table use instead of fake native_chart, and prompt-only blocked binding behavior;
+scripts/kw_presentation_ir_planner_check.py and scripts/kw_visual_grammar_check.py verify the KR-7G.2 planner/visual grammar surface;
+quality_contract records visual_grammar_schema_version, presentation_ir_visual_grammar_binding.v1, bound/blocked block counts, and visual_grammar_binding_status.
+```
+
+Important limitation:
+
+```text
+KR-7G.2 does not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime. It binds contracts into PresentationIR only and fails closed when source evidence bindings are absent.
+```

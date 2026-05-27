@@ -12,10 +12,16 @@ from backend.app.services.slides_service.presentation_ir import (
     PRESENTATION_IR_SCHEMA_VERSION,
     require_presentation_ir_payload,
 )
+from backend.app.services.slides_service.visual_grammar import (
+    VISUAL_GRAMMAR_SCHEMA_VERSION,
+    PresentationVisualGrammarLibrary,
+    VisualGrammarValidationResult,
+)
 
 PRESENTATION_IR_PLANNER_SCHEMA_VERSION = "presentation_ir_planner.v1"
 PRESENTATION_IR_OUTLINE_SCHEMA_VERSION = "presentation_ir_outline.v1"
 PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION = "presentation_ir_planner_snapshot.v1"
+PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION = "presentation_ir_visual_grammar_binding.v1"
 
 PlannerStatus = Literal["ready", "degraded", "blocked"]
 SlideSupportStatus = Literal["supported", "weak", "unsupported"]
@@ -134,9 +140,10 @@ class PresentationIRPlannerFoundation:
 
     KR-7F.2 hardens the KR-7F.1 foundation by planning slide outlines
     against KR-7E local evidence sections before constructing slides. It is
-    still not the final GigaChat planning runtime. It does not call LLMs,
-    embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA,
-    quality scoring, or UI runtime code.
+    still not the final GigaChat planning runtime. It binds KR-7G visual grammar blocks into eligible PresentationIR slides,
+    KR-7G.2 bind visual grammar blocks into PresentationIR planner output.
+    This does not call LLMs, embeddings, web research, PostgreSQL FTS
+    runtime, render/export, visual QA, quality scoring, or UI runtime code.
     """
 
     def plan_from_evidence(
@@ -256,8 +263,18 @@ def _build_presentation_ir(
     status: PlannerStatus,
     coverage_summary: dict[str, Any],
 ) -> dict[str, Any]:
+    visual_grammar_library = PresentationVisualGrammarLibrary()
     slides: list[dict[str, Any]] = []
+    visual_grammar_results: list[VisualGrammarValidationResult] = []
     for outline in outlines:
+        blocks = _slide_blocks(
+            slide_id=outline.slide_id,
+            role=outline.role,
+            request=request,
+            outline=outline,
+            visual_grammar_library=visual_grammar_library,
+        )
+        visual_grammar_results.extend(visual_grammar_library.validate_presentation_ir_blocks({"slides": [{"blocks": blocks}]}))
         slides.append(
             {
                 "slide_id": outline.slide_id,
@@ -267,11 +284,12 @@ def _build_presentation_ir(
                 "takeaway": _slide_takeaway(request=request, outline=outline),
                 "evidence": [binding.as_dict() for binding in outline.evidence_bindings],
                 "outline": outline.as_dict(),
-                "blocks": _slide_blocks(slide_id=outline.slide_id, role=outline.role, request=request, outline=outline),
+                "blocks": blocks,
                 "visual_plan": _visual_plan_for_role(outline.role, has_evidence=bool(outline.evidence_bindings)),
                 "speaker_notes": _speaker_notes_for_outline(outline),
             }
         )
+    visual_grammar_summary = _visual_grammar_summary(results=tuple(visual_grammar_results), slides=slides)
 
     payload: dict[str, Any] = {
         "schema_version": PRESENTATION_IR_SCHEMA_VERSION,
@@ -312,6 +330,11 @@ def _build_presentation_ir(
             "outline_coverage_ratio": coverage_summary["outline_coverage_ratio"],
             "supported_slide_count": coverage_summary["supported_slide_count"],
             "unsupported_slide_count": coverage_summary["unsupported_slide_count"],
+            "visual_grammar_schema_version": VISUAL_GRAMMAR_SCHEMA_VERSION,
+            "visual_grammar_binding_schema_version": PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION,
+            "visual_grammar_bound_blocks": visual_grammar_summary["bound_block_count"],
+            "visual_grammar_blocked_blocks": visual_grammar_summary["blocked_block_count"],
+            "visual_grammar_binding_status": visual_grammar_summary["status"],
         },
     }
     return require_presentation_ir_payload(payload)
@@ -410,47 +433,194 @@ def _slide_blocks(
     role: str,
     request: PresentationIRPlannerRequest,
     outline: PresentationIRSlideOutline,
+    visual_grammar_library: PresentationVisualGrammarLibrary,
 ) -> list[dict[str, Any]]:
-    if role == "cover":
-        return [
-            {
-                "block_id": f"{slide_id}_title",
-                "type": "text",
-                "semantic_role": "main_claim",
-                "content": {"text": request.title, "subtitle": request.objective},
-                "data_binding": None,
-                "source_refs": [binding.evidence_id for binding in outline.evidence_bindings],
-            }
-        ]
-    items = [
-        {
-            "text": _binding_statement(binding),
-            "evidence_id": binding.evidence_id,
-            "provenance_ref": binding.provenance_ref,
-            "section_id": binding.section_id,
-            "section_label": binding.section_label,
-        }
-        for binding in outline.evidence_bindings
-    ]
-    if not items:
-        items = [
-            {
-                "text": "Source evidence is not attached to this slide outline.",
-                "evidence_id": None,
-                "provenance_ref": None,
-                "missing_terms": list(outline.missing_terms),
-            }
-        ]
+    visual_block = _visual_grammar_block(
+        slide_id=slide_id,
+        role=role,
+        request=request,
+        outline=outline,
+    )
+    if visual_block is not None:
+        validation = visual_grammar_library.validate_block(visual_block)
+        visual_block["visual_grammar_binding"] = _visual_grammar_binding_payload(
+            block_type=str(visual_block.get("type") or ""),
+            validation=validation,
+        )
+        return [visual_block]
+
     return [
         {
-            "block_id": f"{slide_id}_evidence_bullets",
+            "block_id": f"{slide_id}_visual_grammar_gap",
             "type": "bullets",
-            "semantic_role": "supporting_evidence" if outline.evidence_bindings else "planner_gap",
-            "content": {"items": items},
+            "semantic_role": "planner_gap",
+            "content": {
+                "items": [
+                    {
+                        "text": "Visual grammar block is not bound because local source evidence is missing or unsupported.",
+                        "evidence_id": None,
+                        "provenance_ref": None,
+                        "missing_terms": list(outline.missing_terms),
+                    }
+                ]
+            },
             "data_binding": None,
-            "source_refs": [binding.evidence_id for binding in outline.evidence_bindings],
+            "source_refs": [],
+            "visual_grammar_binding": {
+                "schema_version": PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION,
+                "visual_grammar_schema_version": VISUAL_GRAMMAR_SCHEMA_VERSION,
+                "status": "blocked",
+                "reason": "unsupported_outline_without_source_evidence",
+                "block_type": None,
+                "validation": None,
+            },
         }
     ]
+
+
+def _visual_grammar_block(
+    *,
+    slide_id: str,
+    role: str,
+    request: PresentationIRPlannerRequest,
+    outline: PresentationIRSlideOutline,
+) -> dict[str, Any] | None:
+    if not outline.evidence_bindings or outline.support_status == "unsupported":
+        return None
+    block_type = _visual_grammar_block_type_for_role(role)
+    source_refs = [binding.evidence_id for binding in outline.evidence_bindings]
+    base = {
+        "block_id": f"{slide_id}_{block_type}",
+        "type": block_type,
+        "semantic_role": _visual_grammar_semantic_role(role=role, block_type=block_type),
+        "source_refs": source_refs,
+        "visual_grammar_binding": {
+            "schema_version": PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION,
+            "visual_grammar_schema_version": VISUAL_GRAMMAR_SCHEMA_VERSION,
+            "status": "pending_validation",
+            "block_type": block_type,
+        },
+    }
+    if block_type == "executive_summary_cards":
+        base["content"] = {
+            "cards": [
+                {
+                    "title": outline.title,
+                    "text": _slide_takeaway(request=request, outline=outline),
+                    "evidence_id": binding.evidence_id,
+                    "provenance_ref": binding.provenance_ref,
+                }
+                for binding in outline.evidence_bindings[:3]
+            ]
+        }
+        base["data_binding"] = None
+    elif block_type == "data_table":
+        base["content"] = {
+            "columns": ["Evidence", "Source", "Matched terms"],
+            "rows": [
+                [_binding_statement(binding), binding.source_id, ", ".join(binding.matched_terms)]
+                for binding in outline.evidence_bindings[:4]
+            ],
+        }
+        base["data_binding"] = {"source_ref": source_refs[0]}
+    elif block_type == "roadmap":
+        base["content"] = {
+            "phases": [
+                {
+                    "label": f"Step {index + 1}",
+                    "text": _binding_statement(binding),
+                    "evidence_id": binding.evidence_id,
+                }
+                for index, binding in enumerate(outline.evidence_bindings[:4])
+            ]
+        }
+        base["data_binding"] = None
+    elif block_type == "decision_matrix":
+        base["content"] = {
+            "criteria": ["Evidence support", "Source relevance", "Operator review"],
+            "options": [binding.section_label or binding.source_id for binding in outline.evidence_bindings[:3]],
+            "scores": [["source-backed", f"score:{binding.score:.2f}", "required"] for binding in outline.evidence_bindings[:3]],
+        }
+        base["data_binding"] = None
+    elif block_type == "risk_matrix":
+        base["content"] = {
+            "risks": [
+                {
+                    "label": binding.section_label or binding.source_id,
+                    "likelihood": "unknown_without_numeric_model",
+                    "impact": "operator_review_required",
+                    "evidence_id": binding.evidence_id,
+                }
+                for binding in outline.evidence_bindings[:4]
+            ]
+        }
+        base["data_binding"] = None
+    else:
+        base["content"] = {"cards": [{"title": outline.title, "text": _binding_statement(outline.evidence_bindings[0])}]}
+        base["data_binding"] = None
+    return base
+
+
+def _visual_grammar_block_type_for_role(role: str) -> str:
+    if role == "data":
+        return "data_table"
+    if role == "roadmap":
+        return "roadmap"
+    if role == "decision":
+        return "decision_matrix"
+    if role in {"risk", "risks"}:
+        return "risk_matrix"
+    return "executive_summary_cards"
+
+
+def _visual_grammar_semantic_role(*, role: str, block_type: str) -> str:
+    if block_type == "data_table":
+        return "source_data_table"
+    if block_type in {"roadmap", "decision_matrix", "risk_matrix"}:
+        return role or block_type
+    return "source_backed_summary"
+
+
+def _visual_grammar_binding_payload(*, block_type: str, validation: VisualGrammarValidationResult) -> dict[str, Any]:
+    return {
+        "schema_version": PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION,
+        "visual_grammar_schema_version": VISUAL_GRAMMAR_SCHEMA_VERSION,
+        "status": validation.status,
+        "block_type": block_type,
+        "validation": validation.as_dict(),
+    }
+
+
+def _visual_grammar_summary(*, results: tuple[VisualGrammarValidationResult, ...], slides: list[dict[str, Any]]) -> dict[str, Any]:
+    bound_blocks = [
+        block
+        for slide in slides
+        for block in slide.get("blocks", [])
+        if isinstance(block, dict)
+        and isinstance(block.get("visual_grammar_binding"), dict)
+        and block["visual_grammar_binding"].get("block_type")
+    ]
+    blocked = [result for result in results if result.status != "ready"]
+    explicit_gaps = [
+        block
+        for slide in slides
+        for block in slide.get("blocks", [])
+        if isinstance(block, dict)
+        and isinstance(block.get("visual_grammar_binding"), dict)
+        and block["visual_grammar_binding"].get("status") == "blocked"
+    ]
+    status = "ready" if bound_blocks and not blocked else "degraded"
+    if not bound_blocks:
+        status = "blocked"
+    return {
+        "schema_version": PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION,
+        "visual_grammar_schema_version": VISUAL_GRAMMAR_SCHEMA_VERSION,
+        "status": status,
+        "bound_block_count": len(bound_blocks),
+        "blocked_block_count": len(blocked) + len(explicit_gaps),
+        "validated_block_count": len(results),
+        "issue_codes": sorted({issue.code for result in blocked for issue in result.issues}),
+    }
 
 
 def _visual_plan_for_role(role: str, *, has_evidence: bool) -> dict[str, Any]:
@@ -660,6 +830,7 @@ __all__ = [
     "PRESENTATION_IR_OUTLINE_SCHEMA_VERSION",
     "PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION",
     "PRESENTATION_IR_PLANNER_SCHEMA_VERSION",
+    "PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION",
     "PresentationIREvidenceBinding",
     "PresentationIRPlannerFoundation",
     "PresentationIRPlannerRequest",

@@ -643,3 +643,11 @@ KR-7F.3 hardens planner persistence and PresentationIR snapshot API contract.
 It adds presentation_ir_planner_snapshot.v1 metadata, persistable planner result validation, blocked-result fail-closed persistence, and read-side planner snapshot metadata in PresentationIR API responses and version summaries.
 It does not implement final GigaChat planning runtime, embeddings, web research, PostgreSQL FTS runtime, render/export, visual QA, quality scoring, or UI runtime.
 ```
+
+Implementation note after KR-7G.2:
+
+```text
+KR-7G.2 binds visual grammar blocks into PresentationIR planner output. KR-7G.2 binds presentation_visual_grammar.v1 blocks into PresentationIR planner output through presentation_ir_visual_grammar_binding.v1.
+It uses source-backed visual grammar blocks only when slide outlines have evidence bindings, records visual grammar validation status in block metadata and quality_contract, and keeps prompt-only/unsupported outlines explicitly blocked instead of pretending visual blocks are source-backed.
+It does not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime.
+```

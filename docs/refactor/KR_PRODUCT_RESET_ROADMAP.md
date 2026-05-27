@@ -894,3 +894,32 @@ do not implement PPTX rendering, final GigaChat planning runtime, embeddings, we
 do not claim visual grammar validators prove renderer output quality;
 do not accept native_chart visual grammar blocks without real numeric source data and source data refs.
 ```
+
+### KR-7G.2 bind visual grammar blocks into PresentationIR planner output
+
+Purpose:
+
+```text
+bind presentation_visual_grammar.v1 block contracts into deterministic PresentationIR planner output;
+ensure source-backed slide outlines produce editable visual grammar blocks with validation metadata;
+keep unsupported or prompt-only outlines explicit and blocked instead of pretending visual blocks are source-backed.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/presentation_ir_planner.py defines presentation_ir_visual_grammar_binding.v1;
+PresentationIR slides include visual grammar block metadata when source evidence bindings exist;
+quality_contract records visual grammar schema, binding schema, bound block count, blocked block count, and binding status;
+prompt-only/degraded planner output does not bind source-backed visual grammar blocks;
+data-oriented planner roles use source-backed data_table blocks rather than fake native_chart blocks;
+scripts/kw_presentation_ir_planner_check.py and scripts/kw_visual_grammar_check.py verify the KR-7G.2 surface;
+full runner and Docker smoke pass before LOCAL ACCEPT.
+```
+
+Non-goals:
+
+```text
+do not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime in KR-7G.2;
+do not claim visual grammar blocks are source-backed when planner output has no evidence bindings.
+```

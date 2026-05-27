@@ -11,6 +11,7 @@ from typing import Any
 REQUIRED_FILES = [
     "backend/app/services/slides_service/visual_grammar.py",
     "backend/tests/services/test_kr7g_visual_grammar.py",
+    "backend/app/services/slides_service/presentation_ir_planner.py",
 ]
 
 REQUIRED_PHRASES = {
@@ -41,6 +42,14 @@ REQUIRED_PHRASES = {
         "does not render PPTX",
         "does not render PPTX, call LLMs, create charts, generate images, or fabricate",
     ],
+    "backend/app/services/slides_service/presentation_ir_planner.py": [
+        "PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION",
+        "PresentationVisualGrammarLibrary",
+        "_visual_grammar_block",
+        "visual_grammar_bound_blocks",
+        "visual_grammar_binding_status",
+        "unsupported_outline_without_source_evidence",
+    ],
     "backend/tests/services/test_kr7g_visual_grammar.py": [
         "test_kr7g1_visual_grammar_catalog_contains_required_editable_blocks",
         "test_kr7g1_visual_grammar_validates_source_backed_cards",
@@ -50,26 +59,32 @@ REQUIRED_PHRASES = {
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7G.1 visual grammar library foundation",
+        "KR-7G.2 bind visual grammar blocks into PresentationIR planner output",
         "presentation_visual_grammar.v1",
         "every block has semantic purpose and validator",
         "native chart blocks require real numeric data and source data refs",
+        "KR-7G.2 bind visual grammar blocks into PresentationIR planner output",
     ],
     "docs/refactor/KR7_KIMI_LEVEL_SLIDES_ROADMAP.md": [
         "Phase KR-7G — visual grammar library",
         "KR-7G.1 introduces presentation_visual_grammar.v1",
+        "KR-7G.2 binds presentation_visual_grammar.v1 blocks",
         "fake chart values are forbidden",
     ],
     "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": [
         "KR-7G.1 visual grammar library foundation",
+        "KR-7G.2 bind visual grammar blocks into PresentationIR planner output",
         "presentation_visual_grammar.v1",
         "native_chart_requires_real_numeric_data",
     ],
     "docs/QUALITY_MATRIX.md": [
         "KR-7G.1 adds visual grammar library foundation",
+        "KR-7G.2 binds visual grammar blocks",
     ],
     "docs/PROJECT_PROHIBITIONS.md": [
         "claim KR-7G.1 renders PPTX or native visuals",
         "accept native_chart visual grammar blocks without real numeric source data",
+        "claim visual grammar blocks are source-backed when planner output has no evidence bindings",
     ],
 }
 

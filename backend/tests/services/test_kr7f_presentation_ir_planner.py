@@ -4,11 +4,13 @@ from backend.app.services.slides_service import (
     PRESENTATION_IR_OUTLINE_SCHEMA_VERSION,
     PRESENTATION_IR_PLANNER_SCHEMA_VERSION,
     PRESENTATION_IR_PLANNER_SNAPSHOT_SCHEMA_VERSION,
+    PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION,
     PRESENTATION_IR_SCHEMA_VERSION,
     OfflineEvidenceIndexBuilder,
     OfflineSourceIngestionEngine,
     PresentationIRPlannerFoundation,
     PresentationIRPlannerRequest,
+    PresentationVisualGrammarLibrary,
     presentation_ir_planner_snapshot_metadata,
     require_persistable_presentation_ir_planner_result,
     require_presentation_ir_payload,
@@ -224,3 +226,87 @@ def test_kr7f3_blocked_planner_result_is_not_persistable_as_ir_snapshot() -> Non
         assert "Blocked PresentationIR planner results" in str(exc)
     else:
         raise AssertionError("blocked planner result unexpectedly persisted")
+
+
+def test_kr7g2_planner_binds_visual_grammar_blocks_into_presentation_ir() -> None:
+    index = _evidence_index()
+    request = PresentationIRPlannerRequest(
+        presentation_id="pres_visual_grammar",
+        title="Support automation results",
+        objective="Support automation retention risk",
+        slide_count=4,
+        required_sections=("retention", "risk"),
+        require_evidence=True,
+    )
+
+    result = PresentationIRPlannerFoundation().plan_from_evidence(request, index)
+
+    assert result.status == "ready"
+    assert result.presentation_ir is not None
+    payload = result.presentation_ir
+    assert payload["quality_contract"]["visual_grammar_schema_version"] == "presentation_visual_grammar.v1"
+    assert payload["quality_contract"]["visual_grammar_binding_schema_version"] == PRESENTATION_IR_VISUAL_GRAMMAR_BINDING_SCHEMA_VERSION
+    assert payload["quality_contract"]["visual_grammar_bound_blocks"] >= 1
+    assert payload["quality_contract"]["visual_grammar_blocked_blocks"] == 0
+    assert payload["quality_contract"]["visual_grammar_binding_status"] == "ready"
+    bound_blocks = [
+        block
+        for slide in payload["slides"]
+        for block in slide["blocks"]
+        if block.get("visual_grammar_binding", {}).get("block_type")
+    ]
+    assert bound_blocks
+    assert all(block["visual_grammar_binding"]["status"] == "ready" for block in bound_blocks)
+    assert all(block["source_refs"] for block in bound_blocks)
+    assert all(PresentationVisualGrammarLibrary().validate_block(block).status == "ready" for block in bound_blocks)
+
+
+def test_kr7g2_planner_uses_data_table_instead_of_fake_native_chart_for_data_role() -> None:
+    index = _evidence_index()
+    request = PresentationIRPlannerRequest(
+        presentation_id="pres_visual_data",
+        title="Support automation results",
+        objective="Support automation retention risk data",
+        slide_count=5,
+        required_sections=("data", "risk", "retention"),
+        require_evidence=True,
+    )
+
+    result = PresentationIRPlannerFoundation().plan_from_evidence(request, index)
+
+    assert result.presentation_ir is not None
+    data_blocks = [
+        block
+        for slide in result.presentation_ir["slides"]
+        if slide["role"] == "data"
+        for block in slide["blocks"]
+    ]
+    assert data_blocks
+    assert {block["type"] for block in data_blocks} == {"data_table"}
+    assert all(block["visual_grammar_binding"]["status"] == "ready" for block in data_blocks)
+    assert all(block["type"] != "native_chart" for block in data_blocks)
+
+
+def test_kr7g2_prompt_only_output_does_not_bind_source_backed_visual_grammar_blocks() -> None:
+    empty_index = OfflineEvidenceIndexBuilder().build_index([])
+    request = PresentationIRPlannerRequest(
+        presentation_id="pres_visual_prompt_only",
+        title="Draft without sources",
+        objective="Create visual grammar gaps without pretending support",
+        require_evidence=False,
+        slide_count=3,
+    )
+
+    result = PresentationIRPlannerFoundation().plan_from_evidence(request, empty_index)
+
+    assert result.status == "degraded"
+    assert result.presentation_ir is not None
+    payload = result.presentation_ir
+    assert payload["quality_contract"]["visual_grammar_bound_blocks"] == 0
+    assert payload["quality_contract"]["visual_grammar_blocked_blocks"] == 3
+    assert payload["quality_contract"]["visual_grammar_binding_status"] == "blocked"
+    assert all(
+        block["visual_grammar_binding"]["status"] == "blocked"
+        for slide in payload["slides"]
+        for block in slide["blocks"]
+    )
