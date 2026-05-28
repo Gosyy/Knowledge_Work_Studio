@@ -53,3 +53,5 @@ KR-7G.3 exposes visual grammar read contracts without renderer claims: catalog a
 KR-7H.1 adds renderer worker boundary contract preflight for Python PresentationIR -> Node/PptxGenJS renderer input -> artifact/proof bundle without production PPTX renderer claims. It keeps renderer_runtime_implemented=false and declares future artifact/proof bundle contracts without producing them.
 
 KR-7H.2 adds renderer worker dry-run scaffold contract for validating PresentationIR -> renderer-worker input -> invocation manifest without Node/PptxGenJS or LibreOffice runtime. It keeps renderer_runtime_implemented=false, artifact_bundle_produced=false, and proof_bundle_produced=false while making unsupported input fail closed.
+
+KR-7H.3 adds renderer worker protocol preflight scaffold without PptxGenJS rendering or LibreOffice proof runtime. It validates the KR-7H.2 dry-run report and invocation manifest through a deterministic Node-side preflight script while keeping renderer_runtime_implemented=false, artifact_bundle_produced=false, and proof_bundle_produced=false.

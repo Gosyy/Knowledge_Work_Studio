@@ -1581,3 +1581,27 @@ Process lesson carried forward from KR-7G.3:
 ```text
 Apply packages must use a self-contained apply-runner that resolves the patch next to the runner through SCRIPT_DIR. A dirty tree before apply must be classified before action; if it is an expected already-applied diff, use a dirty tree already-applied diagnostic runner instead of reset. Do not call TARGETED PASS if a targeted log contains an unexplained failing command. Keep TARGETED PASS, LOCAL ACCEPT, and REMOTE ACCEPT boundaries strict: targeted checks only; committed HEAD plus full runner plus Docker smoke plus reviewed clean/classified tree; pushed and remote HEAD verified.
 ```
+
+## KR-7H.3 renderer worker protocol preflight scaffold
+
+KR-7H.3 adds the next safe KR-7H boundary layer after KR-7H.2. It introduces a deterministic Node-side protocol preflight script for the future renderer worker, but it still does not generate PPTX, does not import or execute PptxGenJS, does not run LibreOffice, and does not produce artifact/proof bundles.
+
+Validation surface:
+
+```text
+renderer_worker/kw_renderer_worker_protocol_preflight.mjs validates KR-7H.2 dry-run reports and invocation manifests and returns presentation_renderer_worker_protocol_preflight_response.v1;
+backend/tests/services/test_kr7h_renderer_worker_protocol.py covers capabilities, ready source-backed preflight, blocked prompt-only input, runtime/bundle claim rejection, and invalid JSON fail-closed behavior;
+scripts/kw_renderer_worker_protocol_check.py verifies the Node-side protocol preflight and is included in scripts/kw_full_tests_with_proxy_runner.sh.
+```
+
+Non-goals preserved:
+
+```text
+no production PPTX generation;
+no PptxGenJS dependency or execution;
+no long-running worker service;
+no LibreOffice proof;
+no artifact/proof bundle production;
+no visual QA or quality scoring;
+no UI or GigaChat runtime changes.
+```

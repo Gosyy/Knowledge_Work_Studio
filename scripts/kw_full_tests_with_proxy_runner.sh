@@ -150,6 +150,7 @@ run_shell_step "29f-presentation-ir-planner-check" "cd '${REPO_ROOT}' && source 
 run_shell_step "29g-visual-grammar-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_visual_grammar_check.py --repo-root . --require-ready"
 run_shell_step "29h-renderer-worker-contract-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_contract_check.py --repo-root . --require-ready"
 run_shell_step "29h2-renderer-worker-dry-run-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_dry_run_check.py --repo-root . --require-ready"
+run_shell_step "29h3-renderer-worker-protocol-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_protocol_check.py --repo-root . --require-ready"
 run_shell_step "30-production-readiness-gate" "cd '${REPO_ROOT}' && source .venv/bin/activate && export NO_PROXY='${LOCAL_NO_PROXY}' no_proxy='${LOCAL_NO_PROXY}' && unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy && python scripts/kw_production_readiness_gate.py --repo-root ."
 run_shell_step "40-docker-compose-check-only" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_fullstack_compose_smoke.py --repo-root . --check-only --timeout 1200"
 run_shell_step "99-git-status-after" "cd '${REPO_ROOT}' && git status --short && git branch --show-current && git rev-parse HEAD"

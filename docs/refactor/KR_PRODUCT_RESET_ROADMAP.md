@@ -1016,3 +1016,42 @@ KR-7H.2 does not generate production PPTX.
 KR-7H.2 does not start Node/PptxGenJS.
 KR-7H.2 does not run LibreOffice.
 ```
+
+### KR-7H.3 renderer worker protocol preflight scaffold
+
+Purpose:
+
+```text
+add a deterministic Node-side protocol preflight scaffold after the KR-7H.2 dry-run invocation manifest;
+validate presentation_renderer_worker_dry_run.v1 and presentation_renderer_worker_invocation_manifest.v1 at the future worker boundary;
+return presentation_renderer_worker_protocol_preflight_response.v1 fail-closed JSON without generating PPTX, importing or executing PptxGenJS, running LibreOffice, or claiming production-quality output.
+```
+
+Acceptance:
+
+```text
+renderer_worker/kw_renderer_worker_protocol_preflight.mjs defines presentation_renderer_worker_protocol_preflight.v1 and presentation_renderer_worker_protocol_preflight_response.v1;
+the protocol preflight accepts only ready dry-run reports with valid renderer input and invocation manifest schemas;
+invalid JSON, prompt-only/blocked dry-run reports, runtime claims, and artifact/proof production claims fail closed;
+scripts/kw_renderer_worker_protocol_check.py verifies the Node-side protocol preflight and is included in the full runner;
+backend/tests/services/test_kr7h_renderer_worker_protocol.py covers capabilities, ready source-backed preflight, blocked prompt-only input, runtime/bundle claim rejection, and invalid JSON.
+```
+
+Non-goals:
+
+```text
+do not generate PPTX in KR-7H.3;
+do not import or execute PptxGenJS;
+do not start a production renderer worker service;
+do not run LibreOffice;
+do not generate PDF/PNG proof artifacts, add UI runtime, add visual QA, add quality scoring, or claim rendered output quality;
+do not treat protocol preflight responses as produced artifact/proof bundles.
+```
+
+KR-7H.3 guardrail summary:
+
+```text
+KR-7H.3 does not generate PPTX.
+KR-7H.3 does not import or execute PptxGenJS.
+KR-7H.3 does not run LibreOffice.
+```

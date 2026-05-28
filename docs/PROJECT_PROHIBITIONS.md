@@ -105,3 +105,10 @@ claim KR-7H.2 generates production PPTX.
 claim KR-7H.2 starts Node/PptxGenJS or LibreOffice runtime.
 claim KR-7H.2 produces artifact/proof bundles.
 claim KR-7H.2 dry-run invocation manifests are rendered deck artifacts.
+
+claim KR-7H.3 generates PPTX.
+claim KR-7H.3 imports or executes PptxGenJS.
+claim KR-7H.3 starts a production renderer worker.
+claim KR-7H.3 runs LibreOffice.
+claim KR-7H.3 produces artifact/proof bundles.
+claim KR-7H.3 protocol preflight responses are rendered deck artifacts.

@@ -674,3 +674,11 @@ KR-7H.2 renderer worker dry-run scaffold contract defines presentation_renderer_
 The dry run validates PresentationIR through the KR-7H.1 renderer input boundary, emits a deterministic invocation manifest for the future Node/PptxGenJS worker, and blocks unsupported or prompt-only inputs fail-closed.
 KR-7H.2 still produces no production PPTX, no Node/PptxGenJS runtime execution, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
 ```
+
+Implementation note after KR-7H.3:
+
+```text
+KR-7H.3 renderer worker protocol preflight scaffold defines presentation_renderer_worker_protocol_preflight.v1 and presentation_renderer_worker_protocol_preflight_response.v1.
+It adds a deterministic Node-side protocol preflight script that validates KR-7H.2 dry-run reports and invocation manifests at the future worker boundary.
+KR-7H.3 still produces no production PPTX, no PptxGenJS rendering, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
+```
