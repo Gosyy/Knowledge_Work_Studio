@@ -97,3 +97,6 @@ claim blocked planner results are persistable PresentationIR snapshots.
 claim visual grammar blocks are source-backed when planner output has no evidence bindings.
 
 claim visual grammar catalog/read APIs render PPTX or generate visual output.
+claim KR-7H.1 renders production-quality PPTX.
+claim artifact/proof bundle is produced by KR-7H.1.
+start Node/PptxGenJS or LibreOffice runtime from KR-7H.1.

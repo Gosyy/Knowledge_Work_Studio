@@ -658,3 +658,10 @@ Implementation note after KR-7G.3:
 KR-7G.3 exposes read-only visual grammar catalog and binding validation APIs. It adds /api/v1/presentation-visual-grammar/catalog and /api/v1/presentations/{presentation_id}/visual-grammar so clients can inspect presentation_visual_grammar.v1 block specs and validated presentation_ir_visual_grammar_binding.v1 metadata from the latest public-safe PresentationIR snapshot.
 The endpoints explicitly report renderer_runtime_implemented=false and do not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime.
 ```
+
+Implementation note after KR-7H.1:
+
+```text
+KR-7H.1 renderer worker boundary contract preflight defines presentation_renderer_worker_contract.v1 and presentation_renderer_worker_input.v1 for the future native renderer boundary. The contract models Python PresentationIR -> Node/PptxGenJS renderer input -> artifact/proof bundle and validates fail-closed input readiness before any renderer runtime exists.
+KR-7H.1 explicitly keeps renderer_runtime_implemented=false, artifact_bundle_produced=false, and proof_bundle_produced=false. It does not create production-quality PPTX output, does not start Node/PptxGenJS, does not run LibreOffice, and does not perform visual QA or quality scoring.
+```

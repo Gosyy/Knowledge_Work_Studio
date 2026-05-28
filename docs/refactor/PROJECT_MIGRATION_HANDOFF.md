@@ -1534,3 +1534,29 @@ Important limitation:
 ```text
 KR-7G.3 does not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime. API responses must keep renderer_runtime_implemented=false and must not imply that visual grammar contracts are rendered output quality.
 ```
+
+## KR-7H.1 renderer worker boundary contract preflight
+
+KR-7H.1 starts the KR-7H renderer-worker phase as a boundary/preflight patch, not as a production PPTX renderer. It defines the future contract for Python PresentationIR -> Node/PptxGenJS renderer input -> artifact/proof bundle and keeps the runtime fail-closed.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/renderer_worker_contract.py defines presentation_renderer_worker_contract.v1, presentation_renderer_worker_input.v1, presentation_renderer_artifact_bundle.v1, and presentation_renderer_proof_bundle.v1;
+renderer_worker_boundary_contract_payload() declares the future boundary chain without runtime claims;
+validate_renderer_worker_input_payload() blocks invalid PresentationIR, prompt-only visual grammar gaps, fake native chart data, non-source assets, and renderer/output claims;
+backend/tests/services/test_kr7h_renderer_worker_contract.py covers the contract-only boundary, valid source-backed input, prompt-only blocked input, fake native_chart blocking, and runtime claim rejection;
+scripts/kw_renderer_worker_contract_check.py verifies the contract surface and is included in scripts/kw_full_tests_with_proxy_runner.sh.
+```
+
+Non-goals:
+
+```text
+KR-7H.1 does not render PPTX, start Node/PptxGenJS, run LibreOffice, generate PDF/PNG proof artifacts, add UI runtime, perform visual QA, perform quality scoring, or claim production-quality output. Artifact/proof bundle schema names are declarations for later KR-7H patches, not produced artifacts.
+```
+
+Process lesson carried forward from KR-7G.3:
+
+```text
+Apply packages must use a self-contained apply-runner that resolves the patch next to the runner through SCRIPT_DIR. A dirty tree before apply must be classified before action; if it is an expected already-applied diff, use a dirty tree already-applied diagnostic runner instead of reset. Do not call TARGETED PASS if a targeted log contains an unexplained failing command. Keep TARGETED PASS, LOCAL ACCEPT, and REMOTE ACCEPT boundaries strict: targeted checks only; committed HEAD plus full runner plus Docker smoke plus reviewed clean/classified tree; pushed and remote HEAD verified.
+```

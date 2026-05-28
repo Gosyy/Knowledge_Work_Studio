@@ -49,3 +49,5 @@ When a patch changes workflow maturity, validation behavior, artifact bundle exp
 KR-7F.3 hardens planner persistence and PresentationIR snapshot API contract with presentation_ir_planner_snapshot.v1 metadata, blocked-result fail-closed persistence, and read-side planner snapshot exposure.
 
 KR-7G.3 exposes visual grammar read contracts without renderer claims: catalog and binding validation APIs are implemented, but rendered PPTX visual output remains a later phase.
+
+KR-7H.1 adds renderer worker boundary contract preflight for Python PresentationIR -> Node/PptxGenJS renderer input -> artifact/proof bundle without production PPTX renderer claims. It keeps renderer_runtime_implemented=false and declares future artifact/proof bundle contracts without producing them.

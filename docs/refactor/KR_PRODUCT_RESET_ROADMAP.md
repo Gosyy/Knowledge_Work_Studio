@@ -950,3 +950,31 @@ Non-goals:
 do not implement PPTX rendering, final GigaChat planning runtime, embeddings, web research, generated images, visual QA, quality scoring, or UI runtime in KR-7G.3;
 do not claim catalog/read APIs render editable visuals or prove PPTX output quality.
 ```
+
+### KR-7H.1 renderer worker boundary contract preflight
+
+Purpose:
+
+```text
+establish the fail-closed renderer boundary contract for Python PresentationIR -> Node/PptxGenJS renderer input -> artifact/proof bundle;
+validate renderer-worker input readiness without starting a Node worker, creating a PPTX, running LibreOffice, or claiming production-quality output;
+make renderer_runtime_implemented=false explicit until later KR-7H runtime patches implement real rendering and proof generation.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/renderer_worker_contract.py defines presentation_renderer_worker_contract.v1 and presentation_renderer_worker_input.v1;
+renderer_worker_boundary_contract_payload() declares the future Python PresentationIR -> Node/PptxGenJS renderer input -> artifact/proof bundle boundary;
+validate_renderer_worker_input_payload() fails closed for invalid PresentationIR, blocked visual grammar bindings, fake native chart data, non-source assets, and renderer/runtime output claims;
+build_renderer_worker_input_payload() returns contract-only JSON with renderer_runtime_implemented=false, artifact_bundle_produced=false, and proof_bundle_produced=false;
+scripts/kw_renderer_worker_contract_check.py verifies the KR-7H.1 boundary surface and is included in the full runner.
+```
+
+Non-goals:
+
+```text
+do not implement production PPTX rendering in KR-7H.1;
+do not start a Node/PptxGenJS worker, run LibreOffice, generate PDF/PNG proof artifacts, add UI runtime, add quality scoring, or claim rendered output quality;
+do not treat artifact/proof bundle declarations as produced artifacts.
+```

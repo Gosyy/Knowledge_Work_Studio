@@ -139,6 +139,20 @@ from backend.app.services.slides_service.render_mode_runtime import (
     resolve_render_mode_runtime,
     slides_render_mode_runtime_capabilities,
 )
+
+from backend.app.services.slides_service.renderer_worker_contract import (
+    RENDERER_WORKER_ARTIFACT_BUNDLE_SCHEMA_VERSION,
+    RENDERER_WORKER_CONTRACT_SCHEMA_VERSION,
+    RENDERER_WORKER_INPUT_SCHEMA_VERSION,
+    RENDERER_WORKER_PROOF_BUNDLE_SCHEMA_VERSION,
+    RENDERER_WORKER_RUNTIME_IMPLEMENTED,
+    RendererWorkerContractIssue,
+    RendererWorkerContractValidationResult,
+    build_renderer_worker_input_payload,
+    renderer_worker_boundary_contract_payload,
+    validate_renderer_worker_input_payload,
+)
+
 from backend.app.services.slides_service.revision import (
     DeckRestoreRequest,
     DeckRestoreResult,
@@ -268,6 +282,16 @@ __all__ = [
     "presentation_ir_planner_snapshot_metadata",
     "presentation_ir_planner_snapshot_metadata_from_ir",
     "require_persistable_presentation_ir_planner_result",
+    "RENDERER_WORKER_CONTRACT_SCHEMA_VERSION",
+    "RENDERER_WORKER_INPUT_SCHEMA_VERSION",
+    "RENDERER_WORKER_ARTIFACT_BUNDLE_SCHEMA_VERSION",
+    "RENDERER_WORKER_PROOF_BUNDLE_SCHEMA_VERSION",
+    "RENDERER_WORKER_RUNTIME_IMPLEMENTED",
+    "RendererWorkerContractIssue",
+    "RendererWorkerContractValidationResult",
+    "renderer_worker_boundary_contract_payload",
+    "build_renderer_worker_input_payload",
+    "validate_renderer_worker_input_payload",
     "VISUAL_GRAMMAR_SCHEMA_VERSION",
     "PresentationVisualGrammarLibrary",
     "VisualGrammarBlockSpec",
