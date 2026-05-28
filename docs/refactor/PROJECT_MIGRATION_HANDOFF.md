@@ -1555,6 +1555,27 @@ Non-goals:
 KR-7H.1 does not render PPTX, start Node/PptxGenJS, run LibreOffice, generate PDF/PNG proof artifacts, add UI runtime, perform visual QA, perform quality scoring, or claim production-quality output. Artifact/proof bundle schema names are declarations for later KR-7H patches, not produced artifacts.
 ```
 
+## KR-7H.2 renderer worker dry-run scaffold contract
+
+KR-7H.2 continues KR-7H without jumping to production rendering. It converts validated PresentationIR and the KR-7H.1 renderer input into a deterministic dry-run report and invocation manifest for the future renderer worker.
+
+Validation surface:
+
+```text
+backend/app/services/slides_service/renderer_worker_dry_run.py defines presentation_renderer_worker_dry_run.v1 and presentation_renderer_worker_invocation_manifest.v1;
+renderer_worker_dry_run_capabilities() reports dry_run_implemented=true while keeping renderer_runtime_implemented=false, artifact_bundle_produced=false, and proof_bundle_produced=false;
+build_renderer_worker_dry_run_report() validates renderer input and returns a ready report only for source-backed, fail-closed PresentationIR;
+blocked visual grammar bindings, fake native chart data, prompt-only gaps, and runtime/output claims remain blocked;
+backend/tests/services/test_kr7h_renderer_worker_dry_run.py covers contract-only capabilities, ready source-backed dry run, blocked prompt-only input, fake native_chart blocking, and fail-closed readiness;
+scripts/kw_renderer_worker_dry_run_check.py verifies the dry-run scaffold and is included in scripts/kw_full_tests_with_proxy_runner.sh.
+```
+
+Non-goals:
+
+```text
+KR-7H.2 does not generate PPTX, does not start Node/PptxGenJS, does not run LibreOffice, does not produce artifact/proof bundles, does not add UI runtime, does not perform visual QA, does not perform quality scoring, and does not claim production-quality output. The invocation manifest is a dry-run contract artifact, not a rendered deck artifact.
+```
+
 Process lesson carried forward from KR-7G.3:
 
 ```text

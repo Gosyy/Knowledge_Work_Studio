@@ -665,3 +665,12 @@ Implementation note after KR-7H.1:
 KR-7H.1 renderer worker boundary contract preflight defines presentation_renderer_worker_contract.v1 and presentation_renderer_worker_input.v1 for the future native renderer boundary. The contract models Python PresentationIR -> Node/PptxGenJS renderer input -> artifact/proof bundle and validates fail-closed input readiness before any renderer runtime exists.
 KR-7H.1 explicitly keeps renderer_runtime_implemented=false, artifact_bundle_produced=false, and proof_bundle_produced=false. It does not create production-quality PPTX output, does not start Node/PptxGenJS, does not run LibreOffice, and does not perform visual QA or quality scoring.
 ```
+
+
+Implementation note after KR-7H.2:
+
+```text
+KR-7H.2 renderer worker dry-run scaffold contract defines presentation_renderer_worker_dry_run.v1 and presentation_renderer_worker_invocation_manifest.v1.
+The dry run validates PresentationIR through the KR-7H.1 renderer input boundary, emits a deterministic invocation manifest for the future Node/PptxGenJS worker, and blocks unsupported or prompt-only inputs fail-closed.
+KR-7H.2 still produces no production PPTX, no Node/PptxGenJS runtime execution, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
+```

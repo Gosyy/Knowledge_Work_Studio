@@ -152,6 +152,16 @@ from backend.app.services.slides_service.renderer_worker_contract import (
     renderer_worker_boundary_contract_payload,
     validate_renderer_worker_input_payload,
 )
+from backend.app.services.slides_service.renderer_worker_dry_run import (
+    RENDERER_WORKER_DRY_RUN_IMPLEMENTED,
+    RENDERER_WORKER_DRY_RUN_SCHEMA_VERSION,
+    RENDERER_WORKER_INVOCATION_MANIFEST_SCHEMA_VERSION,
+    RendererWorkerDryRunResult,
+    build_renderer_worker_dry_run_report,
+    build_renderer_worker_invocation_manifest,
+    renderer_worker_dry_run_capabilities,
+    require_renderer_worker_dry_run_ready,
+)
 
 from backend.app.services.slides_service.revision import (
     DeckRestoreRequest,
@@ -292,6 +302,14 @@ __all__ = [
     "renderer_worker_boundary_contract_payload",
     "build_renderer_worker_input_payload",
     "validate_renderer_worker_input_payload",
+    "RENDERER_WORKER_DRY_RUN_SCHEMA_VERSION",
+    "RENDERER_WORKER_INVOCATION_MANIFEST_SCHEMA_VERSION",
+    "RENDERER_WORKER_DRY_RUN_IMPLEMENTED",
+    "RendererWorkerDryRunResult",
+    "renderer_worker_dry_run_capabilities",
+    "build_renderer_worker_dry_run_report",
+    "build_renderer_worker_invocation_manifest",
+    "require_renderer_worker_dry_run_ready",
     "VISUAL_GRAMMAR_SCHEMA_VERSION",
     "PresentationVisualGrammarLibrary",
     "VisualGrammarBlockSpec",

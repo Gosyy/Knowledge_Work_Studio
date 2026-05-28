@@ -978,3 +978,41 @@ do not implement production PPTX rendering in KR-7H.1;
 do not start a Node/PptxGenJS worker, run LibreOffice, generate PDF/PNG proof artifacts, add UI runtime, add quality scoring, or claim rendered output quality;
 do not treat artifact/proof bundle declarations as produced artifacts.
 ```
+
+### KR-7H.2 renderer worker dry-run scaffold contract
+
+Purpose:
+
+```text
+add a deterministic Python-side dry-run scaffold on top of the KR-7H.1 renderer boundary;
+turn validated PresentationIR into renderer-worker input and a renderer-worker dry-run report;
+emit presentation_renderer_worker_dry_run.v1 and presentation_renderer_worker_invocation_manifest.v1 without starting Node/PptxGenJS, creating PPTX, running LibreOffice, or claiming production-quality output.
+```
+
+Acceptance:
+
+```text
+backend/app/services/slides_service/renderer_worker_dry_run.py defines presentation_renderer_worker_dry_run.v1 and presentation_renderer_worker_invocation_manifest.v1;
+build_renderer_worker_dry_run_report() validates PresentationIR through KR-7H.1 renderer input validation and returns ready only for source-backed, fail-closed renderer input;
+blocked PresentationIR, prompt-only visual grammar gaps, fake native_chart data, runtime claims, and artifact/proof production claims remain blocked;
+ready dry-run reports include an invocation manifest describing the future Node/PptxGenJS worker input but keeping renderer_runtime_implemented=false, artifact_bundle_produced=false, and proof_bundle_produced=false;
+scripts/kw_renderer_worker_dry_run_check.py verifies the dry-run scaffold and is included in the full runner.
+```
+
+Non-goals:
+
+```text
+do not generate production PPTX in KR-7H.2;
+do not start Node/PptxGenJS;
+do not run LibreOffice;
+do not add a PptxGenJS dependency, generate PDF/PNG proof artifacts, add UI runtime, add visual QA, add quality scoring, or claim rendered output quality;
+do not treat the dry-run invocation manifest as a produced artifact/proof bundle.
+```
+
+KR-7H.2 guardrail summary:
+
+```text
+KR-7H.2 does not generate production PPTX.
+KR-7H.2 does not start Node/PptxGenJS.
+KR-7H.2 does not run LibreOffice.
+```

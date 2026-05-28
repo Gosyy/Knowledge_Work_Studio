@@ -100,3 +100,8 @@ claim visual grammar catalog/read APIs render PPTX or generate visual output.
 claim KR-7H.1 renders production-quality PPTX.
 claim artifact/proof bundle is produced by KR-7H.1.
 start Node/PptxGenJS or LibreOffice runtime from KR-7H.1.
+
+claim KR-7H.2 generates production PPTX.
+claim KR-7H.2 starts Node/PptxGenJS or LibreOffice runtime.
+claim KR-7H.2 produces artifact/proof bundles.
+claim KR-7H.2 dry-run invocation manifests are rendered deck artifacts.
