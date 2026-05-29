@@ -86,6 +86,16 @@ def test_kr7h5_package_declares_controlled_pptxgenjs_dependency_only_in_worker()
     assert metadata["persistent_artifact_written"] is False
     assert metadata["libreoffice_executed"] is False
     assert metadata["visual_qa_executed"] is False
+    assert metadata["static_slide_output_smoke_schema_version"] == "presentation_renderer_worker_static_slide_output_smoke.v1"
+    assert metadata["static_slide_output_smoke_implemented"] is True
+    assert metadata["temporary_static_slide_pptx_write_api_called"] is True
+    assert metadata["temporary_static_slide_pptx_written"] is True
+    assert metadata["temporary_static_slide_pptx_deleted"] is True
+    assert metadata["temporary_static_slide_pptx_file_size_nonzero"] is True
+    assert metadata["static_slide_count"] == 1
+    assert metadata["static_slide_content_added"] is True
+    assert metadata["static_slide_uses_user_content"] is False
+    assert metadata["static_slide_uses_presentation_ir"] is False
 
 
 def test_kr7h4_package_scripts_run_protocol_preflight_without_runtime_output() -> None:
@@ -198,6 +208,39 @@ def test_kr7h7_package_scripts_run_empty_pptx_output_smoke_without_persistent_ar
     assert result["visual_qa_executed"] is False
     assert result["output_mode"] == "temporary_empty_pptx_output_smoke_only"
 
+
+
+def test_kr7h8_package_scripts_run_static_slide_output_smoke_without_persistent_artifact() -> None:
+    _ensure_worker_dependencies()
+    completed = subprocess.run(
+        ["npm", "run", "pptxgenjs:static-slide", "--silent"],
+        cwd=WORKER_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    result = json.loads(completed.stdout)
+    assert result["schema_version"] == "presentation_renderer_worker_static_slide_output_smoke.v1"
+    assert result["status"] == "ready"
+    assert result["temporary_pptx_written"] is True
+    assert result["temporary_pptx_deleted"] is True
+    assert result["temporary_pptx_file_size_nonzero"] is True
+    assert result["static_slide_count"] == 1
+    assert result["static_slide_content_added"] is True
+    assert result["static_slide_uses_user_content"] is False
+    assert result["static_slide_uses_presentation_ir"] is False
+    assert result["presentation_ir_mapping_implemented"] is False
+    assert result["persistent_artifact_written"] is False
+    assert result["filesystem_output_written"] is False
+    assert result["production_pptx_output_implemented"] is False
+    assert result["artifact_bundle_produced"] is False
+    assert result["proof_bundle_produced"] is False
+    assert result["libreoffice_executed"] is False
+    assert result["visual_qa_executed"] is False
+    assert result["output_mode"] == "temporary_static_single_slide_output_smoke_only"
+
+
 def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     text = CONTRACT_DOC.read_text(encoding="utf-8")
 
@@ -205,10 +248,12 @@ def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     assert "presentation_renderer_worker_pptxgenjs_capability.v1" in text
     assert "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1" in text
     assert "presentation_renderer_worker_empty_pptx_output_smoke.v1" in text
+    assert "presentation_renderer_worker_static_slide_output_smoke.v1" in text
     assert "npm run protocol:preflight --prefix renderer_worker" in text
     assert "npm run dependency:capability --prefix renderer_worker" in text
     assert "npm run pptxgenjs:in-memory --prefix renderer_worker" in text
     assert "npm run pptxgenjs:empty-output --prefix renderer_worker" in text
+    assert "npm run pptxgenjs:static-slide --prefix renderer_worker" in text
     assert "renderer_runtime_implemented=false" in text
     assert "production_pptx_output_implemented=false" in text
     assert "pptx_generation_executed=false" in text
@@ -219,11 +264,16 @@ def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     assert "filesystem_output_written=false" in text
     assert "temporary_pptx_written=true" in text
     assert "temporary_pptx_deleted=true" in text
+    assert "static_slide_count=1" in text
+    assert "static_slide_content_added=true" in text
+    assert "static_slide_uses_user_content=false" in text
+    assert "static_slide_uses_presentation_ir=false" in text
     assert "persistent_artifact_written=false" in text
     assert "PptxGenJS is declared only inside the isolated renderer_worker package" in text
     assert "does not generate production PPTX" in text
     assert "does not write .pptx files" in text
     assert "temporary empty `.pptx`" in text
+    assert "temporary `.pptx` containing exactly one fixed technical smoke slide" in text
     assert "does not map PresentationIR blocks into slides" in text
     assert "does not run LibreOffice" in text
     assert "does not change UI" in text

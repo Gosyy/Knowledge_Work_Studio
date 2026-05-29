@@ -167,3 +167,19 @@ Do not:
 - claim KR-7H.7 temporary empty output smoke responses are rendered deck artifacts;
 - change frontend package/dependency policy for renderer worker needs during KR-7H.7;
 - run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.7.
+
+
+## KR-7H.8 renderer worker static single-slide PPTX output smoke prohibitions
+
+Do not:
+
+- claim KR-7H.8 creates production PPTX output;
+- claim KR-7H.8 maps PresentationIR blocks into slides;
+- claim KR-7H.8 uses user prompt or evidence content;
+- claim KR-7H.8 generates user-visible deck content;
+- claim KR-7H.8 persists PPTX artifacts;
+- claim KR-7H.8 runs LibreOffice;
+- claim KR-7H.8 produces artifact/proof bundles;
+- claim KR-7H.8 temporary static-slide smoke responses are rendered deck artifacts;
+- change frontend package/dependency policy for renderer worker needs during KR-7H.8;
+- run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.8.

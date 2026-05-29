@@ -63,3 +63,6 @@ KR-7H.6 adds in-memory PptxGenJS construction preflight with `presentation_rende
 
 
 KR-7H.7 adds controlled empty PPTX file output smoke with `presentation_renderer_worker_empty_pptx_output_smoke.v1`. It writes a temporary `.pptx` only inside an ephemeral renderer_worker smoke directory, verifies non-zero size, deletes the temporary file, and keeps production_pptx_output_implemented=false, persistent_artifact_written=false, artifact_bundle_produced=false, and proof_bundle_produced=false without PresentationIR mapping, persistent artifacts, or LibreOffice proof runtime.
+
+
+KR-7H.8 adds controlled static single-slide PPTX output smoke with `presentation_renderer_worker_static_slide_output_smoke.v1`. It writes a temporary `.pptx` containing exactly one fixed technical smoke slide, verifies non-zero size, deletes the temporary file, and keeps production_pptx_output_implemented=false, persistent_artifact_written=false, artifact_bundle_produced=false, and proof_bundle_produced=false without PresentationIR mapping, user/evidence content, persistent artifacts, or LibreOffice proof runtime.

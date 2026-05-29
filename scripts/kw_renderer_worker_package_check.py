@@ -22,6 +22,7 @@ PROTOCOL_SCHEMA_VERSION = "presentation_renderer_worker_protocol_preflight.v1"
 PPTXGENJS_CAPABILITY_SCHEMA_VERSION = "presentation_renderer_worker_pptxgenjs_capability.v1"
 PPTXGENJS_IN_MEMORY_SCHEMA_VERSION = "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1"
 EMPTY_OUTPUT_SCHEMA_VERSION = "presentation_renderer_worker_empty_pptx_output_smoke.v1"
+STATIC_SLIDE_SCHEMA_VERSION = "presentation_renderer_worker_static_slide_output_smoke.v1"
 EXPECTED_PPTXGENJS_VERSION = "4.0.1"
 
 REQUIRED_FILES = [
@@ -32,6 +33,7 @@ REQUIRED_FILES = [
     "renderer_worker/kw_renderer_worker_pptxgenjs_capability.mjs",
     "renderer_worker/kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs",
     "renderer_worker/kw_renderer_worker_empty_pptx_output_smoke.mjs",
+    "renderer_worker/kw_renderer_worker_static_slide_output_smoke.mjs",
     "backend/tests/services/test_kr7h_renderer_worker_package.py",
     "scripts/kw_renderer_worker_package_check.py",
 ]
@@ -46,6 +48,7 @@ REQUIRED_PHRASES = {
         '"check"',
         '"presentation_renderer_worker_package_preflight.v1"',
         '"presentation_renderer_worker_pptxgenjs_capability.v1"',
+        '"presentation_renderer_worker_static_slide_output_smoke.v1"',
         '"renderer_worker_package_boundary": true',
         '"frontend_package_boundary": false',
         '"pptxgenjs_dependency_declared": true',
@@ -71,6 +74,7 @@ REQUIRED_PHRASES = {
         "npm run dependency:capability --prefix renderer_worker",
         "npm run pptxgenjs:in-memory --prefix renderer_worker",
         "npm run pptxgenjs:empty-output --prefix renderer_worker",
+        "npm run pptxgenjs:static-slide --prefix renderer_worker",
         "npm run check --prefix renderer_worker",
         "renderer_runtime_implemented=false",
         "production_pptx_output_implemented=false",
@@ -88,6 +92,7 @@ REQUIRED_PHRASES = {
         "test_kr7h5_package_scripts_run_dependency_capability_without_runtime_output",
         "test_kr7h6_package_scripts_run_in_memory_preflight_without_output",
         "test_kr7h7_package_scripts_run_empty_pptx_output_smoke_without_persistent_artifact",
+        "test_kr7h8_package_scripts_run_static_slide_output_smoke_without_persistent_artifact",
         "test_kr7h4_frontend_package_is_not_used_for_renderer_worker_boundary",
     ],
     "scripts/kw_full_tests_with_proxy_runner.sh": [
@@ -99,12 +104,16 @@ REQUIRED_PHRASES = {
         "kw_renderer_worker_pptxgenjs_in_memory_check.py --repo-root . --require-ready",
         "29h7-renderer-worker-empty-pptx-output-check",
         "kw_renderer_worker_empty_pptx_output_check.py --repo-root . --require-ready",
+        "29h8-renderer-worker-static-slide-output-check",
+        "kw_renderer_worker_static_slide_output_check.py --repo-root . --require-ready",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7H.5 controlled PptxGenJS capability preflight",
         "KR-7H.6 in-memory PptxGenJS construction preflight",
+        "KR-7H.8 controlled static single-slide PPTX output smoke",
         "presentation_renderer_worker_pptxgenjs_capability.v1",
         "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1",
+        "presentation_renderer_worker_static_slide_output_smoke.v1",
         "does not generate PPTX",
         "does not run LibreOffice",
     ],
@@ -117,8 +126,10 @@ REQUIRED_PHRASES = {
     "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": [
         "KR-7H.5 controlled PptxGenJS capability preflight",
         "KR-7H.6 in-memory PptxGenJS construction preflight",
+        "KR-7H.8 controlled static single-slide PPTX output smoke",
         "presentation_renderer_worker_pptxgenjs_capability.v1",
         "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1",
+        "presentation_renderer_worker_static_slide_output_smoke.v1",
         "does not generate PPTX",
         "does not run LibreOffice",
         "does not produce artifact/proof bundles",
@@ -137,6 +148,9 @@ REQUIRED_PHRASES = {
         "claim KR-7H.6 produces artifact/proof bundles",
         "claim KR-7H.7 creates production PPTX output",
         "claim KR-7H.7 produces artifact/proof bundles",
+        "claim KR-7H.8 creates production PPTX output",
+        "claim KR-7H.8 maps PresentationIR blocks into slides",
+        "claim KR-7H.8 produces artifact/proof bundles",
     ],
 }
 
@@ -215,6 +229,7 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
         capability_script = scripts.get("dependency:capability")
         in_memory_script = scripts.get("pptxgenjs:in-memory")
         empty_output_script = scripts.get("pptxgenjs:empty-output")
+        static_slide_script = scripts.get("pptxgenjs:static-slide")
         check_script = scripts.get("check")
         if not isinstance(protocol_script, str) or "kw_renderer_worker_protocol_preflight.mjs" not in protocol_script:
             problems.append("protocol:preflight script must call kw_renderer_worker_protocol_preflight.mjs")
@@ -224,6 +239,8 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
             problems.append("pptxgenjs:in-memory script must call kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs")
         if not isinstance(empty_output_script, str) or "kw_renderer_worker_empty_pptx_output_smoke.mjs" not in empty_output_script:
             problems.append("pptxgenjs:empty-output script must call kw_renderer_worker_empty_pptx_output_smoke.mjs")
+        if not isinstance(static_slide_script, str) or "kw_renderer_worker_static_slide_output_smoke.mjs" not in static_slide_script:
+            problems.append("pptxgenjs:static-slide script must call kw_renderer_worker_static_slide_output_smoke.mjs")
         if (
             not isinstance(check_script, str)
             or "node --check" not in check_script
@@ -231,8 +248,9 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
             or "dependency:capability" not in check_script
             or "pptxgenjs:in-memory" not in check_script
             or "pptxgenjs:empty-output" not in check_script
+            or "pptxgenjs:static-slide" not in check_script
         ):
-            problems.append("check script must run node --check, protocol:preflight, dependency:capability, pptxgenjs:in-memory, and pptxgenjs:empty-output")
+            problems.append("check script must run node --check, protocol:preflight, dependency:capability, pptxgenjs:in-memory, pptxgenjs:empty-output, and pptxgenjs:static-slide")
 
     dependencies = package.get("dependencies")
     if not isinstance(dependencies, dict) or dependencies.get("pptxgenjs") != EXPECTED_PPTXGENJS_VERSION:
@@ -265,6 +283,16 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
         "temporary_pptx_written": True,
         "temporary_pptx_deleted": True,
         "temporary_pptx_file_size_nonzero": True,
+        "static_slide_output_smoke_schema_version": STATIC_SLIDE_SCHEMA_VERSION,
+        "static_slide_output_smoke_implemented": True,
+        "temporary_static_slide_pptx_write_api_called": True,
+        "temporary_static_slide_pptx_written": True,
+        "temporary_static_slide_pptx_deleted": True,
+        "temporary_static_slide_pptx_file_size_nonzero": True,
+        "static_slide_count": 1,
+        "static_slide_content_added": True,
+        "static_slide_uses_user_content": False,
+        "static_slide_uses_presentation_ir": False,
         "presentation_ir_mapping_implemented": False,
         "persistent_artifact_written": False,
         "libreoffice_executed": False,
@@ -322,7 +350,7 @@ def _run_package_scripts(repo_root: Path, problems: list[str]) -> None:
         return
 
     worker_root = repo_root / "renderer_worker"
-    for script_name in ("kw_renderer_worker_protocol_preflight.mjs", "kw_renderer_worker_pptxgenjs_capability.mjs", "kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs", "kw_renderer_worker_empty_pptx_output_smoke.mjs"):
+    for script_name in ("kw_renderer_worker_protocol_preflight.mjs", "kw_renderer_worker_pptxgenjs_capability.mjs", "kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs", "kw_renderer_worker_empty_pptx_output_smoke.mjs", "kw_renderer_worker_static_slide_output_smoke.mjs"):
         syntax = subprocess.run(
             ["node", "--check", script_name],
             cwd=worker_root,
@@ -404,6 +432,35 @@ def _run_package_scripts(repo_root: Path, problems: list[str]) -> None:
     for key, expected in expected_empty_output.items():
         if empty_output.get(key) != expected:
             problems.append(f"renderer_worker empty output {key} expected {expected!r}, got {empty_output.get(key)!r}")
+
+
+    code, static_slide, diagnostics = _run_json(["npm", "run", "pptxgenjs:static-slide", "--silent"], cwd=worker_root)
+    if code != 0 or not isinstance(static_slide, dict):
+        problems.append(f"npm run pptxgenjs:static-slide --prefix renderer_worker did not return JSON: {diagnostics}")
+        return
+    expected_static_slide = {
+        "schema_version": STATIC_SLIDE_SCHEMA_VERSION,
+        "status": "ready",
+        "temporary_pptx_written": True,
+        "temporary_pptx_deleted": True,
+        "temporary_pptx_file_size_nonzero": True,
+        "static_slide_count": 1,
+        "static_slide_content_added": True,
+        "static_slide_uses_user_content": False,
+        "static_slide_uses_presentation_ir": False,
+        "presentation_ir_mapping_implemented": False,
+        "persistent_artifact_written": False,
+        "filesystem_output_written": False,
+        "production_pptx_output_implemented": False,
+        "artifact_bundle_produced": False,
+        "proof_bundle_produced": False,
+        "libreoffice_executed": False,
+        "visual_qa_executed": False,
+        "output_mode": "temporary_static_single_slide_output_smoke_only",
+    }
+    for key, expected in expected_static_slide.items():
+        if static_slide.get(key) != expected:
+            problems.append(f"renderer_worker static slide output {key} expected {expected!r}, got {static_slide.get(key)!r}")
 
 
 def check(repo_root: Path) -> dict[str, Any]:

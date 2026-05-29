@@ -1717,3 +1717,31 @@ Guardrails:
 - does not change UI or GigaChat runtime.
 
 Validation closure must include targeted apply checks, exact local patch/package testing on the assistant copy, full runner, Docker smoke, clean/classified tree, reviewed logs, then push and remote HEAD verification before REMOTE ACCEPT / CLOSED.
+
+
+### KR-7H.8 controlled static single-slide PPTX output smoke
+
+Status: planned patch scope for the next KR-7H step after KR-7H.7 controlled empty PPTX file output smoke.
+
+Intent:
+
+- add `presentation_renderer_worker_static_slide_output_smoke.v1` inside the isolated `renderer_worker` package;
+- add exactly one fixed technical smoke slide with static renderer-worker text;
+- call PptxGenJS `writeFile` only against an ephemeral temporary `.pptx`;
+- verify `temporary_pptx_written=true`, `temporary_pptx_deleted=true`, `temporary_pptx_file_size_nonzero=true`, `static_slide_count=1`, `static_slide_content_added=true`, `static_slide_uses_user_content=false`, and `static_slide_uses_presentation_ir=false`;
+- keep `persistent_artifact_written=false`, `filesystem_output_written=false`, `presentation_ir_mapping_implemented=false`, and `production_pptx_output_implemented=false`;
+- keep frontend package/dependency policy unchanged.
+
+Guardrails:
+
+- does not create production PPTX output;
+- does not map PresentationIR blocks into slides;
+- does not use user prompt content or source evidence content;
+- does not generate user-visible deck content;
+- does not persist PPTX artifacts;
+- does not run LibreOffice;
+- does not produce artifact/proof bundles;
+- does not perform visual QA or quality scoring;
+- does not change UI or GigaChat runtime.
+
+Validation closure must include targeted apply checks, exact local patch/package testing on the assistant copy, full runner, Docker smoke, clean/classified tree, reviewed logs, then push and remote HEAD verification before REMOTE ACCEPT / CLOSED.

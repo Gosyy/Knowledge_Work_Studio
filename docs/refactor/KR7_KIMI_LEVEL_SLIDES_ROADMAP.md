@@ -708,3 +708,8 @@ KR-7H.6 still has no PPTX file output, no PresentationIR mapping, no slide conte
 Implementation note after KR-7H.7:
 
 KR-7H.7 controlled empty PPTX file output smoke defines `presentation_renderer_worker_empty_pptx_output_smoke.v1`. The smoke may write a temporary empty `.pptx` only as local capability evidence, verify non-zero size, and delete the temporary file before returning ready. KR-7H.7 still has no PresentationIR mapping, no user-visible deck content, no persistent artifact, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
+
+
+Implementation note after KR-7H.8:
+
+KR-7H.8 controlled static single-slide PPTX output smoke defines `presentation_renderer_worker_static_slide_output_smoke.v1`. The smoke may write a temporary `.pptx` containing exactly one fixed technical smoke slide only as local capability evidence, verify non-zero size, and delete the temporary file before returning ready. KR-7H.8 still has no PresentationIR mapping, no user/evidence content, no user-visible deck content, no persistent artifact, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
