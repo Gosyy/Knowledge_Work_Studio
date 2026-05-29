@@ -1,17 +1,18 @@
 {
   "name": "kw-studio-renderer-worker",
-  "version": "0.0.0-kr7h5-capability-preflight",
+  "version": "0.0.0-kr7h6-in-memory-preflight",
   "private": true,
   "type": "module",
-  "description": "KR-7H isolated renderer worker package; validates protocol and controlled PptxGenJS capability boundary without generating PPTX.",
+  "description": "KR-7H isolated renderer worker package; validates protocol, controlled PptxGenJS capability, and in-memory construction boundary without generating PPTX.",
   "scripts": {
     "protocol:preflight": "node ./kw_renderer_worker_protocol_preflight.mjs --capabilities",
     "dependency:capability": "node ./kw_renderer_worker_pptxgenjs_capability.mjs --json",
-    "check": "node --check ./kw_renderer_worker_protocol_preflight.mjs && node --check ./kw_renderer_worker_pptxgenjs_capability.mjs && npm run protocol:preflight && npm run dependency:capability"
+    "check": "node --check ./kw_renderer_worker_protocol_preflight.mjs && node --check ./kw_renderer_worker_pptxgenjs_capability.mjs && node --check ./kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs && npm run protocol:preflight && npm run dependency:capability && npm run pptxgenjs:in-memory",
+    "pptxgenjs:in-memory": "node ./kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs --json"
   },
   "kwStudio": {
     "schema_version": "presentation_renderer_worker_package_preflight.v1",
-    "phase": "KR-7H.5 controlled PptxGenJS capability preflight",
+    "phase": "KR-7H.6 in-memory PptxGenJS construction preflight",
     "renderer_worker_package_boundary": true,
     "frontend_package_boundary": false,
     "protocol_preflight_script": "kw_renderer_worker_protocol_preflight.mjs",
@@ -28,7 +29,9 @@
       "render_slide_png_proofs",
       "write_artifact_bundle",
       "write_proof_bundle",
-      "claim_visual_quality_score"
+      "claim_visual_quality_score",
+      "call_pptxgenjs_write_or_output_api",
+      "map_presentation_ir_to_slides"
     ],
     "non_goals": [
       "no_pptx_generation",
@@ -38,13 +41,22 @@
       "no_proof_bundle_generation",
       "no_visual_qa_scoring",
       "no_frontend_package_changes",
-      "no_production_quality_output_claims"
+      "no_production_quality_output_claims",
+      "no_pptxgenjs_write_or_output_calls",
+      "no_slide_content_generation",
+      "no_filesystem_output"
     ],
     "pptxgenjs_capability_schema_version": "presentation_renderer_worker_pptxgenjs_capability.v1",
     "pptxgenjs_dependency_declared": true,
     "pptxgenjs_dependency_version": "4.0.1",
     "pptxgenjs_capability_preflight_implemented": true,
-    "pptx_generation_executed": false
+    "pptx_generation_executed": false,
+    "pptxgenjs_in_memory_schema_version": "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1",
+    "pptxgenjs_in_memory_preflight_implemented": true,
+    "pptxgenjs_in_memory_object_created": true,
+    "slide_content_added": false,
+    "pptxgenjs_write_api_called": false,
+    "filesystem_output_written": false
   },
   "dependencies": {
     "pptxgenjs": "4.0.1"

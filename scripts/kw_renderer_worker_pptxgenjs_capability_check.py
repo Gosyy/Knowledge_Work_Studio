@@ -112,7 +112,13 @@ def _run_json(command: list[str], *, cwd: Path | None = None) -> tuple[int, dict
     return completed.returncode, payload, diagnostics
 
 
+def _worker_dependency_tree_ready(worker_root: Path) -> bool:
+    return (worker_root / "node_modules" / "pptxgenjs" / "package.json").is_file()
+
+
 def _ensure_npm_install(worker_root: Path, problems: list[str]) -> None:
+    if _worker_dependency_tree_ready(worker_root):
+        return
     completed = subprocess.run(
         ["npm", "ci", "--ignore-scripts", "--audit=false", "--fund=false", "--silent"],
         cwd=worker_root,

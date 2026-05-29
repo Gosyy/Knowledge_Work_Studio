@@ -696,3 +696,10 @@ Implementation note after KR-7H.5:
 KR-7H.5 controlled PptxGenJS capability preflight defines `presentation_renderer_worker_pptxgenjs_capability.v1`.
 The PptxGenJS dependency is introduced only inside renderer_worker as pinned `pptxgenjs@4.0.1` with an isolated package lock and package-level capability script.
 The capability check verifies dependency availability/version and the default export shape for future renderer work, but it does not generate PPTX, map PresentationIR blocks into slides, run LibreOffice, produce proof/artifact bundles, perform visual QA, or claim production-quality output.
+
+
+Implementation note after KR-7H.6:
+
+KR-7H.6 in-memory PptxGenJS construction preflight defines `presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1`.
+The preflight imports the pinned PptxGenJS dependency and constructs a presentation object in memory only, reporting zero slides, `slide_content_added=false`, `pptxgenjs_write_api_called=false`, and `filesystem_output_written=false`.
+KR-7H.6 still has no PPTX file output, no PresentationIR mapping, no slide content generation, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.

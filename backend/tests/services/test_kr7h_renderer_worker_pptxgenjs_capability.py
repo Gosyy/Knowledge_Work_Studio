@@ -10,7 +10,13 @@ CAPABILITY_SCRIPT = WORKER_ROOT / "kw_renderer_worker_pptxgenjs_capability.mjs"
 FRONTEND_PACKAGE_JSON = REPO_ROOT / "frontend" / "package.json"
 
 
+def _worker_dependency_tree_ready() -> bool:
+    return (WORKER_ROOT / "node_modules" / "pptxgenjs" / "package.json").is_file()
+
+
 def _ensure_worker_dependencies() -> None:
+    if _worker_dependency_tree_ready():
+        return
     completed = subprocess.run(
         ["npm", "ci", "--ignore-scripts", "--audit=false", "--fund=false", "--silent"],
         cwd=WORKER_ROOT,

@@ -20,6 +20,7 @@ from typing import Any
 PACKAGE_SCHEMA_VERSION = "presentation_renderer_worker_package_preflight.v1"
 PROTOCOL_SCHEMA_VERSION = "presentation_renderer_worker_protocol_preflight.v1"
 PPTXGENJS_CAPABILITY_SCHEMA_VERSION = "presentation_renderer_worker_pptxgenjs_capability.v1"
+PPTXGENJS_IN_MEMORY_SCHEMA_VERSION = "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1"
 EXPECTED_PPTXGENJS_VERSION = "4.0.1"
 
 REQUIRED_FILES = [
@@ -28,6 +29,7 @@ REQUIRED_FILES = [
     "renderer_worker/CONTRACT.md",
     "renderer_worker/kw_renderer_worker_protocol_preflight.mjs",
     "renderer_worker/kw_renderer_worker_pptxgenjs_capability.mjs",
+    "renderer_worker/kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs",
     "backend/tests/services/test_kr7h_renderer_worker_package.py",
     "scripts/kw_renderer_worker_package_check.py",
 ]
@@ -65,6 +67,7 @@ REQUIRED_PHRASES = {
         "presentation_renderer_worker_pptxgenjs_capability.v1",
         "npm run protocol:preflight --prefix renderer_worker",
         "npm run dependency:capability --prefix renderer_worker",
+        "npm run pptxgenjs:in-memory --prefix renderer_worker",
         "npm run check --prefix renderer_worker",
         "renderer_runtime_implemented=false",
         "production_pptx_output_implemented=false",
@@ -80,6 +83,7 @@ REQUIRED_PHRASES = {
         "test_kr7h4_package_json_declares_isolated_renderer_worker_boundary",
         "test_kr7h5_package_declares_controlled_pptxgenjs_dependency_only_in_worker",
         "test_kr7h5_package_scripts_run_dependency_capability_without_runtime_output",
+        "test_kr7h6_package_scripts_run_in_memory_preflight_without_output",
         "test_kr7h4_frontend_package_is_not_used_for_renderer_worker_boundary",
     ],
     "scripts/kw_full_tests_with_proxy_runner.sh": [
@@ -87,10 +91,14 @@ REQUIRED_PHRASES = {
         "kw_renderer_worker_package_check.py --repo-root . --require-ready",
         "29h5-renderer-worker-pptxgenjs-capability-check",
         "kw_renderer_worker_pptxgenjs_capability_check.py --repo-root . --require-ready",
+        "29h6-renderer-worker-pptxgenjs-in-memory-check",
+        "kw_renderer_worker_pptxgenjs_in_memory_check.py --repo-root . --require-ready",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7H.5 controlled PptxGenJS capability preflight",
+        "KR-7H.6 in-memory PptxGenJS construction preflight",
         "presentation_renderer_worker_pptxgenjs_capability.v1",
+        "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1",
         "does not generate PPTX",
         "does not run LibreOffice",
     ],
@@ -102,19 +110,25 @@ REQUIRED_PHRASES = {
     ],
     "docs/refactor/PROJECT_MIGRATION_HANDOFF.md": [
         "KR-7H.5 controlled PptxGenJS capability preflight",
+        "KR-7H.6 in-memory PptxGenJS construction preflight",
         "presentation_renderer_worker_pptxgenjs_capability.v1",
+        "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1",
         "does not generate PPTX",
         "does not run LibreOffice",
         "does not produce artifact/proof bundles",
     ],
     "docs/QUALITY_MATRIX.md": [
         "KR-7H.5 adds controlled PptxGenJS capability preflight",
+        "KR-7H.6 adds in-memory PptxGenJS construction preflight",
         "without PPTX generation or LibreOffice proof runtime",
     ],
     "docs/PROJECT_PROHIBITIONS.md": [
         "claim KR-7H.5 generates PPTX",
         "claim KR-7H.5 maps PresentationIR blocks into slides",
         "claim KR-7H.5 produces artifact/proof bundles",
+        "claim KR-7H.6 writes PPTX files",
+        "claim KR-7H.6 maps PresentationIR blocks into slides",
+        "claim KR-7H.6 produces artifact/proof bundles",
     ],
 }
 
@@ -148,11 +162,17 @@ def _run_json(command: list[str], *, cwd: Path | None = None) -> tuple[int, dict
     return completed.returncode, payload, diagnostics
 
 
+def _worker_dependency_tree_ready(worker_root: Path) -> bool:
+    return (worker_root / "node_modules" / "pptxgenjs" / "package.json").is_file()
+
+
 def _ensure_npm_install(repo_root: Path, problems: list[str]) -> None:
     if not _npm_available():
         problems.append("npm executable is required for KR-7H package preflight check")
         return
     worker_root = repo_root / "renderer_worker"
+    if _worker_dependency_tree_ready(worker_root):
+        return
     completed = subprocess.run(
         ["npm", "ci", "--ignore-scripts", "--audit=false", "--fund=false", "--silent"],
         cwd=worker_root,
@@ -185,18 +205,22 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
     else:
         protocol_script = scripts.get("protocol:preflight")
         capability_script = scripts.get("dependency:capability")
+        in_memory_script = scripts.get("pptxgenjs:in-memory")
         check_script = scripts.get("check")
         if not isinstance(protocol_script, str) or "kw_renderer_worker_protocol_preflight.mjs" not in protocol_script:
             problems.append("protocol:preflight script must call kw_renderer_worker_protocol_preflight.mjs")
         if not isinstance(capability_script, str) or "kw_renderer_worker_pptxgenjs_capability.mjs" not in capability_script:
             problems.append("dependency:capability script must call kw_renderer_worker_pptxgenjs_capability.mjs")
+        if not isinstance(in_memory_script, str) or "kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs" not in in_memory_script:
+            problems.append("pptxgenjs:in-memory script must call kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs")
         if (
             not isinstance(check_script, str)
             or "node --check" not in check_script
             or "protocol:preflight" not in check_script
             or "dependency:capability" not in check_script
+            or "pptxgenjs:in-memory" not in check_script
         ):
-            problems.append("check script must run node --check, protocol:preflight, and dependency:capability")
+            problems.append("check script must run node --check, protocol:preflight, dependency:capability, and pptxgenjs:in-memory")
 
     dependencies = package.get("dependencies")
     if not isinstance(dependencies, dict) or dependencies.get("pptxgenjs") != EXPECTED_PPTXGENJS_VERSION:
@@ -215,11 +239,17 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
     expected = {
         "schema_version": PACKAGE_SCHEMA_VERSION,
         "pptxgenjs_capability_schema_version": PPTXGENJS_CAPABILITY_SCHEMA_VERSION,
+        "pptxgenjs_in_memory_schema_version": PPTXGENJS_IN_MEMORY_SCHEMA_VERSION,
         "renderer_worker_package_boundary": True,
         "frontend_package_boundary": False,
         "pptxgenjs_dependency_declared": True,
         "pptxgenjs_dependency_version": EXPECTED_PPTXGENJS_VERSION,
         "pptxgenjs_capability_preflight_implemented": True,
+        "pptxgenjs_in_memory_preflight_implemented": True,
+        "pptxgenjs_in_memory_object_created": True,
+        "slide_content_added": False,
+        "pptxgenjs_write_api_called": False,
+        "filesystem_output_written": False,
         "renderer_runtime_implemented": False,
         "production_pptx_output_implemented": False,
         "pptx_generation_executed": False,

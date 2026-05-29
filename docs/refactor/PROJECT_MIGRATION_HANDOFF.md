@@ -1666,3 +1666,28 @@ Validation closure must include targeted apply checks, full runner, Docker smoke
 Operational wording for KR-7H.5 checks: PptxGenJS dependency is introduced only inside renderer_worker and remains prohibited from frontend package/dependency policy.
 
 Process lesson from KR-7H.5 patch packaging: dependency lockfiles, repair runners, and generated packages must be tested on the assistant's verified local project copy before release. A lockfile generated in the assistant sandbox must be inspected for environment-specific registry/proxy URLs before it is packaged for the operator. Diagnostic runners must be strict fail-fast and must not print final PASS markers after any failing validation command.
+
+
+### KR-7H.6 in-memory PptxGenJS construction preflight
+
+Status: planned patch scope for the next KR-7H step after KR-7H.5 capability preflight.
+
+Intent:
+
+- add `presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1` inside the isolated `renderer_worker` package;
+- construct `new PptxGenJS()` in memory only to verify the first controlled API-level smoke;
+- keep `slide_count=0`, `slide_content_added=false`, `pptxgenjs_write_api_called=false`, and `filesystem_output_written=false`;
+- keep frontend package/dependency policy unchanged.
+
+Guardrails:
+
+- does not write .pptx files;
+- does not map PresentationIR blocks into slides;
+- does not add slide content;
+- does not call PptxGenJS write/output APIs;
+- does not run LibreOffice;
+- does not produce artifact/proof bundles;
+- does not perform visual QA or quality scoring;
+- does not change UI or GigaChat runtime.
+
+Validation closure must include targeted apply checks, exact local patch/package testing on the assistant copy, full runner, Docker smoke, clean/classified tree, reviewed logs, then push and remote HEAD verification before REMOTE ACCEPT / CLOSED.

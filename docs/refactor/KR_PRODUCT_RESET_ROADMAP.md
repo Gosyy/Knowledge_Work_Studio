@@ -1123,3 +1123,28 @@ Non-goals:
 - does not perform visual QA or quality scoring;
 - does not change UI or GigaChat runtime;
 - does not run npm audit fix or unrelated dependency cleanup.
+
+
+### KR-7H.6 in-memory PptxGenJS construction preflight
+
+KR-7H.6 introduces `presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1` after the controlled PptxGenJS capability preflight. It is the first API-level smoke that constructs a PptxGenJS presentation object in memory only.
+
+Scope:
+
+- import pinned `pptxgenjs@4.0.1` from the isolated `renderer_worker` package;
+- construct `new PptxGenJS()` in memory and return deterministic JSON;
+- verify `slide_count=0`, `slide_content_added=false`, `pptxgenjs_write_api_called=false`, and `filesystem_output_written=false`;
+- keep frontend package/dependency policy unchanged;
+- add project-resident checker, service tests, and full-runner coverage.
+
+Non-goals:
+
+- does not write .pptx files;
+- does not map PresentationIR blocks into slides;
+- does not add slide content;
+- does not call PptxGenJS write/output APIs;
+- does not run LibreOffice;
+- does not produce artifact/proof bundles;
+- does not perform visual QA or quality scoring;
+- does not change UI or GigaChat runtime;
+- does not run npm audit fix or unrelated dependency cleanup.

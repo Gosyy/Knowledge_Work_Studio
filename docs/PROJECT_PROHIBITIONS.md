@@ -136,3 +136,19 @@ Do not:
 - claim KR-7H.5 dependency capability preflight responses are rendered deck artifacts;
 - change frontend package/dependency policy for renderer worker needs during KR-7H.5;
 - run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.5.
+
+
+## KR-7H.6 renderer worker in-memory PptxGenJS prohibitions
+
+Do not:
+
+- claim KR-7H.6 writes PPTX files;
+- claim KR-7H.6 maps PresentationIR blocks into slides;
+- claim KR-7H.6 adds slide content;
+- claim KR-7H.6 calls PptxGenJS write/output APIs;
+- claim KR-7H.6 starts a production renderer worker service;
+- claim KR-7H.6 runs LibreOffice;
+- claim KR-7H.6 produces artifact/proof bundles;
+- claim KR-7H.6 in-memory preflight responses are rendered deck artifacts;
+- change frontend package/dependency policy for renderer worker needs during KR-7H.6;
+- run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.6.
