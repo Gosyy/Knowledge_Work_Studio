@@ -1,0 +1,41 @@
+{
+  "name": "kw-studio-renderer-worker",
+  "version": "0.0.0-kr7h4-preflight",
+  "private": true,
+  "type": "module",
+  "description": "KR-7H isolated renderer worker package preflight; validates protocol boundary only and does not generate PPTX.",
+  "scripts": {
+    "protocol:preflight": "node ./kw_renderer_worker_protocol_preflight.mjs --capabilities",
+    "check": "node --check ./kw_renderer_worker_protocol_preflight.mjs && npm run protocol:preflight"
+  },
+  "kwStudio": {
+    "schema_version": "presentation_renderer_worker_package_preflight.v1",
+    "phase": "KR-7H.4 isolated renderer worker package preflight",
+    "renderer_worker_package_boundary": true,
+    "frontend_package_boundary": false,
+    "protocol_preflight_script": "kw_renderer_worker_protocol_preflight.mjs",
+    "renderer_runtime_implemented": false,
+    "production_pptx_output_implemented": false,
+    "artifact_bundle_produced": false,
+    "proof_bundle_produced": false,
+    "blocked_runtime_actions": [
+      "import_or_execute_pptxgenjs",
+      "generate_editable_pptx",
+      "run_libreoffice_pdf_export",
+      "render_slide_png_proofs",
+      "write_artifact_bundle",
+      "write_proof_bundle",
+      "claim_visual_quality_score"
+    ],
+    "non_goals": [
+      "no_pptxgenjs_dependency",
+      "no_pptx_generation",
+      "no_libreoffice_execution",
+      "no_artifact_bundle_storage",
+      "no_proof_bundle_generation",
+      "no_visual_qa_scoring",
+      "no_frontend_package_changes",
+      "no_production_quality_output_claims"
+    ]
+  }
+}

@@ -112,3 +112,11 @@ claim KR-7H.3 starts a production renderer worker.
 claim KR-7H.3 runs LibreOffice.
 claim KR-7H.3 produces artifact/proof bundles.
 claim KR-7H.3 protocol preflight responses are rendered deck artifacts.
+
+claim KR-7H.4 generates PPTX.
+claim KR-7H.4 adds or executes PptxGenJS.
+claim KR-7H.4 starts a production renderer worker service.
+claim KR-7H.4 runs LibreOffice.
+claim KR-7H.4 produces artifact/proof bundles.
+claim KR-7H.4 package preflight responses are rendered deck artifacts.
+change frontend package/dependency policy for renderer worker needs during KR-7H.4.

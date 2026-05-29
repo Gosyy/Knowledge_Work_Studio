@@ -682,3 +682,11 @@ KR-7H.3 renderer worker protocol preflight scaffold defines presentation_rendere
 It adds a deterministic Node-side protocol preflight script that validates KR-7H.2 dry-run reports and invocation manifests at the future worker boundary.
 KR-7H.3 still produces no production PPTX, no PptxGenJS rendering, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
 ```
+
+Implementation note after KR-7H.4:
+
+```text
+KR-7H.4 isolated renderer worker package preflight defines presentation_renderer_worker_package_preflight.v1.
+It adds a private renderer_worker package boundary with deterministic npm run protocol:preflight and npm run check scripts, keeping renderer worker package concerns separate from frontend UI package concerns.
+KR-7H.4 still has no PptxGenJS dependency, no production PPTX output, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
+```

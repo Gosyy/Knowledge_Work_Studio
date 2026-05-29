@@ -1605,3 +1605,29 @@ no artifact/proof bundle production;
 no visual QA or quality scoring;
 no UI or GigaChat runtime changes.
 ```
+
+## KR-7H.4 isolated renderer worker package preflight
+
+KR-7H.4 adds the next safe KR-7H boundary layer after KR-7H.3. It introduces an isolated renderer_worker package boundary and deterministic package scripts for the future renderer worker, but it still does not generate PPTX, does not add PptxGenJS dependency, does not run LibreOffice, and does not produce artifact/proof bundles.
+
+Validation surface:
+
+```text
+renderer_worker/package.json declares presentation_renderer_worker_package_preflight.v1 metadata, private package isolation, npm run protocol:preflight, and npm run check;
+renderer_worker/CONTRACT.md documents the package boundary, required scripts, runtime flags, and non-goals;
+backend/tests/services/test_kr7h_renderer_worker_package.py covers package metadata, npm scripts, contract guardrails, and frontend package isolation;
+scripts/kw_renderer_worker_package_check.py verifies package JSON, protocol capabilities, npm scripts, frontend isolation, and is included in scripts/kw_full_tests_with_proxy_runner.sh.
+```
+
+Non-goals preserved:
+
+```text
+no production PPTX generation;
+no PptxGenJS dependency or execution;
+no PresentationIR-to-slide mapping;
+no long-running worker service;
+no LibreOffice proof;
+no artifact/proof bundle production;
+no visual QA or quality scoring;
+no UI, frontend package, or GigaChat runtime changes.
+```

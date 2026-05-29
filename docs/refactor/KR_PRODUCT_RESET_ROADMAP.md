@@ -1055,3 +1055,47 @@ KR-7H.3 does not generate PPTX.
 KR-7H.3 does not import or execute PptxGenJS.
 KR-7H.3 does not run LibreOffice.
 ```
+
+### KR-7H.4 isolated renderer worker package preflight
+
+Purpose:
+
+```text
+add an isolated renderer_worker package boundary after the KR-7H.3 Node-side protocol preflight scaffold;
+keep renderer worker package scripts separate from frontend UI package scripts and dependencies;
+verify presentation_renderer_worker_package_preflight.v1 readiness through deterministic npm scripts without adding PptxGenJS, generating PPTX, running LibreOffice, or claiming production-quality output.
+```
+
+Acceptance:
+
+```text
+renderer_worker/package.json defines a private kw-studio-renderer-worker package with type=module and no dependencies/devDependencies;
+renderer_worker/package.json exposes npm run protocol:preflight and npm run check;
+renderer_worker/CONTRACT.md documents package isolation, required scripts, runtime flags, and non-goals;
+scripts/kw_renderer_worker_package_check.py validates package.json, package scripts, frontend package isolation, and protocol capabilities;
+backend/tests/services/test_kr7h_renderer_worker_package.py covers package metadata, npm scripts, contract text, and frontend isolation;
+scripts/kw_full_tests_with_proxy_runner.sh includes the 29h4-renderer-worker-package-check step.
+```
+
+Non-goals:
+
+```text
+do not generate PPTX in KR-7H.4;
+do not add PptxGenJS dependency;
+do not map PresentationIR blocks into slides;
+do not start a long-running renderer worker service;
+do not run LibreOffice;
+do not produce PDF/PNG proof artifacts or artifact/proof bundles;
+do not perform visual QA or quality scoring;
+do not change frontend package.json for renderer worker needs;
+do not change UI, GigaChat runtime, embeddings, web research, or dependency/security policy.
+```
+
+KR-7H.4 guardrail summary:
+
+```text
+KR-7H.4 does not generate PPTX.
+KR-7H.4 does not add PptxGenJS dependency.
+KR-7H.4 does not run LibreOffice.
+KR-7H.4 package preflight responses are not rendered deck artifacts.
+```
