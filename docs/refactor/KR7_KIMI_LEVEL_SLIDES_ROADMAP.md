@@ -690,3 +690,9 @@ KR-7H.4 isolated renderer worker package preflight defines presentation_renderer
 It adds a private renderer_worker package boundary with deterministic npm run protocol:preflight and npm run check scripts, keeping renderer worker package concerns separate from frontend UI package concerns.
 KR-7H.4 still has no PptxGenJS dependency, no production PPTX output, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
 ```
+
+Implementation note after KR-7H.5:
+
+KR-7H.5 controlled PptxGenJS capability preflight defines `presentation_renderer_worker_pptxgenjs_capability.v1`.
+The PptxGenJS dependency is introduced only inside renderer_worker as pinned `pptxgenjs@4.0.1` with an isolated package lock and package-level capability script.
+The capability check verifies dependency availability/version and the default export shape for future renderer work, but it does not generate PPTX, map PresentationIR blocks into slides, run LibreOffice, produce proof/artifact bundles, perform visual QA, or claim production-quality output.

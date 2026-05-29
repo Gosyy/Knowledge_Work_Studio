@@ -1099,3 +1099,27 @@ KR-7H.4 does not add PptxGenJS dependency.
 KR-7H.4 does not run LibreOffice.
 KR-7H.4 package preflight responses are not rendered deck artifacts.
 ```
+
+### KR-7H.5 controlled PptxGenJS capability preflight
+
+KR-7H.5 introduces a controlled PptxGenJS capability preflight after the isolated renderer worker package boundary.
+
+Scope:
+
+- declare `pptxgenjs@4.0.1` only inside `renderer_worker/package.json`;
+- commit `renderer_worker/package-lock.json` for the isolated worker package;
+- add `presentation_renderer_worker_pptxgenjs_capability.v1` capability output;
+- validate dependency availability/version through deterministic npm and Node checks;
+- keep frontend package/dependency policy unchanged;
+- add project-resident checker, service tests, and full-runner coverage.
+
+Non-goals:
+
+- does not generate PPTX;
+- does not map PresentationIR blocks into slides;
+- does not call PptxGenJS output/write APIs;
+- does not run LibreOffice;
+- does not produce artifact/proof bundles;
+- does not perform visual QA or quality scoring;
+- does not change UI or GigaChat runtime;
+- does not run npm audit fix or unrelated dependency cleanup.

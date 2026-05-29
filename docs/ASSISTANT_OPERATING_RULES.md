@@ -49,6 +49,8 @@ git rev-parse --is-shallow-repository -> false
 
 If a current local full-history checkout is not available, stop and ask the operator for a full-history clone or mirror archive. GitHub file browsing and uploaded logs are useful evidence, but they are not a substitute for local patch validation.
 
+Before releasing any new patch or repair package to the operator, test that exact patch on the verified local full-history checkout that matches the intended base state. The minimum evidence is: `git apply --check` on the expected base, actual local application or reproduction of the expected dirty-tree state, targeted validation through the project `.venv`, and `git diff --check`. If a patch is meant to repair an already-applied dirty tree, reproduce that dirty-tree state locally and run the repair/diagnostic path there before sharing the package. A patch that was only reasoned about, generated from snippets, or checked only through `git apply --check` is not ready to send.
+
 ## Mandatory `.venv` rule
 
 All project analysis and validation must use the project `.venv` when it exists. If it does not exist, create it before validation:

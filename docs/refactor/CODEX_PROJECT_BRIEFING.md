@@ -337,6 +337,8 @@ Do not develop code patches without a local full-history checkout that can be in
 
 If the coding environment lacks a current full-history checkout, request a full clone or bare mirror archive from the operator, clone from it locally, verify `git rev-parse --is-shallow-repository` is `false`, then reproduce and test the change locally before proposing a patch.
 
+Before proposing any patch, apply and targeted-test that exact patch on the verified local checkout. For repair packages that target an already-applied dirty tree, reproduce the expected dirty tree locally and test the repair runner there. `git apply --check` is mandatory preflight, but it is not a substitute for actually exercising the patch or repair package locally.
+
 <!-- KR7_VENV_ONLY_DEV_RULE -->
 
 ## Use `.venv` for all project checks

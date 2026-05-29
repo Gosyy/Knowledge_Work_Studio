@@ -58,7 +58,7 @@ def test_kr7h3_protocol_capabilities_are_preflight_only() -> None:
     assert capabilities["production_pptx_output_implemented"] is False
     assert capabilities["artifact_bundle_produced"] is False
     assert capabilities["proof_bundle_produced"] is False
-    assert "no_pptxgenjs_dependency" in capabilities["non_goals"]
+    assert "no_pptxgenjs_protocol_import" in capabilities["non_goals"]
     assert "import_or_execute_pptxgenjs" in capabilities["blocked_runtime_actions"]
 
 

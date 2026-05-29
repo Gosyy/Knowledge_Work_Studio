@@ -1,16 +1,17 @@
 {
   "name": "kw-studio-renderer-worker",
-  "version": "0.0.0-kr7h4-preflight",
+  "version": "0.0.0-kr7h5-capability-preflight",
   "private": true,
   "type": "module",
-  "description": "KR-7H isolated renderer worker package preflight; validates protocol boundary only and does not generate PPTX.",
+  "description": "KR-7H isolated renderer worker package; validates protocol and controlled PptxGenJS capability boundary without generating PPTX.",
   "scripts": {
     "protocol:preflight": "node ./kw_renderer_worker_protocol_preflight.mjs --capabilities",
-    "check": "node --check ./kw_renderer_worker_protocol_preflight.mjs && npm run protocol:preflight"
+    "dependency:capability": "node ./kw_renderer_worker_pptxgenjs_capability.mjs --json",
+    "check": "node --check ./kw_renderer_worker_protocol_preflight.mjs && node --check ./kw_renderer_worker_pptxgenjs_capability.mjs && npm run protocol:preflight && npm run dependency:capability"
   },
   "kwStudio": {
     "schema_version": "presentation_renderer_worker_package_preflight.v1",
-    "phase": "KR-7H.4 isolated renderer worker package preflight",
+    "phase": "KR-7H.5 controlled PptxGenJS capability preflight",
     "renderer_worker_package_boundary": true,
     "frontend_package_boundary": false,
     "protocol_preflight_script": "kw_renderer_worker_protocol_preflight.mjs",
@@ -19,8 +20,10 @@
     "artifact_bundle_produced": false,
     "proof_bundle_produced": false,
     "blocked_runtime_actions": [
-      "import_or_execute_pptxgenjs",
+      "instantiate_presentation_for_output",
+      "add_slide_content",
       "generate_editable_pptx",
+      "write_pptx_file",
       "run_libreoffice_pdf_export",
       "render_slide_png_proofs",
       "write_artifact_bundle",
@@ -28,14 +31,22 @@
       "claim_visual_quality_score"
     ],
     "non_goals": [
-      "no_pptxgenjs_dependency",
       "no_pptx_generation",
+      "no_presentation_ir_mapping",
       "no_libreoffice_execution",
       "no_artifact_bundle_storage",
       "no_proof_bundle_generation",
       "no_visual_qa_scoring",
       "no_frontend_package_changes",
       "no_production_quality_output_claims"
-    ]
+    ],
+    "pptxgenjs_capability_schema_version": "presentation_renderer_worker_pptxgenjs_capability.v1",
+    "pptxgenjs_dependency_declared": true,
+    "pptxgenjs_dependency_version": "4.0.1",
+    "pptxgenjs_capability_preflight_implemented": true,
+    "pptx_generation_executed": false
+  },
+  "dependencies": {
+    "pptxgenjs": "4.0.1"
   }
 }

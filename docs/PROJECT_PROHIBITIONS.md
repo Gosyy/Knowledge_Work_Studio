@@ -10,6 +10,8 @@ It is forbidden to:
 
 ```text
 issue code patches without a verified local full-history checkout;
+issue patches or repair packages that were not applied and targeted-tested on the verified local checkout that matches the intended base or dirty-tree state;
+treat `git apply --check` alone as sufficient local patch validation;
 issue repair runners from GitHub snippets alone;
 allow fake/noop providers in development runtime;
 assume a clean checkout without checking branch, HEAD and dirty tree;
@@ -120,3 +122,17 @@ claim KR-7H.4 runs LibreOffice.
 claim KR-7H.4 produces artifact/proof bundles.
 claim KR-7H.4 package preflight responses are rendered deck artifacts.
 change frontend package/dependency policy for renderer worker needs during KR-7H.4.
+
+## KR-7H.5 renderer worker dependency capability prohibitions
+
+Do not:
+
+- claim KR-7H.5 generates PPTX;
+- claim KR-7H.5 maps PresentationIR blocks into slides;
+- claim KR-7H.5 calls PptxGenJS output/write APIs;
+- claim KR-7H.5 starts a production renderer worker service;
+- claim KR-7H.5 runs LibreOffice;
+- claim KR-7H.5 produces artifact/proof bundles;
+- claim KR-7H.5 dependency capability preflight responses are rendered deck artifacts;
+- change frontend package/dependency policy for renderer worker needs during KR-7H.5;
+- run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.5.

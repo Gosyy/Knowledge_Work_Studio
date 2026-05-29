@@ -170,8 +170,12 @@ verify local branch;
 verify working tree clean/dirty state;
 if dirty, identify whether it is intended partial patch state;
 do not assume a patch applies to a clean base if the user already applied part of it;
-build and test against the actual expected state.
+build and test against the actual expected state;
+apply and targeted-test the exact patch locally on that verified state before giving it to the operator;
+for repair packages that target an already-applied dirty tree, reproduce that dirty tree locally and test the repair path before release.
 ```
+
+`git apply --check` is required, but it is not enough by itself. The assistant must prove that the patch or repair package actually runs through the relevant targeted validation sequence on the local project copy.
 
 ### 4.2 Do not delete blindly
 
@@ -271,6 +275,8 @@ Patch quality expectations before giving files to the user:
 ```text
 inspect actual repo state when possible;
 run git apply --check locally when feasible;
+apply the exact patch locally, or reproduce the expected already-applied dirty tree for repair packages;
+run targeted validation on that local copy before giving the package to the operator;
 run git diff --check;
 run py_compile for changed Python files;
 run targeted checker scripts;
@@ -323,6 +329,8 @@ verify remote HEAD through Git or web;
 apply accepted patch history if the local bundle is stale;
 create patches against the current accepted base;
 run git apply --check before giving the patch;
+apply and test the exact patch locally before giving the patch;
+for already-applied dirty-tree repairs, reproduce the expected dirty state locally and test the repair runner before giving it;
 run targeted validations before giving the patch;
 be honest if direct Git fetch is unavailable.
 ```
@@ -1631,3 +1639,30 @@ no artifact/proof bundle production;
 no visual QA or quality scoring;
 no UI, frontend package, or GigaChat runtime changes.
 ```
+
+### KR-7H.5 controlled PptxGenJS capability preflight
+
+Status: planned patch scope for the next KR-7H step after KR-7H.4 package preflight.
+
+Intent:
+
+- introduce controlled PptxGenJS capability preflight only inside the isolated `renderer_worker` package;
+- pin `pptxgenjs@4.0.1` in `renderer_worker/package.json` and `renderer_worker/package-lock.json`;
+- expose `presentation_renderer_worker_pptxgenjs_capability.v1` from a deterministic Node script;
+- validate dependency availability/version without generating PPTX.
+
+Guardrails:
+
+- does not generate PPTX;
+- does not map PresentationIR blocks into slides;
+- does not run LibreOffice;
+- does not produce artifact/proof bundles;
+- does not perform visual QA or quality scoring;
+- does not change frontend package/dependency policy;
+- does not change UI or GigaChat runtime.
+
+Validation closure must include targeted apply checks, full runner, Docker smoke, clean/classified tree, reviewed logs, then push and remote HEAD verification before REMOTE ACCEPT / CLOSED.
+
+Operational wording for KR-7H.5 checks: PptxGenJS dependency is introduced only inside renderer_worker and remains prohibited from frontend package/dependency policy.
+
+Process lesson from KR-7H.5 patch packaging: dependency lockfiles, repair runners, and generated packages must be tested on the assistant's verified local project copy before release. A lockfile generated in the assistant sandbox must be inspected for environment-specific registry/proxy URLs before it is packaged for the operator. Diagnostic runners must be strict fail-fast and must not print final PASS markers after any failing validation command.

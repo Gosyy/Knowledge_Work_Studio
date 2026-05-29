@@ -53,7 +53,7 @@ function capabilities() {
     ],
     blocked_runtime_actions: [...BLOCKED_RUNTIME_ACTIONS],
     non_goals: [
-      "no_pptxgenjs_dependency",
+      "no_pptxgenjs_protocol_import",
       "no_pptx_generation",
       "no_libreoffice_execution",
       "no_artifact_bundle_storage",
@@ -222,7 +222,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Usage: node renderer_worker/kw_renderer_worker_protocol_preflight.mjs [--capabilities] [--input file] [--json]\n\nReads a KR-7H.2 dry-run JSON payload from --input or stdin and returns a KR-7H.3 fail-closed protocol preflight response. This script does not generate PPTX, import PptxGenJS, run LibreOffice, write artifacts, or claim visual quality.`);
+  console.log(`Usage: node renderer_worker/kw_renderer_worker_protocol_preflight.mjs [--capabilities] [--input file] [--json]\n\nReads a KR-7H.2 dry-run JSON payload from --input or stdin and returns a KR-7H.3 fail-closed protocol preflight response. This script does not generate PPTX, import or call PptxGenJS rendering APIs, run LibreOffice, write artifacts, or claim visual quality.`);
 }
 
 async function main() {

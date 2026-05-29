@@ -11,6 +11,7 @@ A patch is DONE only when all applicable items are true:
 ```text
 actual local full-history checkout was verified;
 actual branch/HEAD/dirty tree were recorded;
+the exact patch or repair package was applied and tested on that verified local checkout before it was sent to the operator;
 related docs, source files, tests, runners, and contracts were audited;
 problem is solved directly, not bypassed;
 no hidden workaround or unsupported product claim was introduced;

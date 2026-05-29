@@ -34,7 +34,7 @@ REQUIRED_PHRASES = {
         "proof_bundle_produced: false",
         "import_or_execute_pptxgenjs",
         "run_libreoffice_pdf_export",
-        "no_pptxgenjs_dependency",
+        "no_pptxgenjs_protocol_import",
         "no_pptx_generation",
         "protocol_preflight_only",
     ],
