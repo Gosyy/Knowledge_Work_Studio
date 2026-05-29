@@ -1745,3 +1745,21 @@ Guardrails:
 - does not change UI or GigaChat runtime.
 
 Validation closure must include targeted apply checks, exact local patch/package testing on the assistant copy, full runner, Docker smoke, clean/classified tree, reviewed logs, then push and remote HEAD verification before REMOTE ACCEPT / CLOSED.
+
+### KR-7H post-7H.8 consolidation decision
+
+The remaining KR-7H native renderer-worker phase is now planned as a shorter set of broader, bounded patches instead of an open-ended chain of micro-preflights:
+
+```text
+KR-7H.9  — minimal PresentationIR mapping + single/multi-slide temporary PPTX smoke
+KR-7H.10 — persistent PPTX artifact bundle + render report contract
+KR-7H.11 — LibreOffice proof bundle smoke
+KR-7H.12 — renderer hardening: source-image-only, fail-closed, no fake artifacts
+KR-7H.13 — KR-7H closure gate
+```
+
+This decision is safe only because KR-7H.1 through KR-7H.8 have already proven the key lower-level contracts separately: Python-to-worker boundary, dry-run manifest, Node protocol preflight, isolated renderer_worker package, controlled PptxGenJS dependency, in-memory construction, temporary empty PPTX output, and temporary static-slide PPTX output.
+
+Future assistants must use the consolidated KR-7H.9 through KR-7H.13 plan unless a later explicit roadmap patch changes it. The consolidation allows larger patches, but it does not weaken the process rules: every patch still needs local full-history audit, exact patch/package self-test on the assistant's current copy or clean test clone, targeted apply-log review, full runner, Docker smoke, clean/classified tree, push, and remote HEAD verification.
+
+Do not collapse the remaining KR-7H work into one renderer mega-patch. PresentationIR mapping, persistent artifact storage, LibreOffice proof generation, hardening, and closure remain separate steps.

@@ -358,6 +358,25 @@ Acceptance:
 - PPTX editable in PowerPoint/LibreOffice;
 - render and quality reports pass.
 
+Agreed KR-7H consolidation plan after KR-7H.8:
+
+```text
+KR-7H.9  — minimal PresentationIR mapping + single/multi-slide temporary PPTX smoke
+KR-7H.10 — persistent PPTX artifact bundle + render report contract
+KR-7H.11 — LibreOffice proof bundle smoke
+KR-7H.12 — renderer hardening: source-image-only, fail-closed, no fake artifacts
+KR-7H.13 — KR-7H closure gate
+```
+
+Rationale:
+
+- KR-7H.1 through KR-7H.8 intentionally de-risked the renderer boundary, worker package, PptxGenJS dependency, in-memory construction, temporary file output, and static-slide output in small steps;
+- after KR-7H.8 the remaining KR-7H work should use larger patches when the scope stays inside one architectural layer and one validation contour;
+- larger KR-7H patches are allowed only when the patch has clear non-goals, fail-closed behavior, exact local patch/package testing, targeted validation, full runner, Docker smoke, and reviewed logs;
+- do not merge PresentationIR mapping, persistent artifact storage, LibreOffice proof generation, visual QA, UI changes, or GigaChat runtime changes into one patch unless the phase plan is explicitly revised again.
+
+The post-KR-7H.8 plan above replaces the earlier open-ended micro-step continuation for remaining KR-7H work. Future KR-7H.* patches must follow this consolidation unless a later documented decision updates the plan.
+
 ## Phase KR-7I — template and brand understanding
 
 Goal: use uploaded PPTX templates as brand/layout sources.

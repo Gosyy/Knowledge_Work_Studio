@@ -1203,3 +1203,27 @@ Non-goals:
 - does not run npm audit fix or unrelated dependency cleanup.
 
 Validation closure must include targeted apply checks, exact local patch/package testing on the assistant copy, full runner, Docker smoke, clean/classified tree, reviewed logs, then push and remote HEAD verification before REMOTE ACCEPT / CLOSED.
+
+### KR-7H post-7H.8 consolidation plan
+
+After KR-7H.8 the remaining native renderer-worker phase is intentionally consolidated into larger, still bounded patches:
+
+```text
+KR-7H.9  — minimal PresentationIR mapping + single/multi-slide temporary PPTX smoke
+KR-7H.10 — persistent PPTX artifact bundle + render report contract
+KR-7H.11 — LibreOffice proof bundle smoke
+KR-7H.12 — renderer hardening: source-image-only, fail-closed, no fake artifacts
+KR-7H.13 — KR-7H closure gate
+```
+
+This consolidation is accepted because KR-7H.1 through KR-7H.8 already established the safe renderer-worker boundary, isolated Node package, controlled PptxGenJS dependency, in-memory construction, temporary file output, and static-slide output. Future KR-7H patches may be broader than earlier micro-preflight patches, but only when they remain inside one coherent architectural layer and keep explicit non-goals.
+
+Consolidation guardrails:
+
+- KR-7H.9 may combine minimal PresentationIR mapping with single-slide and multi-slide temporary PPTX smoke, but must not create persistent artifacts or LibreOffice proofs;
+- KR-7H.10 may introduce persistent PPTX artifact bundle writing and render report contracts, but must not run LibreOffice proof generation or visual QA;
+- KR-7H.11 may introduce LibreOffice proof-bundle smoke, but must not broaden mapping into full professional layout or visual scoring;
+- KR-7H.12 may harden source-image-only behavior, fail-closed paths, and no-fake-artifact guarantees, but must not add unrelated UI/GigaChat/runtime/dependency cleanup;
+- KR-7H.13 is the closure gate and must verify the whole KR-7H renderer-worker contract with targeted checks, full runner, Docker smoke, clean/classified tree, reviewed logs, push, and remote HEAD verification.
+
+The consolidated KR-7H plan replaces any assumption that future KR-7H work must continue as many tiny preflight patches. It does not relax quality gates: every patch still requires a valid current full-history checkout, exact patch/package testing on the assistant side, self-contained apply runner, targeted apply-log review, committed local full runner, Docker smoke, and remote verification before closure.
