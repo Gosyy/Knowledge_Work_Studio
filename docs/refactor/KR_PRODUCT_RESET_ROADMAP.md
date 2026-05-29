@@ -1148,3 +1148,30 @@ Non-goals:
 - does not perform visual QA or quality scoring;
 - does not change UI or GigaChat runtime;
 - does not run npm audit fix or unrelated dependency cleanup.
+
+
+### KR-7H.7 controlled empty PPTX file output smoke
+
+KR-7H.7 introduces `presentation_renderer_worker_empty_pptx_output_smoke.v1` after the in-memory PptxGenJS construction preflight. It is the first controlled writer capability smoke, but it is still not a production renderer.
+
+Scope:
+
+- call PptxGenJS `writeFile` only for a temporary empty `.pptx` inside the isolated `renderer_worker` package;
+- verify `temporary_pptx_written=true`, `temporary_pptx_deleted=true`, and `temporary_pptx_file_size_nonzero=true`;
+- keep `persistent_artifact_written=false`, `filesystem_output_written=false`, `presentation_ir_mapping_implemented=false`, and `production_pptx_output_implemented=false`;
+- keep frontend package/dependency policy unchanged;
+- add project-resident checker, service tests, and full-runner coverage.
+
+Non-goals:
+
+- does not create production PPTX output;
+- does not map PresentationIR blocks into slides;
+- does not add slide content;
+- does not persist PPTX artifacts;
+- does not run LibreOffice;
+- does not produce artifact/proof bundles;
+- does not perform visual QA or quality scoring;
+- does not change UI or GigaChat runtime;
+- does not run npm audit fix or unrelated dependency cleanup.
+
+Validation closure must include targeted apply checks, exact local patch/package testing on the assistant copy, full runner, Docker smoke, clean/classified tree, reviewed logs, then push and remote HEAD verification before REMOTE ACCEPT / CLOSED.

@@ -154,6 +154,7 @@ run_shell_step "29h3-renderer-worker-protocol-check" "cd '${REPO_ROOT}' && sourc
 run_shell_step "29h4-renderer-worker-package-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_package_check.py --repo-root . --require-ready"
 run_shell_step "29h5-renderer-worker-pptxgenjs-capability-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_pptxgenjs_capability_check.py --repo-root . --require-ready"
 run_shell_step "29h6-renderer-worker-pptxgenjs-in-memory-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_pptxgenjs_in_memory_check.py --repo-root . --require-ready"
+run_shell_step "29h7-renderer-worker-empty-pptx-output-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_empty_pptx_output_check.py --repo-root . --require-ready"
 run_shell_step "30-production-readiness-gate" "cd '${REPO_ROOT}' && source .venv/bin/activate && export NO_PROXY='${LOCAL_NO_PROXY}' no_proxy='${LOCAL_NO_PROXY}' && unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy && python scripts/kw_production_readiness_gate.py --repo-root ."
 run_shell_step "40-docker-compose-check-only" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_fullstack_compose_smoke.py --repo-root . --check-only --timeout 1200"
 run_shell_step "99-git-status-after" "cd '${REPO_ROOT}' && git status --short && git branch --show-current && git rev-parse HEAD"

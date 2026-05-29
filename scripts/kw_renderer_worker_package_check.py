@@ -21,6 +21,7 @@ PACKAGE_SCHEMA_VERSION = "presentation_renderer_worker_package_preflight.v1"
 PROTOCOL_SCHEMA_VERSION = "presentation_renderer_worker_protocol_preflight.v1"
 PPTXGENJS_CAPABILITY_SCHEMA_VERSION = "presentation_renderer_worker_pptxgenjs_capability.v1"
 PPTXGENJS_IN_MEMORY_SCHEMA_VERSION = "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1"
+EMPTY_OUTPUT_SCHEMA_VERSION = "presentation_renderer_worker_empty_pptx_output_smoke.v1"
 EXPECTED_PPTXGENJS_VERSION = "4.0.1"
 
 REQUIRED_FILES = [
@@ -30,6 +31,7 @@ REQUIRED_FILES = [
     "renderer_worker/kw_renderer_worker_protocol_preflight.mjs",
     "renderer_worker/kw_renderer_worker_pptxgenjs_capability.mjs",
     "renderer_worker/kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs",
+    "renderer_worker/kw_renderer_worker_empty_pptx_output_smoke.mjs",
     "backend/tests/services/test_kr7h_renderer_worker_package.py",
     "scripts/kw_renderer_worker_package_check.py",
 ]
@@ -68,6 +70,7 @@ REQUIRED_PHRASES = {
         "npm run protocol:preflight --prefix renderer_worker",
         "npm run dependency:capability --prefix renderer_worker",
         "npm run pptxgenjs:in-memory --prefix renderer_worker",
+        "npm run pptxgenjs:empty-output --prefix renderer_worker",
         "npm run check --prefix renderer_worker",
         "renderer_runtime_implemented=false",
         "production_pptx_output_implemented=false",
@@ -84,6 +87,7 @@ REQUIRED_PHRASES = {
         "test_kr7h5_package_declares_controlled_pptxgenjs_dependency_only_in_worker",
         "test_kr7h5_package_scripts_run_dependency_capability_without_runtime_output",
         "test_kr7h6_package_scripts_run_in_memory_preflight_without_output",
+        "test_kr7h7_package_scripts_run_empty_pptx_output_smoke_without_persistent_artifact",
         "test_kr7h4_frontend_package_is_not_used_for_renderer_worker_boundary",
     ],
     "scripts/kw_full_tests_with_proxy_runner.sh": [
@@ -93,6 +97,8 @@ REQUIRED_PHRASES = {
         "kw_renderer_worker_pptxgenjs_capability_check.py --repo-root . --require-ready",
         "29h6-renderer-worker-pptxgenjs-in-memory-check",
         "kw_renderer_worker_pptxgenjs_in_memory_check.py --repo-root . --require-ready",
+        "29h7-renderer-worker-empty-pptx-output-check",
+        "kw_renderer_worker_empty_pptx_output_check.py --repo-root . --require-ready",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7H.5 controlled PptxGenJS capability preflight",
@@ -129,6 +135,8 @@ REQUIRED_PHRASES = {
         "claim KR-7H.6 writes PPTX files",
         "claim KR-7H.6 maps PresentationIR blocks into slides",
         "claim KR-7H.6 produces artifact/proof bundles",
+        "claim KR-7H.7 creates production PPTX output",
+        "claim KR-7H.7 produces artifact/proof bundles",
     ],
 }
 
@@ -206,6 +214,7 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
         protocol_script = scripts.get("protocol:preflight")
         capability_script = scripts.get("dependency:capability")
         in_memory_script = scripts.get("pptxgenjs:in-memory")
+        empty_output_script = scripts.get("pptxgenjs:empty-output")
         check_script = scripts.get("check")
         if not isinstance(protocol_script, str) or "kw_renderer_worker_protocol_preflight.mjs" not in protocol_script:
             problems.append("protocol:preflight script must call kw_renderer_worker_protocol_preflight.mjs")
@@ -213,14 +222,17 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
             problems.append("dependency:capability script must call kw_renderer_worker_pptxgenjs_capability.mjs")
         if not isinstance(in_memory_script, str) or "kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs" not in in_memory_script:
             problems.append("pptxgenjs:in-memory script must call kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs")
+        if not isinstance(empty_output_script, str) or "kw_renderer_worker_empty_pptx_output_smoke.mjs" not in empty_output_script:
+            problems.append("pptxgenjs:empty-output script must call kw_renderer_worker_empty_pptx_output_smoke.mjs")
         if (
             not isinstance(check_script, str)
             or "node --check" not in check_script
             or "protocol:preflight" not in check_script
             or "dependency:capability" not in check_script
             or "pptxgenjs:in-memory" not in check_script
+            or "pptxgenjs:empty-output" not in check_script
         ):
-            problems.append("check script must run node --check, protocol:preflight, dependency:capability, and pptxgenjs:in-memory")
+            problems.append("check script must run node --check, protocol:preflight, dependency:capability, pptxgenjs:in-memory, and pptxgenjs:empty-output")
 
     dependencies = package.get("dependencies")
     if not isinstance(dependencies, dict) or dependencies.get("pptxgenjs") != EXPECTED_PPTXGENJS_VERSION:
@@ -247,6 +259,16 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
         "pptxgenjs_capability_preflight_implemented": True,
         "pptxgenjs_in_memory_preflight_implemented": True,
         "pptxgenjs_in_memory_object_created": True,
+        "empty_pptx_output_smoke_schema_version": EMPTY_OUTPUT_SCHEMA_VERSION,
+        "empty_pptx_output_smoke_implemented": True,
+        "temporary_pptx_write_api_called": True,
+        "temporary_pptx_written": True,
+        "temporary_pptx_deleted": True,
+        "temporary_pptx_file_size_nonzero": True,
+        "presentation_ir_mapping_implemented": False,
+        "persistent_artifact_written": False,
+        "libreoffice_executed": False,
+        "visual_qa_executed": False,
         "slide_content_added": False,
         "pptxgenjs_write_api_called": False,
         "filesystem_output_written": False,
@@ -260,7 +282,7 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
         if metadata.get(key) != expected_value:
             problems.append(f"renderer_worker kwStudio.{key} expected {expected_value!r}, got {metadata.get(key)!r}")
     non_goals = metadata.get("non_goals") if isinstance(metadata.get("non_goals"), list) else []
-    for non_goal in ("no_pptx_generation", "no_presentation_ir_mapping", "no_libreoffice_execution", "no_frontend_package_changes"):
+    for non_goal in ("no_production_pptx_generation", "no_presentation_ir_mapping", "no_libreoffice_execution", "no_frontend_package_changes", "no_persistent_filesystem_output"):
         if non_goal not in non_goals:
             problems.append(f"renderer_worker kwStudio.non_goals missing {non_goal}")
 
@@ -300,7 +322,7 @@ def _run_package_scripts(repo_root: Path, problems: list[str]) -> None:
         return
 
     worker_root = repo_root / "renderer_worker"
-    for script_name in ("kw_renderer_worker_protocol_preflight.mjs", "kw_renderer_worker_pptxgenjs_capability.mjs"):
+    for script_name in ("kw_renderer_worker_protocol_preflight.mjs", "kw_renderer_worker_pptxgenjs_capability.mjs", "kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs", "kw_renderer_worker_empty_pptx_output_smoke.mjs"):
         syntax = subprocess.run(
             ["node", "--check", script_name],
             cwd=worker_root,
@@ -358,6 +380,30 @@ def _run_package_scripts(repo_root: Path, problems: list[str]) -> None:
     for key, expected in expected_dependency.items():
         if capability.get(key) != expected:
             problems.append(f"renderer_worker dependency capability {key} expected {expected!r}, got {capability.get(key)!r}")
+
+    code, empty_output, diagnostics = _run_json(["npm", "run", "pptxgenjs:empty-output", "--silent"], cwd=worker_root)
+    if code != 0 or not isinstance(empty_output, dict):
+        problems.append(f"npm run pptxgenjs:empty-output --prefix renderer_worker did not return JSON: {diagnostics}")
+        return
+    expected_empty_output = {
+        "schema_version": EMPTY_OUTPUT_SCHEMA_VERSION,
+        "status": "ready",
+        "temporary_pptx_written": True,
+        "temporary_pptx_deleted": True,
+        "temporary_pptx_file_size_nonzero": True,
+        "presentation_ir_mapping_implemented": False,
+        "persistent_artifact_written": False,
+        "filesystem_output_written": False,
+        "production_pptx_output_implemented": False,
+        "artifact_bundle_produced": False,
+        "proof_bundle_produced": False,
+        "libreoffice_executed": False,
+        "visual_qa_executed": False,
+        "output_mode": "temporary_empty_pptx_output_smoke_only",
+    }
+    for key, expected in expected_empty_output.items():
+        if empty_output.get(key) != expected:
+            problems.append(f"renderer_worker empty output {key} expected {expected!r}, got {empty_output.get(key)!r}")
 
 
 def check(repo_root: Path) -> dict[str, Any]:

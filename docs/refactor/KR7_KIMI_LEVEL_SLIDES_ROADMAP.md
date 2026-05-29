@@ -703,3 +703,8 @@ Implementation note after KR-7H.6:
 KR-7H.6 in-memory PptxGenJS construction preflight defines `presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1`.
 The preflight imports the pinned PptxGenJS dependency and constructs a presentation object in memory only, reporting zero slides, `slide_content_added=false`, `pptxgenjs_write_api_called=false`, and `filesystem_output_written=false`.
 KR-7H.6 still has no PPTX file output, no PresentationIR mapping, no slide content generation, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
+
+
+Implementation note after KR-7H.7:
+
+KR-7H.7 controlled empty PPTX file output smoke defines `presentation_renderer_worker_empty_pptx_output_smoke.v1`. The smoke may write a temporary empty `.pptx` only as local capability evidence, verify non-zero size, and delete the temporary file before returning ready. KR-7H.7 still has no PresentationIR mapping, no user-visible deck content, no persistent artifact, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.

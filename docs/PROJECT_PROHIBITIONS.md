@@ -152,3 +152,18 @@ Do not:
 - claim KR-7H.6 in-memory preflight responses are rendered deck artifacts;
 - change frontend package/dependency policy for renderer worker needs during KR-7H.6;
 - run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.6.
+
+
+## KR-7H.7 renderer worker empty PPTX output smoke prohibitions
+
+Do not:
+
+- claim KR-7H.7 creates production PPTX output;
+- claim KR-7H.7 maps PresentationIR blocks into slides;
+- claim KR-7H.7 generates user-visible deck content;
+- claim KR-7H.7 persists PPTX artifacts;
+- claim KR-7H.7 runs LibreOffice;
+- claim KR-7H.7 produces artifact/proof bundles;
+- claim KR-7H.7 temporary empty output smoke responses are rendered deck artifacts;
+- change frontend package/dependency policy for renderer worker needs during KR-7H.7;
+- run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.7.

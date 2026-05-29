@@ -41,7 +41,6 @@ REQUIRED_PHRASES = {
         '"presentation_renderer_worker_pptxgenjs_capability.v1"',
         '"pptxgenjs_dependency_declared": true',
         '"pptx_generation_executed": false',
-        '"no_pptx_generation"',
     ],
     "renderer_worker/package-lock.json": [
         '"node_modules/pptxgenjs"',

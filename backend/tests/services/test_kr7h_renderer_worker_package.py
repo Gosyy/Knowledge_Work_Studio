@@ -76,6 +76,16 @@ def test_kr7h5_package_declares_controlled_pptxgenjs_dependency_only_in_worker()
     assert metadata["slide_content_added"] is False
     assert metadata["pptxgenjs_write_api_called"] is False
     assert metadata["filesystem_output_written"] is False
+    assert metadata["empty_pptx_output_smoke_schema_version"] == "presentation_renderer_worker_empty_pptx_output_smoke.v1"
+    assert metadata["empty_pptx_output_smoke_implemented"] is True
+    assert metadata["temporary_pptx_write_api_called"] is True
+    assert metadata["temporary_pptx_written"] is True
+    assert metadata["temporary_pptx_deleted"] is True
+    assert metadata["temporary_pptx_file_size_nonzero"] is True
+    assert metadata["presentation_ir_mapping_implemented"] is False
+    assert metadata["persistent_artifact_written"] is False
+    assert metadata["libreoffice_executed"] is False
+    assert metadata["visual_qa_executed"] is False
 
 
 def test_kr7h4_package_scripts_run_protocol_preflight_without_runtime_output() -> None:
@@ -159,15 +169,46 @@ def test_kr7h6_package_scripts_run_in_memory_preflight_without_output() -> None:
     assert result["proof_bundle_produced"] is False
     assert "call_pptxgenjs_write_or_output_api" in result["blocked_runtime_actions"]
 
+
+def test_kr7h7_package_scripts_run_empty_pptx_output_smoke_without_persistent_artifact() -> None:
+    _ensure_worker_dependencies()
+    completed = subprocess.run(
+        ["npm", "run", "pptxgenjs:empty-output", "--silent"],
+        cwd=WORKER_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    result = json.loads(completed.stdout)
+    assert result["schema_version"] == "presentation_renderer_worker_empty_pptx_output_smoke.v1"
+    assert result["status"] == "ready"
+    assert result["temporary_pptx_written"] is True
+    assert result["temporary_pptx_deleted"] is True
+    assert result["temporary_pptx_file_size_nonzero"] is True
+    assert result["slide_count"] == 0
+    assert result["slide_content_added"] is False
+    assert result["presentation_ir_mapping_implemented"] is False
+    assert result["persistent_artifact_written"] is False
+    assert result["filesystem_output_written"] is False
+    assert result["production_pptx_output_implemented"] is False
+    assert result["artifact_bundle_produced"] is False
+    assert result["proof_bundle_produced"] is False
+    assert result["libreoffice_executed"] is False
+    assert result["visual_qa_executed"] is False
+    assert result["output_mode"] == "temporary_empty_pptx_output_smoke_only"
+
 def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     text = CONTRACT_DOC.read_text(encoding="utf-8")
 
     assert "presentation_renderer_worker_package_preflight.v1" in text
     assert "presentation_renderer_worker_pptxgenjs_capability.v1" in text
     assert "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1" in text
+    assert "presentation_renderer_worker_empty_pptx_output_smoke.v1" in text
     assert "npm run protocol:preflight --prefix renderer_worker" in text
     assert "npm run dependency:capability --prefix renderer_worker" in text
     assert "npm run pptxgenjs:in-memory --prefix renderer_worker" in text
+    assert "npm run pptxgenjs:empty-output --prefix renderer_worker" in text
     assert "renderer_runtime_implemented=false" in text
     assert "production_pptx_output_implemented=false" in text
     assert "pptx_generation_executed=false" in text
@@ -176,9 +217,13 @@ def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     assert "slide_content_added=false" in text
     assert "pptxgenjs_write_api_called=false" in text
     assert "filesystem_output_written=false" in text
+    assert "temporary_pptx_written=true" in text
+    assert "temporary_pptx_deleted=true" in text
+    assert "persistent_artifact_written=false" in text
     assert "PptxGenJS is declared only inside the isolated renderer_worker package" in text
     assert "does not generate production PPTX" in text
     assert "does not write .pptx files" in text
+    assert "temporary empty `.pptx`" in text
     assert "does not map PresentationIR blocks into slides" in text
     assert "does not run LibreOffice" in text
     assert "does not change UI" in text
