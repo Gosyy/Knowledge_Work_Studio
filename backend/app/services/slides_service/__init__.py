@@ -145,11 +145,13 @@ from backend.app.services.slides_service.renderer_worker_contract import (
     RENDERER_WORKER_CONTRACT_SCHEMA_VERSION,
     RENDERER_WORKER_INPUT_SCHEMA_VERSION,
     RENDERER_WORKER_PROOF_BUNDLE_SCHEMA_VERSION,
+    RENDERER_WORKER_SOURCE_IMAGE_HARDENING_SCHEMA_VERSION,
     RENDERER_WORKER_RUNTIME_IMPLEMENTED,
     RendererWorkerContractIssue,
     RendererWorkerContractValidationResult,
     build_renderer_worker_input_payload,
     renderer_worker_boundary_contract_payload,
+    renderer_worker_source_image_hardening_payload,
     validate_renderer_worker_input_payload,
 )
 from backend.app.services.slides_service.renderer_worker_dry_run import (
@@ -296,6 +298,7 @@ __all__ = [
     "RENDERER_WORKER_INPUT_SCHEMA_VERSION",
     "RENDERER_WORKER_ARTIFACT_BUNDLE_SCHEMA_VERSION",
     "RENDERER_WORKER_PROOF_BUNDLE_SCHEMA_VERSION",
+    "RENDERER_WORKER_SOURCE_IMAGE_HARDENING_SCHEMA_VERSION",
     "RENDERER_WORKER_RUNTIME_IMPLEMENTED",
     "RendererWorkerContractIssue",
     "RendererWorkerContractValidationResult",

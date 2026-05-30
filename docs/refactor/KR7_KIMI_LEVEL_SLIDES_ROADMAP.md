@@ -787,3 +787,8 @@ KR-7H.11 adds `presentation_renderer_worker_libreoffice_proof_bundle.v1` on top 
 ### KR-7H.11 LibreOffice proof bundle smoke contract
 
 KR-7H.11 validation must include exact package self-test through `npm run pptxgenjs:libreoffice-proof-bundle --prefix renderer_worker`, `kw_renderer_worker_libreoffice_proof_bundle_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. The next KR-7H.12 step remains renderer hardening: source-image-only, fail-closed, no fake artifacts; KR-7H.13 remains the KR-7H closure gate.
+
+
+### KR-7H.12 renderer source-image hardening contract
+
+KR-7H.12 adds `presentation_renderer_worker_source_image_hardening.v1` as a guardrail/checker layer after the LibreOffice proof bundle smoke. It enforces source-image-only renderer input validation and fails closed for generated, fake, fallback, placeholder, random, web, synthetic, inline data URI, base64, or raw-byte image payloads. It also blocks `requires_image=true` slides unless a source image asset/ref is bound. It does not implement source image selection, image mapping, visual QA/scoring, professional layout, UI changes, GigaChat/runtime changes, or production renderer closure. Validation must include `kw_renderer_worker_source_image_hardening_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.

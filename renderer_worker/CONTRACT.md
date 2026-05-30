@@ -18,6 +18,8 @@ KR-7H.9 extends that boundary with minimal PresentationIR mapping plus single-sl
 
 KR-7H.11 extends the KR-7H.10 persistent PPTX artifact bundle path with a controlled LibreOffice + `pdftoppm` proof bundle smoke. It may run LibreOffice headless to export the existing controlled PPTX artifact to PDF, run `pdftoppm` to render PNG proof files, and write `presentation_renderer_worker_libreoffice_proof_bundle.v1`. It must fail closed when LibreOffice, `pdftoppm`, the PDF proof, any PNG proof, or the proof-bundle JSON is absent or empty. It still does not perform visual QA/scoring, map charts/tables/images/theme/brand/professional layout, change UI/frontend/GigaChat runtime, or claim production-quality renderer closure.
 
+KR-7H.12 hardens renderer input guardrails with `presentation_renderer_worker_source_image_hardening.v1`. It keeps image mapping and source-image selection runtime out of scope, but makes renderer input validation fail closed for generated, fake, fallback, placeholder, random, web, synthetic, or inline image payloads. If a slide requires an image, it must be bound to source image refs/assets before a later renderer phase may use it.
+
 ## Contract identifiers
 
 - `presentation_renderer_worker_package_preflight.v1`
@@ -31,6 +33,7 @@ KR-7H.11 extends the KR-7H.10 persistent PPTX artifact bundle path with a contro
 - `presentation_renderer_worker_pptx_artifact_bundle.v1`
 - `presentation_renderer_worker_render_report.v1`
 - `presentation_renderer_worker_libreoffice_proof_bundle.v1`
+- `presentation_renderer_worker_source_image_hardening.v1`
 
 ## Required package scripts
 
@@ -42,9 +45,10 @@ KR-7H.11 extends the KR-7H.10 persistent PPTX artifact bundle path with a contro
 - `npm run pptxgenjs:minimal-ir-smoke --prefix renderer_worker`
 - `npm run pptxgenjs:artifact-bundle --prefix renderer_worker`
 - `npm run pptxgenjs:libreoffice-proof-bundle --prefix renderer_worker`
+- `python scripts/kw_renderer_worker_source_image_hardening_check.py --repo-root . --require-ready`
 - `npm run check --prefix renderer_worker`
 
-The `check` script confirms package isolation, protocol preflight readiness, controlled PptxGenJS capability, in-memory construction, temporary empty output smoke, temporary static single-slide output smoke, temporary minimal PresentationIR title/body mapping smoke, persistent PPTX artifact bundle, and LibreOffice proof bundle smoke. It does not generate production PPTX, does not perform visual QA/scoring, does not map charts/tables/images or professional layouts, does not start a long-running worker service, and does not use fake/fallback proof renderers as success evidence.
+The `check` script confirms package isolation, protocol preflight readiness, controlled PptxGenJS capability, in-memory construction, temporary empty output smoke, temporary static single-slide output smoke, temporary minimal PresentationIR title/body mapping smoke, persistent PPTX artifact bundle, and LibreOffice proof bundle smoke. The KR-7H.12 Python checker confirms source-image-only fail-closed hardening. It does not generate production PPTX, does not perform visual QA/scoring, does not map charts/tables/images or professional layouts, does not start a long-running worker service, and does not use fake/fallback proof renderers as success evidence.
 
 ## Runtime flags
 
@@ -75,6 +79,13 @@ The package contract must keep these claims false:
 - `chart_mapping_implemented=false`
 - `table_mapping_implemented=false`
 - `image_mapping_implemented=false`
+- `source_image_hardening_implemented=true`
+- `source_images_only_enforced=true`
+- `generated_images_allowed=false`
+- `fallback_images_allowed=false`
+- `fake_artifacts_allowed=false`
+- `inline_image_payloads_allowed=false`
+- `source_image_selection_implemented=false`
 
 ## Dependency boundary
 
@@ -114,6 +125,13 @@ Required claims for `presentation_renderer_worker_empty_pptx_output_smoke.v1`:
 - `chart_mapping_implemented=false`
 - `table_mapping_implemented=false`
 - `image_mapping_implemented=false`
+- `source_image_hardening_implemented=true`
+- `source_images_only_enforced=true`
+- `generated_images_allowed=false`
+- `fallback_images_allowed=false`
+- `fake_artifacts_allowed=false`
+- `inline_image_payloads_allowed=false`
+- `source_image_selection_implemented=false`
 - `temporary_pptx_file_size_nonzero=true`
 - `persistent_artifact_written=false`
 - `filesystem_output_written=false`
@@ -150,6 +168,13 @@ Required claims for `presentation_renderer_worker_static_slide_output_smoke.v1`:
 - `chart_mapping_implemented=false`
 - `table_mapping_implemented=false`
 - `image_mapping_implemented=false`
+- `source_image_hardening_implemented=true`
+- `source_images_only_enforced=true`
+- `generated_images_allowed=false`
+- `fallback_images_allowed=false`
+- `fake_artifacts_allowed=false`
+- `inline_image_payloads_allowed=false`
+- `source_image_selection_implemented=false`
 - `persistent_artifact_written=false`
 - `filesystem_output_written=false`
 - `presentation_ir_mapping_implemented=false`
@@ -183,6 +208,13 @@ Required claims for `presentation_renderer_worker_minimal_ir_mapping_smoke.v1`:
 - `chart_mapping_implemented=false`
 - `table_mapping_implemented=false`
 - `image_mapping_implemented=false`
+- `source_image_hardening_implemented=true`
+- `source_images_only_enforced=true`
+- `generated_images_allowed=false`
+- `fallback_images_allowed=false`
+- `fake_artifacts_allowed=false`
+- `inline_image_payloads_allowed=false`
+- `source_image_selection_implemented=false`
 - `theme_mapping_implemented=false`
 - `professional_layout_engine_implemented=false`
 - `user_prompt_passthrough_allowed=false`
@@ -284,3 +316,9 @@ professional_layout_engine_implemented=false
 ```
 
 KR-7H.11 must return `blocked` and a non-zero process exit when LibreOffice/`soffice`, `pdftoppm`, the PDF proof, the PNG proofs, or `kr7h11-proof-bundle.json` are missing or empty. Python-pptx, fake images, placeholder PDFs, and fallback renderers are forbidden as success evidence. KR-7H.11 still does not perform visual QA/scoring, does not broaden mapping beyond title/body text, does not close the production renderer, and does not change UI, GigaChat/runtime, Docker/deploy/Postgres behavior, or frontend package dependencies.
+
+## KR-7H.12 source-image hardening boundary
+
+KR-7H.12 is a renderer guardrail layer, not source image selection or image rendering. It introduces `presentation_renderer_worker_source_image_hardening.v1` and validates that renderer input stays source-image-only before later KR-7J/K/L phases add selection/layout behavior. Generated images, fake images, fallback images, placeholder images, random/web/synthetic images, inline data URIs, and raw base64/byte image payloads must fail closed. A slide with `visual_plan.requires_image=true` must have source image refs/assets; otherwise the renderer input is blocked rather than filled with fake artifacts.
+
+KR-7H.12 still keeps `image_mapping_implemented=false`, `source_image_selection_implemented=false`, `visual_qa_executed=false`, `production_pptx_output_implemented=false`, and `renderer_runtime_implemented=false`.

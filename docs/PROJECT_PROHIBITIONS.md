@@ -244,3 +244,7 @@ Do not:
 - claim KR-7H.8 temporary static-slide smoke responses are rendered deck artifacts;
 - change frontend package/dependency policy for renderer worker needs during KR-7H.8;
 - run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.8.
+
+## KR-7H.12 renderer source-image hardening prohibitions
+
+Do not claim KR-7H.12 implements source image selection, image mapping, visual QA/scoring, professional layout, or production renderer closure. Do not treat generated, fake, fallback, placeholder, random, web, synthetic, inline data URI, base64, or raw-byte image payloads as valid renderer assets. If a slide requires an image and no source image asset/ref is bound, renderer input must fail closed instead of inventing or substituting an image.

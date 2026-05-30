@@ -1246,3 +1246,6 @@ KR-7H.10 adds `presentation_renderer_worker_pptx_artifact_bundle.v1` and `presen
 ### KR-7H.10 persistent PPTX artifact bundle + render report contract
 
 KR-7H.10 is the persistent artifact-bundle step in the consolidated KR-7H plan. It may create a controlled PPTX artifact bundle and render report contract, but it must not run LibreOffice, generate proof images, produce proof bundles, broaden renderer mapping beyond title/body text, or claim production renderer closure. Validation must include exact package self-test, `kw_renderer_worker_pptx_artifact_bundle_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.
+
+
+KR-7H.12 renderer hardening adds `presentation_renderer_worker_source_image_hardening.v1` to enforce source-image-only fail-closed renderer input guardrails and to forbid fake/generated/fallback image artifacts without implementing image mapping or source image selection runtime.

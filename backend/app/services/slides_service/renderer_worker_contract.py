@@ -17,11 +17,61 @@ RENDERER_WORKER_CONTRACT_SCHEMA_VERSION = "presentation_renderer_worker_contract
 RENDERER_WORKER_INPUT_SCHEMA_VERSION = "presentation_renderer_worker_input.v1"
 RENDERER_WORKER_ARTIFACT_BUNDLE_SCHEMA_VERSION = "presentation_renderer_artifact_bundle.v1"
 RENDERER_WORKER_PROOF_BUNDLE_SCHEMA_VERSION = "presentation_renderer_proof_bundle.v1"
+RENDERER_WORKER_SOURCE_IMAGE_HARDENING_SCHEMA_VERSION = "presentation_renderer_worker_source_image_hardening.v1"
 RENDERER_WORKER_RUNTIME_IMPLEMENTED = False
 RENDERER_WORKER_ENGINE = "node_pptxgenjs_worker_contract_only"
 RENDERER_WORKER_PROOF_PIPELINE = "libreoffice_pdf_png_proof_contract_only"
 
 RendererWorkerContractStatus = Literal["ready", "blocked"]
+
+FORBIDDEN_RENDERER_ASSET_SOURCES = {
+    "ai_generated",
+    "external",
+    "external_url",
+    "fallback",
+    "fake",
+    "generated",
+    "local_deterministic",
+    "noop",
+    "placeholder",
+    "random",
+    "synthetic",
+    "web",
+}
+
+SOURCE_BACKED_ASSET_SOURCES = {
+    "document",
+    "presentation",
+    "source",
+    "source_asset",
+    "stored_file",
+    "uploaded_file",
+}
+
+IMAGE_BLOCK_TYPES = {"image", "picture", "source_image", "media_image", "raster_image"}
+IMAGE_MIME_PREFIX = "image/"
+SOURCE_IMAGE_REF_KEYS = (
+    "source_asset_id",
+    "source_ref",
+    "source_id",
+    "source_file_id",
+    "source_document_id",
+    "provenance_ref",
+    "checksum_sha256",
+)
+INLINE_IMAGE_PAYLOAD_KEYS = ("content_bytes", "bytes", "base64", "data_uri", "inline_data", "image_data")
+GENERATED_FLAG_KEYS = (
+    "generated",
+    "is_generated",
+    "ai_generated",
+    "fake",
+    "is_fake",
+    "placeholder",
+    "is_placeholder",
+    "fallback",
+    "uses_fallback",
+    "synthetic",
+)
 
 
 @dataclass(frozen=True)
@@ -106,6 +156,16 @@ def renderer_worker_boundary_contract_payload() -> dict[str, Any]:
             "status": "declared_not_produced_by_kr7h1",
             "required_future_proofs": ["pdf_proof", "slide_png_proofs", "geometry_report", "quality_gate_report"],
         },
+        "source_image_hardening_schema_version": RENDERER_WORKER_SOURCE_IMAGE_HARDENING_SCHEMA_VERSION,
+        "source_image_policy": {
+            "source_images_only": True,
+            "generated_images_allowed": False,
+            "fallback_images_allowed": False,
+            "fake_artifacts_allowed": False,
+            "inline_image_payloads_allowed": False,
+            "image_mapping_implemented": False,
+            "source_image_selection_implemented": False,
+        },
         "non_goals": [
             "no_pptx_rendering_runtime",
             "no_node_worker_execution",
@@ -187,8 +247,10 @@ def validate_renderer_worker_input_payload(presentation_ir: dict[str, Any]) -> R
             )
         )
 
-    if quality_contract.get("source_images_only") is False:
-        issues.append(_issue("source_images_only_not_enforced", "Renderer boundary requires source_images_only policy.", "quality_contract.source_images_only"))
+    if quality_contract.get("source_images_only") is not True:
+        issues.append(_issue("source_images_only_not_enforced", "Renderer boundary requires explicit source_images_only=true policy.", "quality_contract.source_images_only"))
+    if quality_contract.get("no_generated_images") is not True:
+        issues.append(_issue("no_generated_images_not_enforced", "Renderer boundary requires explicit no_generated_images=true policy.", "quality_contract.no_generated_images"))
 
     _validate_slides(slides, issues)
     _validate_assets(payload.get("assets") or [], issues)
@@ -208,24 +270,68 @@ def _validate_slides(slides: list[Any], issues: list[RendererWorkerContractIssue
                 issues.append(_issue("missing_renderer_slide_key", f"Renderer input slide is missing {key}.", f"{path}.{key}"))
         if not isinstance(slide.get("blocks"), list):
             issues.append(_issue("slide_blocks_must_be_list", "Renderer input slide.blocks must be a list.", f"{path}.blocks"))
-        if not isinstance(slide.get("visual_plan"), dict):
+        visual_plan = slide.get("visual_plan")
+        if not isinstance(visual_plan, dict):
             issues.append(_issue("slide_visual_plan_must_be_object", "Renderer input slide.visual_plan must be an object.", f"{path}.visual_plan"))
+            visual_plan = {}
+        if visual_plan.get("requires_image") is True and not _slide_has_source_image_binding(slide):
+            issues.append(
+                _issue(
+                    "source_image_required_but_unbound",
+                    "Slide requires an image, but no source-backed image asset/ref is bound; renderer must fail closed instead of inventing an image.",
+                    f"{path}.visual_plan.requires_image",
+                )
+            )
 
 
 def _validate_assets(assets: list[Any], issues: list[RendererWorkerContractIssue]) -> None:
     for index, asset in enumerate(assets):
+        path = f"assets[{index}]"
         if not isinstance(asset, dict):
-            issues.append(_issue("asset_must_be_object", "Renderer input asset must be an object.", f"assets[{index}]"))
+            issues.append(_issue("asset_must_be_object", "Renderer input asset must be an object.", path))
             continue
-        source_kind = str(asset.get("source") or asset.get("source_type") or asset.get("asset_source") or "").lower()
-        if source_kind and source_kind not in {"source", "uploaded_file", "stored_file", "source_asset", "document", "presentation"}:
+        source_kind = _asset_source_kind(asset)
+        if source_kind in FORBIDDEN_RENDERER_ASSET_SOURCES:
             issues.append(
                 _issue(
                     "non_source_asset_forbidden",
-                    "KR-7H.1 renderer boundary allows source images only; generated or external assets must stay blocked.",
-                    f"assets[{index}]",
+                    "KR-7H.12 renderer hardening allows source-backed assets only; generated, fallback, fake, random, web, or synthetic assets must stay blocked.",
+                    path,
                 )
             )
+        if _has_generated_or_fake_flag(asset):
+            issues.append(
+                _issue(
+                    "fake_or_generated_asset_forbidden",
+                    "Renderer input asset carries generated/fake/fallback/placeholder metadata and must not be treated as a success artifact.",
+                    path,
+                )
+            )
+        if _asset_is_image(asset):
+            if source_kind not in SOURCE_BACKED_ASSET_SOURCES:
+                issues.append(
+                    _issue(
+                        "source_image_asset_source_missing",
+                        "Image assets must declare a source-backed source/source_type/asset_source value.",
+                        path,
+                    )
+                )
+            if not _has_source_image_ref(asset):
+                issues.append(
+                    _issue(
+                        "source_image_asset_ref_missing",
+                        "Image assets must include source asset/ref/checksum provenance before any renderer path may use them.",
+                        path,
+                    )
+                )
+            if _has_inline_image_payload(asset):
+                issues.append(
+                    _issue(
+                        "inline_or_placeholder_image_payload_forbidden",
+                        "Renderer worker input must not carry inline image bytes/base64/data URIs as proof of a source image.",
+                        path,
+                    )
+                )
 
 
 def _validate_visual_grammar_blocks(slides: list[Any], issues: list[RendererWorkerContractIssue]) -> None:
@@ -241,6 +347,22 @@ def _validate_visual_grammar_blocks(slides: list[Any], issues: list[RendererWork
             block_type = str(block.get("type") or "")
             binding = block.get("visual_grammar_binding") if isinstance(block.get("visual_grammar_binding"), dict) else None
             block_path = f"slides[{slide_index}].blocks[{block_index}]"
+            if _block_is_image_like(block) and not _block_has_source_image_binding(block):
+                issues.append(
+                    _issue(
+                        "source_image_block_ref_missing",
+                        "Image-like renderer blocks must be bound to source image refs/assets and must fail closed when unbound.",
+                        block_path,
+                    )
+                )
+            if _block_is_image_like(block) and _block_has_forbidden_image_payload(block):
+                issues.append(
+                    _issue(
+                        "fake_or_inline_image_block_forbidden",
+                        "Image-like renderer blocks must not use fake/generated/fallback/inline image payloads as success evidence.",
+                        block_path,
+                    )
+                )
             if binding and binding.get("status") == "blocked":
                 issues.append(
                     _issue(
@@ -260,6 +382,131 @@ def _validate_visual_grammar_blocks(slides: list[Any], issues: list[RendererWork
                                 f"{block_path}.{issue.block_id or block_type}",
                             )
                         )
+
+
+def renderer_worker_source_image_hardening_payload() -> dict[str, Any]:
+    """Return the KR-7H.12 renderer hardening contract payload.
+
+    KR-7H.12 is a guardrail/checker layer. It does not implement source image
+    selection, image mapping, visual QA, or production renderer closure. It
+    makes unsupported image/fake artifact inputs fail closed before later phases
+    can reuse source assets.
+    """
+
+    return {
+        "schema_version": RENDERER_WORKER_SOURCE_IMAGE_HARDENING_SCHEMA_VERSION,
+        "phase": "KR-7H.12 renderer hardening: source-image-only, fail-closed, no fake artifacts",
+        "status": "ready",
+        "renderer_runtime_implemented": RENDERER_WORKER_RUNTIME_IMPLEMENTED,
+        "production_pptx_output_implemented": False,
+        "source_image_hardening_implemented": True,
+        "source_images_only_enforced": True,
+        "generated_images_allowed": False,
+        "fallback_images_allowed": False,
+        "fake_artifacts_allowed": False,
+        "inline_image_payloads_allowed": False,
+        "source_image_selection_implemented": False,
+        "image_mapping_implemented": False,
+        "visual_qa_executed": False,
+        "blocked_runtime_actions": [
+            "use_generated_images",
+            "use_placeholder_images",
+            "use_fallback_images_as_success",
+            "write_fake_artifact_manifest_entries",
+            "treat_inline_image_bytes_as_source_asset",
+            "map_charts_tables_images",
+            "run_professional_layout_engine",
+            "claim_visual_quality_score",
+        ],
+        "non_goals": [
+            "no_source_image_selection_runtime",
+            "no_image_mapping_runtime",
+            "no_visual_qa_scoring",
+            "no_production_renderer_closure",
+            "no_frontend_changes",
+            "no_gigachat_runtime_changes",
+        ],
+    }
+
+
+def _asset_source_kind(asset: dict[str, Any]) -> str:
+    return str(asset.get("source") or asset.get("source_type") or asset.get("asset_source") or asset.get("provenance_source") or "").strip().lower()
+
+
+def _asset_is_image(asset: dict[str, Any]) -> bool:
+    mime_type = str(asset.get("mime_type") or asset.get("content_type") or "").strip().lower()
+    asset_type = str(asset.get("type") or asset.get("asset_type") or asset.get("kind") or "").strip().lower()
+    file_type = str(asset.get("file_type") or "").strip().lower()
+    return mime_type.startswith(IMAGE_MIME_PREFIX) or "image" in {asset_type, file_type} or file_type in {"png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"}
+
+
+def _has_source_image_ref(value: dict[str, Any]) -> bool:
+    for key in SOURCE_IMAGE_REF_KEYS:
+        candidate = value.get(key)
+        if isinstance(candidate, str) and candidate.strip():
+            return True
+    source_refs = value.get("source_refs")
+    return _non_empty_string_list(source_refs)
+
+
+def _has_generated_or_fake_flag(value: dict[str, Any]) -> bool:
+    for key in GENERATED_FLAG_KEYS:
+        if value.get(key) is True:
+            return True
+    source_kind = _asset_source_kind(value)
+    return source_kind in FORBIDDEN_RENDERER_ASSET_SOURCES
+
+
+def _has_inline_image_payload(value: dict[str, Any]) -> bool:
+    for key in INLINE_IMAGE_PAYLOAD_KEYS:
+        candidate = value.get(key)
+        if isinstance(candidate, str) and candidate.strip():
+            return True
+        if isinstance(candidate, (bytes, bytearray)) and candidate:
+            return True
+    uri = str(value.get("uri") or value.get("url") or "").strip().lower()
+    return uri.startswith("data:")
+
+
+def _slide_has_source_image_binding(slide: dict[str, Any]) -> bool:
+    visual_plan = slide.get("visual_plan") if isinstance(slide.get("visual_plan"), dict) else {}
+    for key in ("source_image_refs", "source_asset_refs", "image_source_refs"):
+        if _non_empty_string_list(visual_plan.get(key)):
+            return True
+    for block in slide.get("blocks") or []:
+        if isinstance(block, dict) and _block_is_image_like(block) and _block_has_source_image_binding(block):
+            return True
+    return False
+
+
+def _block_is_image_like(block: dict[str, Any]) -> bool:
+    block_type = str(block.get("type") or "").strip().lower()
+    semantic_role = str(block.get("semantic_role") or "").strip().lower()
+    return block_type in IMAGE_BLOCK_TYPES or block_type.endswith("_image") or "image" in semantic_role
+
+
+def _block_has_source_image_binding(block: dict[str, Any]) -> bool:
+    if _has_source_image_ref(block):
+        return True
+    for nested_key in ("content", "data_binding"):
+        nested = block.get(nested_key)
+        if isinstance(nested, dict) and _has_source_image_ref(nested):
+            return True
+    return False
+
+
+def _block_has_forbidden_image_payload(block: dict[str, Any]) -> bool:
+    if _has_generated_or_fake_flag(block) or _has_inline_image_payload(block):
+        return True
+    for nested_key in ("content", "data_binding"):
+        nested = block.get(nested_key)
+        if isinstance(nested, dict) and (_has_generated_or_fake_flag(nested) or _has_inline_image_payload(nested)):
+            return True
+    return False
+
+
+def _non_empty_string_list(value: Any) -> bool:
+    return isinstance(value, list) and any(isinstance(item, str) and item.strip() for item in value)
 
 
 def _result(status: RendererWorkerContractStatus, issues: list[RendererWorkerContractIssue]) -> RendererWorkerContractValidationResult:

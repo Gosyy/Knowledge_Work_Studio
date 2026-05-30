@@ -1792,3 +1792,8 @@ KR-7H.11 adds the controlled LibreOffice proof-bundle smoke for the renderer wor
 ### KR-7H.11 LibreOffice proof bundle smoke contract
 
 KR-7H.11 adds `renderer_worker/kw_renderer_worker_libreoffice_proof_bundle_smoke.mjs`, `scripts/kw_renderer_worker_libreoffice_proof_bundle_check.py`, `backend/tests/services/test_kr7h_renderer_worker_libreoffice_proof_bundle.py`, a renderer-worker package script `pptxgenjs:libreoffice-proof-bundle`, and a project full-runner step `29h11-renderer-worker-libreoffice-proof-bundle-check`. It does not change UI, GigaChat/runtime, Docker/deploy/Postgres behavior, frontend dependencies, or production renderer closure. KR-7H.12 remains source-image-only/fail-closed/no-fake-artifacts hardening, and KR-7H.13 remains the closure gate.
+
+
+### KR-7H.12 continuation note
+
+KR-7H.12 starts after remote `8d68b5b` and must remain a renderer hardening patch: source-image-only, fail-closed, no fake artifacts. It should add `presentation_renderer_worker_source_image_hardening.v1`, checker/test/full-runner coverage, and docs. It must not implement source image selection, image mapping, visual QA/scoring, professional layout, UI changes, GigaChat/runtime changes, or production renderer closure. Generated/fake/fallback/placeholder/random/web/synthetic/inline image payloads must fail closed.
