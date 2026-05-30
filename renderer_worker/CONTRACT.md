@@ -188,3 +188,40 @@ Required claims for `presentation_renderer_worker_minimal_ir_mapping_smoke.v1`:
 - `visual_qa_executed=false`
 
 KR-7H.9 still does not create production PPTX output, does not persist artifacts, does not run LibreOffice, does not create PDF/PNG proofs, does not write artifact/proof bundles, does not perform visual QA/scoring, does not map charts/tables/images/theme/brand, and does not claim production-quality PPTX output.
+
+
+## KR-7H.10 persistent PPTX artifact bundle + render report contract
+
+KR-7H.10 introduces `presentation_renderer_worker_pptx_artifact_bundle.v1` and `presentation_renderer_worker_render_report.v1` after the minimal IR mapping temporary smoke. It is the first renderer-worker contract that may write a persistent PPTX artifact, but only inside an explicit controlled renderer-worker output directory.
+
+Required command:
+
+```bash
+npm run pptxgenjs:artifact-bundle --prefix renderer_worker
+```
+
+The worker may map only title/body text from validated renderer input or source-backed dry-run payloads. It must write `kr7h10-minimal-ir-rendered.pptx` and `kr7h10-render-report.json`, verify non-zero file sizes, and return deterministic metadata.
+
+Required flags and boundaries:
+
+```text
+artifact_bundle_schema_version=presentation_renderer_worker_pptx_artifact_bundle.v1
+render_report_schema_version=presentation_renderer_worker_render_report.v1
+persistent_artifact_written=true
+artifact_bundle_produced=true
+artifact_bundle_verified=true
+render_report_written=true
+render_report_deterministic=true
+presentation_ir_mapping_implemented=true
+title_body_mapping_implemented=true
+production_pptx_output_implemented=false
+proof_bundle_produced=false
+libreoffice_executed=false
+visual_qa_executed=false
+chart_mapping_implemented=false
+table_mapping_implemented=false
+image_mapping_implemented=false
+professional_layout_engine_implemented=false
+```
+
+KR-7H.10 does not run LibreOffice, does not create PDF/PNG proofs, does not write proof bundles, does not perform visual QA or quality scoring, does not map charts/tables/images/theme/brand, does not change frontend package dependencies, and does not claim production-quality or Kimi-level output.

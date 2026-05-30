@@ -51,8 +51,10 @@ def test_kr7h4_package_json_declares_isolated_renderer_worker_boundary() -> None
     assert metadata["renderer_runtime_implemented"] is False
     assert metadata["production_pptx_output_implemented"] is False
     assert metadata["pptx_generation_executed"] is False
-    assert metadata["artifact_bundle_produced"] is False
+    assert metadata["artifact_bundle_produced"] is True
     assert metadata["proof_bundle_produced"] is False
+    assert metadata["pptx_artifact_bundle_contract_implemented"] is True
+    assert metadata["render_report_contract_implemented"] is True
     assert "no_frontend_package_changes" in metadata["non_goals"]
 
 
@@ -75,7 +77,7 @@ def test_kr7h5_package_declares_controlled_pptxgenjs_dependency_only_in_worker()
     assert metadata["pptxgenjs_in_memory_object_created"] is True
     assert metadata["slide_content_added"] is False
     assert metadata["pptxgenjs_write_api_called"] is False
-    assert metadata["filesystem_output_written"] is False
+    assert metadata["filesystem_output_written"] is True
     assert metadata["empty_pptx_output_smoke_schema_version"] == "presentation_renderer_worker_empty_pptx_output_smoke.v1"
     assert metadata["empty_pptx_output_smoke_implemented"] is True
     assert metadata["temporary_pptx_write_api_called"] is True
@@ -97,9 +99,17 @@ def test_kr7h5_package_declares_controlled_pptxgenjs_dependency_only_in_worker()
     assert metadata["table_mapping_implemented"] is False
     assert metadata["image_mapping_implemented"] is False
     assert metadata["professional_layout_engine_implemented"] is False
-    assert metadata["persistent_artifact_written"] is False
+    assert metadata["persistent_artifact_written"] is True
     assert metadata["libreoffice_executed"] is False
     assert metadata["visual_qa_executed"] is False
+    assert metadata["artifact_bundle_schema_version"] == "presentation_renderer_worker_pptx_artifact_bundle.v1"
+    assert metadata["render_report_schema_version"] == "presentation_renderer_worker_render_report.v1"
+    assert metadata["pptx_artifact_bundle_contract_implemented"] is True
+    assert metadata["render_report_contract_implemented"] is True
+    assert metadata["artifact_bundle_produced"] is True
+    assert metadata["artifact_bundle_verified"] is True
+    assert metadata["render_report_written"] is True
+    assert metadata["render_report_deterministic"] is True
     assert metadata["static_slide_output_smoke_schema_version"] == "presentation_renderer_worker_static_slide_output_smoke.v1"
     assert metadata["static_slide_output_smoke_implemented"] is True
     assert metadata["temporary_static_slide_pptx_write_api_called"] is True
@@ -292,6 +302,52 @@ def test_kr7h9_package_scripts_run_minimal_ir_mapping_smoke_without_persistent_a
     assert result["output_mode"] == "temporary_minimal_ir_mapping_smoke_only"
 
 
+
+def test_kr7h10_package_scripts_run_artifact_bundle_smoke_with_cleanup() -> None:
+    _ensure_worker_dependencies()
+    output_dir = WORKER_ROOT / ".kw-renderer-worker-artifact-bundle-smoke"
+    if output_dir.exists():
+        subprocess.run(["rm", "-rf", str(output_dir)], check=False)
+    completed = subprocess.run(
+        ["npm", "run", "pptxgenjs:artifact-bundle", "--silent"],
+        cwd=WORKER_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    result = json.loads(completed.stdout)
+    assert result["schema_version"] == "presentation_renderer_worker_pptx_artifact_bundle.v1"
+    assert result["status"] == "ready"
+    assert result["render_report_schema_version"] == "presentation_renderer_worker_render_report.v1"
+    assert result["mapped_fields"] == ["title", "body"]
+    assert result["mapped_block_types"] == ["text"]
+    assert result["mapped_slide_count"] >= 2
+    assert result["persistent_artifact_written"] is True
+    assert result["persistent_artifact_exists"] is True
+    assert result["persistent_artifact_file_size_nonzero"] is True
+    assert result["artifact_bundle_produced"] is True
+    assert result["artifact_bundle_verified"] is True
+    assert result["render_report_written"] is True
+    assert result["render_report_exists"] is True
+    assert result["render_report_file_size_nonzero"] is True
+    assert result["render_report_deterministic"] is True
+    assert result["output_directory_cleanup_requested"] is True
+    assert result["output_directory_cleanup_performed"] is True
+    assert result["presentation_ir_mapping_implemented"] is True
+    assert result["title_body_mapping_implemented"] is True
+    assert result["chart_mapping_implemented"] is False
+    assert result["table_mapping_implemented"] is False
+    assert result["image_mapping_implemented"] is False
+    assert result["professional_layout_engine_implemented"] is False
+    assert result["production_pptx_output_implemented"] is False
+    assert result["proof_bundle_produced"] is False
+    assert result["libreoffice_executed"] is False
+    assert result["visual_qa_executed"] is False
+    assert result["output_mode"] == "persistent_pptx_artifact_bundle_and_render_report_contract_only"
+    assert not output_dir.exists()
+
+
 def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     text = CONTRACT_DOC.read_text(encoding="utf-8")
 
@@ -301,12 +357,15 @@ def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     assert "presentation_renderer_worker_empty_pptx_output_smoke.v1" in text
     assert "presentation_renderer_worker_static_slide_output_smoke.v1" in text
     assert "presentation_renderer_worker_minimal_ir_mapping_smoke.v1" in text
+    assert "presentation_renderer_worker_pptx_artifact_bundle.v1" in text
+    assert "presentation_renderer_worker_render_report.v1" in text
     assert "npm run protocol:preflight --prefix renderer_worker" in text
     assert "npm run dependency:capability --prefix renderer_worker" in text
     assert "npm run pptxgenjs:in-memory --prefix renderer_worker" in text
     assert "npm run pptxgenjs:empty-output --prefix renderer_worker" in text
     assert "npm run pptxgenjs:static-slide --prefix renderer_worker" in text
     assert "npm run pptxgenjs:minimal-ir-smoke --prefix renderer_worker" in text
+    assert "npm run pptxgenjs:artifact-bundle --prefix renderer_worker" in text
     assert "renderer_runtime_implemented=false" in text
     assert "production_pptx_output_implemented=false" in text
     assert "pptx_generation_executed=false" in text
@@ -327,6 +386,9 @@ def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     assert "single_slide_smoke_executed=true" in text
     assert "multi_slide_smoke_executed=true" in text
     assert "persistent_artifact_written=false" in text
+    assert "persistent_artifact_written=true" in text
+    assert "artifact_bundle_produced=true" in text
+    assert "render_report_written=true" in text
     assert "PptxGenJS is declared only inside the isolated renderer_worker package" in text
     assert "does not generate production PPTX" in text
     assert "does not write .pptx files" in text

@@ -70,6 +70,28 @@ run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.9.
 KR-7H.9 may map only title/body text from validated renderer input or source-backed dry-run payloads into temporary single-slide and multi-slide PPTX smoke files. All temporary files must be deleted before returning ready.
 ```
 
+
+
+## KR-7H.10 renderer worker persistent PPTX artifact bundle prohibitions
+
+During KR-7H.10 it is forbidden to:
+
+```text
+claim KR-7H.10 creates production-quality PPTX output;
+claim KR-7H.10 runs LibreOffice or creates PDF/PNG proofs;
+claim KR-7H.10 produces proof bundles;
+claim KR-7H.10 performs visual QA or quality scoring;
+claim KR-7H.10 maps charts, tables, images, theme, brand, or professional layouts;
+use arbitrary user prompt passthrough into renderer output;
+change frontend package/dependency policy for renderer worker needs during KR-7H.10;
+change GigaChat/runtime behavior as part of KR-7H.10;
+run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.10.
+```
+
+```text
+KR-7H.10 may write a persistent PPTX artifact only in an explicit controlled renderer-worker output directory and must write a deterministic render report JSON beside it. This is an artifact bundle contract step, not LibreOffice proof, visual QA, or production-quality renderer closure.
+```
+
 ## Runtime and deploy prohibitions
 
 It is forbidden to:

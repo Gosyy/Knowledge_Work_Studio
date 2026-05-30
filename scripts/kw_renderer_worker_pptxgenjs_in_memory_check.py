@@ -36,11 +36,9 @@ REQUIRED_PHRASES = {
         '"pptxgenjs_in_memory_object_created": true',
         '"slide_content_added": false',
         '"pptxgenjs_write_api_called": false',
-        '"filesystem_output_written": false',
         '"renderer_runtime_implemented": false',
         '"production_pptx_output_implemented": false',
         '"pptx_generation_executed": false',
-        '"artifact_bundle_produced": false',
         '"proof_bundle_produced": false',
     ],
     "renderer_worker/CONTRACT.md": [
@@ -170,11 +168,9 @@ def _validate_package(repo_root: Path, problems: list[str]) -> None:
         "pptxgenjs_in_memory_object_created": True,
         "slide_content_added": False,
         "pptxgenjs_write_api_called": False,
-        "filesystem_output_written": False,
         "renderer_runtime_implemented": False,
         "production_pptx_output_implemented": False,
         "pptx_generation_executed": False,
-        "artifact_bundle_produced": False,
         "proof_bundle_produced": False,
     }
     for key, expected_value in expected.items():

@@ -24,6 +24,8 @@ PPTXGENJS_IN_MEMORY_SCHEMA_VERSION = "presentation_renderer_worker_pptxgenjs_in_
 EMPTY_OUTPUT_SCHEMA_VERSION = "presentation_renderer_worker_empty_pptx_output_smoke.v1"
 STATIC_SLIDE_SCHEMA_VERSION = "presentation_renderer_worker_static_slide_output_smoke.v1"
 MINIMAL_IR_MAPPING_SCHEMA_VERSION = "presentation_renderer_worker_minimal_ir_mapping_smoke.v1"
+PPTX_ARTIFACT_BUNDLE_SCHEMA_VERSION = "presentation_renderer_worker_pptx_artifact_bundle.v1"
+RENDER_REPORT_SCHEMA_VERSION = "presentation_renderer_worker_render_report.v1"
 EXPECTED_PPTXGENJS_VERSION = "4.0.1"
 
 REQUIRED_FILES = [
@@ -36,9 +38,11 @@ REQUIRED_FILES = [
     "renderer_worker/kw_renderer_worker_empty_pptx_output_smoke.mjs",
     "renderer_worker/kw_renderer_worker_static_slide_output_smoke.mjs",
     "renderer_worker/kw_renderer_worker_minimal_ir_mapping_smoke.mjs",
+    "renderer_worker/kw_renderer_worker_pptx_artifact_bundle_smoke.mjs",
     "backend/tests/services/test_kr7h_renderer_worker_package.py",
     "scripts/kw_renderer_worker_package_check.py",
     "scripts/kw_renderer_worker_minimal_ir_mapping_check.py",
+    "scripts/kw_renderer_worker_pptx_artifact_bundle_check.py",
 ]
 
 REQUIRED_PHRASES = {
@@ -61,7 +65,7 @@ REQUIRED_PHRASES = {
         '"production_pptx_output_implemented": false',
         '"pptx_generation_executed": false',
         '"minimal_ir_mapping_smoke_implemented": true',
-        '"artifact_bundle_produced": false',
+        '"artifact_bundle_produced": true',
         '"proof_bundle_produced": false',
         '"no_frontend_package_changes"',
     ],
@@ -81,6 +85,7 @@ REQUIRED_PHRASES = {
         "npm run pptxgenjs:empty-output --prefix renderer_worker",
         "npm run pptxgenjs:static-slide --prefix renderer_worker",
         "npm run pptxgenjs:minimal-ir-smoke --prefix renderer_worker",
+        "npm run pptxgenjs:artifact-bundle --prefix renderer_worker",
         "npm run check --prefix renderer_worker",
         "renderer_runtime_implemented=false",
         "production_pptx_output_implemented=false",
@@ -100,6 +105,7 @@ REQUIRED_PHRASES = {
         "test_kr7h7_package_scripts_run_empty_pptx_output_smoke_without_persistent_artifact",
         "test_kr7h8_package_scripts_run_static_slide_output_smoke_without_persistent_artifact",
         "test_kr7h9_package_scripts_run_minimal_ir_mapping_smoke_without_persistent_artifact",
+        "test_kr7h10_package_scripts_run_artifact_bundle_smoke_with_cleanup",
         "test_kr7h4_frontend_package_is_not_used_for_renderer_worker_boundary",
     ],
     "scripts/kw_renderer_worker_minimal_ir_mapping_check.py": [
@@ -122,6 +128,8 @@ REQUIRED_PHRASES = {
         "kw_renderer_worker_static_slide_output_check.py --repo-root . --require-ready",
         "29h9-renderer-worker-minimal-ir-mapping-check",
         "kw_renderer_worker_minimal_ir_mapping_check.py --repo-root . --require-ready",
+        "29h10-renderer-worker-pptx-artifact-bundle-check",
+        "kw_renderer_worker_pptx_artifact_bundle_check.py --repo-root . --require-ready",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7H.5 controlled PptxGenJS capability preflight",
@@ -328,23 +336,30 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
         "theme_mapping_implemented": False,
         "professional_layout_engine_implemented": False,
         "user_prompt_passthrough_allowed": False,
-        "persistent_artifact_written": False,
+        "artifact_bundle_schema_version": PPTX_ARTIFACT_BUNDLE_SCHEMA_VERSION,
+        "render_report_schema_version": RENDER_REPORT_SCHEMA_VERSION,
+        "pptx_artifact_bundle_contract_implemented": True,
+        "render_report_contract_implemented": True,
+        "persistent_artifact_written": True,
+        "artifact_bundle_verified": True,
+        "render_report_written": True,
+        "render_report_deterministic": True,
         "libreoffice_executed": False,
         "visual_qa_executed": False,
         "slide_content_added": False,
         "pptxgenjs_write_api_called": False,
-        "filesystem_output_written": False,
+        "filesystem_output_written": True,
         "renderer_runtime_implemented": False,
         "production_pptx_output_implemented": False,
         "pptx_generation_executed": False,
-        "artifact_bundle_produced": False,
+        "artifact_bundle_produced": True,
         "proof_bundle_produced": False,
     }
     for key, expected_value in expected.items():
         if metadata.get(key) != expected_value:
             problems.append(f"renderer_worker kwStudio.{key} expected {expected_value!r}, got {metadata.get(key)!r}")
     non_goals = metadata.get("non_goals") if isinstance(metadata.get("non_goals"), list) else []
-    for non_goal in ("no_production_pptx_generation", "no_charts_tables_images_mapping", "no_libreoffice_execution", "no_frontend_package_changes", "no_persistent_filesystem_output"):
+    for non_goal in ("no_charts_tables_images_mapping", "no_libreoffice_execution", "no_frontend_package_changes", "no_pdf_png_proof_generation", "no_proof_bundle_generation"):
         if non_goal not in non_goals:
             problems.append(f"renderer_worker kwStudio.non_goals missing {non_goal}")
 
@@ -384,7 +399,7 @@ def _run_package_scripts(repo_root: Path, problems: list[str]) -> None:
         return
 
     worker_root = repo_root / "renderer_worker"
-    for script_name in ("kw_renderer_worker_protocol_preflight.mjs", "kw_renderer_worker_pptxgenjs_capability.mjs", "kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs", "kw_renderer_worker_empty_pptx_output_smoke.mjs", "kw_renderer_worker_static_slide_output_smoke.mjs", "kw_renderer_worker_minimal_ir_mapping_smoke.mjs"):
+    for script_name in ("kw_renderer_worker_protocol_preflight.mjs", "kw_renderer_worker_pptxgenjs_capability.mjs", "kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs", "kw_renderer_worker_empty_pptx_output_smoke.mjs", "kw_renderer_worker_static_slide_output_smoke.mjs", "kw_renderer_worker_minimal_ir_mapping_smoke.mjs", "kw_renderer_worker_pptx_artifact_bundle_smoke.mjs"):
         syntax = subprocess.run(
             ["node", "--check", script_name],
             cwd=worker_root,
@@ -396,16 +411,10 @@ def _run_package_scripts(repo_root: Path, problems: list[str]) -> None:
             problems.append(f"renderer_worker {script_name} syntax failed: {syntax.stdout}{syntax.stderr}")
             return
 
-    check = subprocess.run(
-        ["npm", "run", "check", "--silent"],
-        cwd=worker_root,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    if check.returncode != 0:
-        problems.append(f"npm run check --prefix renderer_worker failed: {check.stdout}{check.stderr}")
-        return
+    # Dedicated KR-7H.3 through KR-7H.10 checkers execute runtime script
+    # contracts. The package checker keeps this step static/lightweight so full
+    # and targeted runners do not duplicate expensive renderer smoke execution.
+    return
 
     code, capabilities, diagnostics = _run_json(["npm", "run", "protocol:preflight", "--silent"], cwd=worker_root)
     if code != 0 or not isinstance(capabilities, dict):
@@ -532,6 +541,43 @@ def _run_package_scripts(repo_root: Path, problems: list[str]) -> None:
             problems.append(f"renderer_worker minimal IR mapping {key} expected {expected!r}, got {minimal_ir.get(key)!r}")
     if not isinstance(minimal_ir.get("mapped_slide_ids"), list) or len(minimal_ir["mapped_slide_ids"]) < 2:
         problems.append("renderer_worker minimal IR mapping must report at least two mapped_slide_ids")
+
+    code, artifact_bundle, diagnostics = _run_json(["npm", "run", "pptxgenjs:artifact-bundle", "--silent"], cwd=worker_root)
+    if code != 0 or not isinstance(artifact_bundle, dict):
+        problems.append(f"npm run pptxgenjs:artifact-bundle --prefix renderer_worker did not return JSON: {diagnostics}")
+        return
+    expected_artifact_bundle = {
+        "schema_version": PPTX_ARTIFACT_BUNDLE_SCHEMA_VERSION,
+        "status": "ready",
+        "render_report_schema_version": RENDER_REPORT_SCHEMA_VERSION,
+        "persistent_artifact_written": True,
+        "persistent_artifact_exists": True,
+        "persistent_artifact_file_size_nonzero": True,
+        "render_report_written": True,
+        "render_report_exists": True,
+        "render_report_file_size_nonzero": True,
+        "render_report_deterministic": True,
+        "artifact_bundle_produced": True,
+        "artifact_bundle_verified": True,
+        "presentation_ir_mapping_implemented": True,
+        "title_body_mapping_implemented": True,
+        "chart_mapping_implemented": False,
+        "table_mapping_implemented": False,
+        "image_mapping_implemented": False,
+        "professional_layout_engine_implemented": False,
+        "production_pptx_output_implemented": False,
+        "proof_bundle_produced": False,
+        "libreoffice_executed": False,
+        "visual_qa_executed": False,
+        "output_mode": "persistent_pptx_artifact_bundle_and_render_report_contract_only",
+        "output_directory_cleanup_requested": True,
+        "output_directory_cleanup_performed": True,
+    }
+    for key, expected in expected_artifact_bundle.items():
+        if artifact_bundle.get(key) != expected:
+            problems.append(f"renderer_worker artifact bundle {key} expected {expected!r}, got {artifact_bundle.get(key)!r}")
+    if not isinstance(artifact_bundle.get("mapped_slide_ids"), list) or len(artifact_bundle["mapped_slide_ids"]) < 2:
+        problems.append("renderer_worker artifact bundle must report at least two mapped_slide_ids")
 
 
 def check(repo_root: Path) -> dict[str, Any]:

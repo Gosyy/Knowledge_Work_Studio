@@ -1237,3 +1237,12 @@ KR-7H.9 adds `presentation_renderer_worker_minimal_ir_mapping_smoke.v1` and vali
 ### KR-7H.9 minimal PresentationIR mapping + single/multi-slide temporary PPTX smoke
 
 KR-7H.9 implements the first controlled renderer mapping smoke. It may map only title/body text from validated renderer input / source-backed dry-run payloads into temporary single-slide and multi-slide PPTX files, verify non-zero sizes, and delete all temporary files before returning ready. It must not persist PPTX artifacts, run LibreOffice, create proof bundles, map charts/tables/images/theme/brand, perform visual QA, or claim production-quality output.
+
+
+Implementation note after KR-7H.10:
+
+KR-7H.10 adds `presentation_renderer_worker_pptx_artifact_bundle.v1` and `presentation_renderer_worker_render_report.v1`. It writes a persistent PPTX artifact and deterministic render report JSON into an explicit controlled renderer-worker output directory using only the previously allowed title/body mapping from validated renderer input / source-backed dry-run payloads. KR-7H.10 still has no LibreOffice PDF/PNG proof, no proof bundle, no visual QA/scoring, no chart/table/image/theme/brand/professional layout mapping, no frontend changes, no GigaChat/runtime changes, and no production-quality or Kimi-level output claim.
+
+### KR-7H.10 persistent PPTX artifact bundle + render report contract
+
+KR-7H.10 is the persistent artifact-bundle step in the consolidated KR-7H plan. It may create a controlled PPTX artifact bundle and render report contract, but it must not run LibreOffice, generate proof images, produce proof bundles, broaden renderer mapping beyond title/body text, or claim production renderer closure. Validation must include exact package self-test, `kw_renderer_worker_pptx_artifact_bundle_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.

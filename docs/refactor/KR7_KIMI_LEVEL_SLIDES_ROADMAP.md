@@ -769,3 +769,12 @@ no production-quality output claim.
 ```
 
 KR-7H.9 must be validated by `scripts/kw_renderer_worker_minimal_ir_mapping_check.py`, targeted service tests, full runner, Docker smoke, and remote HEAD verification.
+
+
+Implementation note after KR-7H.10:
+
+KR-7H.10 adds `presentation_renderer_worker_pptx_artifact_bundle.v1` and `presentation_renderer_worker_render_report.v1`. It writes a persistent PPTX artifact and deterministic render report JSON into an explicit controlled renderer-worker output directory using only the previously allowed title/body mapping from validated renderer input / source-backed dry-run payloads. KR-7H.10 still has no LibreOffice PDF/PNG proof, no proof bundle, no visual QA/scoring, no chart/table/image/theme/brand/professional layout mapping, no frontend changes, no GigaChat/runtime changes, and no production-quality or Kimi-level output claim.
+
+### KR-7H.10 persistent PPTX artifact bundle + render report contract
+
+KR-7H.10 is the persistent artifact-bundle step in the consolidated KR-7H plan. It may create a controlled PPTX artifact bundle and render report contract, but it must not run LibreOffice, generate proof images, produce proof bundles, broaden renderer mapping beyond title/body text, or claim production renderer closure. Validation must include exact package self-test, `kw_renderer_worker_pptx_artifact_bundle_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.

@@ -148,7 +148,6 @@ def _validate_package(repo_root: Path, problems: list[str]) -> None:
         "renderer_runtime_implemented": False,
         "production_pptx_output_implemented": False,
         "pptx_generation_executed": False,
-        "artifact_bundle_produced": False,
         "proof_bundle_produced": False,
     }
     for key, expected_value in expected.items():
