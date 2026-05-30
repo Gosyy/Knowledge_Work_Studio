@@ -1763,3 +1763,14 @@ This decision is safe only because KR-7H.1 through KR-7H.8 have already proven t
 Future assistants must use the consolidated KR-7H.9 through KR-7H.13 plan unless a later explicit roadmap patch changes it. The consolidation allows larger patches, but it does not weaken the process rules: every patch still needs local full-history audit, exact patch/package self-test on the assistant's current copy or clean test clone, targeted apply-log review, full runner, Docker smoke, clean/classified tree, push, and remote HEAD verification.
 
 Do not collapse the remaining KR-7H work into one renderer mega-patch. PresentationIR mapping, persistent artifact storage, LibreOffice proof generation, hardening, and closure remain separate steps.
+
+
+### KR-7H.9 minimal PresentationIR mapping temporary PPTX smoke
+
+Status: planned/implemented patch scope after the KR-7H consolidation decision.
+
+KR-7H.9 adds `presentation_renderer_worker_minimal_ir_mapping_smoke.v1`. It is the first controlled mapping smoke: validated renderer input / source-backed dry-run payloads may be mapped only to title/body text in temporary single-slide and multi-slide PPTX files. The worker must verify non-zero output sizes, delete all temporary files, and return deterministic JSON.
+
+KR-7H.9 remains non-production: no persistent PPTX artifact, no backend artifact bundle, no LibreOffice proof, no proof bundle, no visual QA/scoring, no chart/table/image/theme/brand/professional layout mapping, no frontend changes, and no GigaChat/runtime changes.
+
+Validation for KR-7H.9 must include exact package self-test on the assistant's current full-history checkout or clean test clone, `kw_renderer_worker_minimal_ir_mapping_check.py`, targeted pytest, `kw_test_inventory.py --require-ready`, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.

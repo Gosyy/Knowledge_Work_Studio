@@ -1227,3 +1227,13 @@ Consolidation guardrails:
 - KR-7H.13 is the closure gate and must verify the whole KR-7H renderer-worker contract with targeted checks, full runner, Docker smoke, clean/classified tree, reviewed logs, push, and remote HEAD verification.
 
 The consolidated KR-7H plan replaces any assumption that future KR-7H work must continue as many tiny preflight patches. It does not relax quality gates: every patch still requires a valid current full-history checkout, exact patch/package testing on the assistant side, self-contained apply runner, targeted apply-log review, committed local full runner, Docker smoke, and remote verification before closure.
+
+
+Implementation note after KR-7H.9:
+
+KR-7H.9 adds `presentation_renderer_worker_minimal_ir_mapping_smoke.v1` and validates minimal title/body mapping from renderer input into temporary single-slide and multi-slide PPTX smoke outputs. It deletes all temporary outputs and still does not create persistent artifacts, LibreOffice proofs, proof bundles, visual QA, chart/table/image mappings, or production-quality PPTX output.
+
+
+### KR-7H.9 minimal PresentationIR mapping + single/multi-slide temporary PPTX smoke
+
+KR-7H.9 implements the first controlled renderer mapping smoke. It may map only title/body text from validated renderer input / source-backed dry-run payloads into temporary single-slide and multi-slide PPTX files, verify non-zero sizes, and delete all temporary files before returning ready. It must not persist PPTX artifacts, run LibreOffice, create proof bundles, map charts/tables/images/theme/brand, perform visual QA, or claim production-quality output.

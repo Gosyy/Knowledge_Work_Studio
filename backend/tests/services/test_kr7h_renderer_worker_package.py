@@ -82,7 +82,21 @@ def test_kr7h5_package_declares_controlled_pptxgenjs_dependency_only_in_worker()
     assert metadata["temporary_pptx_written"] is True
     assert metadata["temporary_pptx_deleted"] is True
     assert metadata["temporary_pptx_file_size_nonzero"] is True
-    assert metadata["presentation_ir_mapping_implemented"] is False
+    assert metadata["presentation_ir_mapping_implemented"] is True
+    assert metadata["minimal_ir_mapping_smoke_schema_version"] == "presentation_renderer_worker_minimal_ir_mapping_smoke.v1"
+    assert metadata["minimal_ir_mapping_smoke_implemented"] is True
+    assert metadata["title_body_mapping_implemented"] is True
+    assert metadata["mapped_fields"] == ["title", "body"]
+    assert metadata["mapped_block_types"] == ["text"]
+    assert metadata["single_slide_smoke_executed"] is True
+    assert metadata["multi_slide_smoke_executed"] is True
+    assert metadata["temporary_minimal_ir_pptx_written"] is True
+    assert metadata["temporary_minimal_ir_pptx_deleted"] is True
+    assert metadata["temporary_minimal_ir_pptx_file_size_nonzero"] is True
+    assert metadata["chart_mapping_implemented"] is False
+    assert metadata["table_mapping_implemented"] is False
+    assert metadata["image_mapping_implemented"] is False
+    assert metadata["professional_layout_engine_implemented"] is False
     assert metadata["persistent_artifact_written"] is False
     assert metadata["libreoffice_executed"] is False
     assert metadata["visual_qa_executed"] is False
@@ -241,6 +255,43 @@ def test_kr7h8_package_scripts_run_static_slide_output_smoke_without_persistent_
     assert result["output_mode"] == "temporary_static_single_slide_output_smoke_only"
 
 
+def test_kr7h9_package_scripts_run_minimal_ir_mapping_smoke_without_persistent_artifact() -> None:
+    _ensure_worker_dependencies()
+    completed = subprocess.run(
+        ["npm", "run", "pptxgenjs:minimal-ir-smoke", "--silent"],
+        cwd=WORKER_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    result = json.loads(completed.stdout)
+    assert result["schema_version"] == "presentation_renderer_worker_minimal_ir_mapping_smoke.v1"
+    assert result["status"] == "ready"
+    assert result["mapped_fields"] == ["title", "body"]
+    assert result["mapped_block_types"] == ["text"]
+    assert result["single_slide_smoke_executed"] is True
+    assert result["multi_slide_smoke_executed"] is True
+    assert result["single_slide_pptx_written"] is True
+    assert result["single_slide_pptx_deleted"] is True
+    assert result["multi_slide_pptx_written"] is True
+    assert result["multi_slide_pptx_deleted"] is True
+    assert result["title_body_mapping_implemented"] is True
+    assert result["presentation_ir_mapping_implemented"] is True
+    assert result["chart_mapping_implemented"] is False
+    assert result["table_mapping_implemented"] is False
+    assert result["image_mapping_implemented"] is False
+    assert result["professional_layout_engine_implemented"] is False
+    assert result["persistent_artifact_written"] is False
+    assert result["filesystem_output_written"] is False
+    assert result["production_pptx_output_implemented"] is False
+    assert result["artifact_bundle_produced"] is False
+    assert result["proof_bundle_produced"] is False
+    assert result["libreoffice_executed"] is False
+    assert result["visual_qa_executed"] is False
+    assert result["output_mode"] == "temporary_minimal_ir_mapping_smoke_only"
+
+
 def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     text = CONTRACT_DOC.read_text(encoding="utf-8")
 
@@ -249,11 +300,13 @@ def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     assert "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1" in text
     assert "presentation_renderer_worker_empty_pptx_output_smoke.v1" in text
     assert "presentation_renderer_worker_static_slide_output_smoke.v1" in text
+    assert "presentation_renderer_worker_minimal_ir_mapping_smoke.v1" in text
     assert "npm run protocol:preflight --prefix renderer_worker" in text
     assert "npm run dependency:capability --prefix renderer_worker" in text
     assert "npm run pptxgenjs:in-memory --prefix renderer_worker" in text
     assert "npm run pptxgenjs:empty-output --prefix renderer_worker" in text
     assert "npm run pptxgenjs:static-slide --prefix renderer_worker" in text
+    assert "npm run pptxgenjs:minimal-ir-smoke --prefix renderer_worker" in text
     assert "renderer_runtime_implemented=false" in text
     assert "production_pptx_output_implemented=false" in text
     assert "pptx_generation_executed=false" in text
@@ -268,13 +321,18 @@ def test_kr7h4_package_contract_blocks_renderer_runtime_claims() -> None:
     assert "static_slide_content_added=true" in text
     assert "static_slide_uses_user_content=false" in text
     assert "static_slide_uses_presentation_ir=false" in text
+    assert "minimal_ir_mapping_smoke_implemented=true" in text
+    assert "title_body_mapping_implemented=true" in text
+    assert "mapped_fields=title,body" in text
+    assert "single_slide_smoke_executed=true" in text
+    assert "multi_slide_smoke_executed=true" in text
     assert "persistent_artifact_written=false" in text
     assert "PptxGenJS is declared only inside the isolated renderer_worker package" in text
     assert "does not generate production PPTX" in text
     assert "does not write .pptx files" in text
     assert "temporary empty `.pptx`" in text
     assert "temporary `.pptx` containing exactly one fixed technical smoke slide" in text
-    assert "does not map PresentationIR blocks into slides" in text
+    assert "maps only title/body text from validated renderer input" in text
     assert "does not run LibreOffice" in text
     assert "does not change UI" in text
 

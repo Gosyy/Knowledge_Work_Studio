@@ -42,7 +42,6 @@ REQUIRED_PHRASES = {
         '"pptx_generation_executed": false',
         '"artifact_bundle_produced": false',
         '"proof_bundle_produced": false',
-        '"no_slide_content_generation"',
     ],
     "renderer_worker/CONTRACT.md": [
         "KR-7H.6 extends that boundary with an in-memory PptxGenJS construction preflight",

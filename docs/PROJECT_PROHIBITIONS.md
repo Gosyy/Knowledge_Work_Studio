@@ -48,6 +48,28 @@ accept native_chart visual grammar blocks without real numeric source data and s
 claim visual grammar validators prove renderer output quality.
 ```
 
+
+## KR-7H.9 renderer worker minimal PresentationIR mapping smoke prohibitions
+
+It is forbidden to:
+
+```text
+claim KR-7H.9 creates production PPTX output;
+claim KR-7H.9 persists PPTX artifacts;
+claim KR-7H.9 produces artifact/proof bundles;
+claim KR-7H.9 runs LibreOffice;
+claim KR-7H.9 performs visual QA or quality scoring;
+claim KR-7H.9 maps charts, tables, images, theme, brand, or professional layouts;
+claim KR-7H.9 allows arbitrary user prompt passthrough into renderer output;
+claim KR-7H.9 temporary mapping smoke responses are rendered deck artifacts;
+change frontend package/dependency policy for renderer worker needs during KR-7H.9;
+run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.9.
+```
+
+```text
+KR-7H.9 may map only title/body text from validated renderer input or source-backed dry-run payloads into temporary single-slide and multi-slide PPTX smoke files. All temporary files must be deleted before returning ready.
+```
+
 ## Runtime and deploy prohibitions
 
 It is forbidden to:

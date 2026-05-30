@@ -14,6 +14,8 @@ KR-7H.7 extends that boundary with a controlled empty PPTX file output smoke. Th
 
 KR-7H.8 extends that boundary with a controlled static single-slide PPTX output smoke. The smoke may add exactly one fixed technical slide with static renderer-worker smoke text, call PptxGenJS `writeFile` only against an ephemeral temporary file, verify that the temporary `.pptx` exists and has non-zero size, then delete the file and temporary directory before returning ready. The fixed technical slide is not user prompt content, not evidence content, not PresentationIR mapping, not a persisted artifact, not a production deck, and not a proof bundle.
 
+KR-7H.9 extends that boundary with minimal PresentationIR mapping plus single-slide and multi-slide temporary PPTX smoke. The smoke may map only `title` and `body` text from validated renderer input / source-backed dry-run payloads, write temporary single-slide and multi-slide `.pptx` files, verify non-zero size, and delete all temporary outputs before returning ready. It does not map charts, tables, images, theme, brand, or professional layout; it does not persist PPTX artifacts, run LibreOffice, create proof bundles, or claim production renderer readiness.
+
 ## Contract identifiers
 
 - `presentation_renderer_worker_package_preflight.v1`
@@ -23,6 +25,7 @@ KR-7H.8 extends that boundary with a controlled static single-slide PPTX output 
 - `presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1`
 - `presentation_renderer_worker_empty_pptx_output_smoke.v1`
 - `presentation_renderer_worker_static_slide_output_smoke.v1`
+- `presentation_renderer_worker_minimal_ir_mapping_smoke.v1`
 
 ## Required package scripts
 
@@ -31,9 +34,10 @@ KR-7H.8 extends that boundary with a controlled static single-slide PPTX output 
 - `npm run pptxgenjs:in-memory --prefix renderer_worker`
 - `npm run pptxgenjs:empty-output --prefix renderer_worker`
 - `npm run pptxgenjs:static-slide --prefix renderer_worker`
+- `npm run pptxgenjs:minimal-ir-smoke --prefix renderer_worker`
 - `npm run check --prefix renderer_worker`
 
-The `check` script confirms package isolation, protocol preflight readiness, controlled PptxGenJS capability, in-memory construction, temporary empty output smoke, and temporary static single-slide output smoke only. It does not generate production PPTX, does not map PresentationIR blocks into slides, does not start a long-running worker service, and does not execute LibreOffice.
+The `check` script confirms package isolation, protocol preflight readiness, controlled PptxGenJS capability, in-memory construction, temporary empty output smoke, temporary static single-slide output smoke, and temporary minimal PresentationIR title/body mapping smoke only. It does not generate production PPTX, does not persist artifacts, does not map charts/tables/images or professional layouts, does not start a long-running worker service, and does not execute LibreOffice.
 
 ## Runtime flags
 
@@ -54,6 +58,16 @@ The package contract must keep these claims false:
 - `static_slide_content_added=true`
 - `static_slide_uses_user_content=false`
 - `static_slide_uses_presentation_ir=false`
+- `minimal_ir_mapping_smoke_implemented=true`
+- `title_body_mapping_implemented=true`
+- `mapped_fields=title,body`
+- `single_slide_smoke_executed=true`
+- `multi_slide_smoke_executed=true`
+- `temporary_minimal_ir_pptx_written=true`
+- `temporary_minimal_ir_pptx_deleted=true`
+- `chart_mapping_implemented=false`
+- `table_mapping_implemented=false`
+- `image_mapping_implemented=false`
 
 ## Dependency boundary
 
@@ -64,6 +78,7 @@ The package contract must keep these claims false:
 - The KR-7H.6 in-memory preflight may construct `new PptxGenJS()` only as an in-memory object smoke. It must report `slide_count=0`, `slide_content_added=false`, `pptxgenjs_write_api_called=false`, and `filesystem_output_written=false`.
 - The KR-7H.7 empty output smoke may call `writeFile` only for an ephemeral temporary `.pptx`, must report `temporary_pptx_written=true`, `temporary_pptx_deleted=true`, `temporary_pptx_file_size_nonzero=true`, `persistent_artifact_written=false`, `production_pptx_output_implemented=false`, and `artifact_bundle_produced=false`.
 - The KR-7H.8 static slide output smoke may add exactly one fixed technical slide and call `writeFile` only for an ephemeral temporary `.pptx`. It must report `static_slide_count=1`, `static_slide_content_added=true`, `static_slide_uses_user_content=false`, `static_slide_uses_presentation_ir=false`, `temporary_pptx_written=true`, `temporary_pptx_deleted=true`, `temporary_pptx_file_size_nonzero=true`, `persistent_artifact_written=false`, `production_pptx_output_implemented=false`, and `artifact_bundle_produced=false`.
+- The KR-7H.9 minimal IR mapping smoke may map only title/body text from validated renderer input. It must run both single-slide and multi-slide temporary PPTX smoke paths, delete all temporary outputs, and report `title_body_mapping_implemented=true`, `presentation_ir_mapping_implemented=true`, `chart_mapping_implemented=false`, `table_mapping_implemented=false`, `image_mapping_implemented=false`, `persistent_artifact_written=false`, `production_pptx_output_implemented=false`, and `artifact_bundle_produced=false`.
 
 ## Explicit non-goals
 
@@ -82,6 +97,16 @@ Required claims for `presentation_renderer_worker_empty_pptx_output_smoke.v1`:
 - `static_slide_content_added=true`
 - `static_slide_uses_user_content=false`
 - `static_slide_uses_presentation_ir=false`
+- `minimal_ir_mapping_smoke_implemented=true`
+- `title_body_mapping_implemented=true`
+- `mapped_fields=title,body`
+- `single_slide_smoke_executed=true`
+- `multi_slide_smoke_executed=true`
+- `temporary_minimal_ir_pptx_written=true`
+- `temporary_minimal_ir_pptx_deleted=true`
+- `chart_mapping_implemented=false`
+- `table_mapping_implemented=false`
+- `image_mapping_implemented=false`
 - `temporary_pptx_file_size_nonzero=true`
 - `persistent_artifact_written=false`
 - `filesystem_output_written=false`
@@ -108,6 +133,16 @@ Required claims for `presentation_renderer_worker_static_slide_output_smoke.v1`:
 - `static_slide_content_added=true`
 - `static_slide_uses_user_content=false`
 - `static_slide_uses_presentation_ir=false`
+- `minimal_ir_mapping_smoke_implemented=true`
+- `title_body_mapping_implemented=true`
+- `mapped_fields=title,body`
+- `single_slide_smoke_executed=true`
+- `multi_slide_smoke_executed=true`
+- `temporary_minimal_ir_pptx_written=true`
+- `temporary_minimal_ir_pptx_deleted=true`
+- `chart_mapping_implemented=false`
+- `table_mapping_implemented=false`
+- `image_mapping_implemented=false`
 - `persistent_artifact_written=false`
 - `filesystem_output_written=false`
 - `presentation_ir_mapping_implemented=false`
@@ -118,3 +153,38 @@ Required claims for `presentation_renderer_worker_static_slide_output_smoke.v1`:
 - `visual_qa_executed=false`
 
 KR-7H.8 still does not map PresentationIR blocks into slides, does not use user prompt content or source evidence content, does not generate a user-visible deck, does not persist a PPTX artifact, does not run LibreOffice, does not create PDF/PNG proofs, does not write artifact/proof bundles, and does not claim production-quality PPTX output.
+
+
+## KR-7H.9 minimal PresentationIR mapping temporary PPTX smoke boundary
+
+KR-7H.9 maps only title/body text from validated renderer input / source-backed dry-run payloads. KR-7H.9 may map only `title` and `body` text from validated renderer input / source-backed dry-run payloads. It must execute both single-slide and multi-slide temporary PPTX smoke paths, verify non-zero file sizes, delete the temporary `.pptx` files, remove the temporary directory, and return a deterministic fail-closed JSON report.
+
+Required claims for `presentation_renderer_worker_minimal_ir_mapping_smoke.v1`:
+
+- `minimal_ir_mapping_smoke_implemented=true`
+- `mapped_fields=title,body`
+- `mapped_block_types=text`
+- `single_slide_smoke_executed=true`
+- `multi_slide_smoke_executed=true`
+- `single_slide_pptx_written=true`
+- `single_slide_pptx_deleted=true`
+- `multi_slide_pptx_written=true`
+- `multi_slide_pptx_deleted=true`
+- `temporary_directory_removed=true`
+- `title_body_mapping_implemented=true`
+- `presentation_ir_mapping_implemented=true`
+- `chart_mapping_implemented=false`
+- `table_mapping_implemented=false`
+- `image_mapping_implemented=false`
+- `theme_mapping_implemented=false`
+- `professional_layout_engine_implemented=false`
+- `user_prompt_passthrough_allowed=false`
+- `persistent_artifact_written=false`
+- `filesystem_output_written=false`
+- `production_pptx_output_implemented=false`
+- `artifact_bundle_produced=false`
+- `proof_bundle_produced=false`
+- `libreoffice_executed=false`
+- `visual_qa_executed=false`
+
+KR-7H.9 still does not create production PPTX output, does not persist artifacts, does not run LibreOffice, does not create PDF/PNG proofs, does not write artifact/proof bundles, does not perform visual QA/scoring, does not map charts/tables/images/theme/brand, and does not claim production-quality PPTX output.

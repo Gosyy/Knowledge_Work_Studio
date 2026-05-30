@@ -66,3 +66,5 @@ KR-7H.7 adds controlled empty PPTX file output smoke with `presentation_renderer
 
 
 KR-7H.8 adds controlled static single-slide PPTX output smoke with `presentation_renderer_worker_static_slide_output_smoke.v1`. It writes a temporary `.pptx` containing exactly one fixed technical smoke slide, verifies non-zero size, deletes the temporary file, and keeps production_pptx_output_implemented=false, persistent_artifact_written=false, artifact_bundle_produced=false, and proof_bundle_produced=false without PresentationIR mapping, user/evidence content, persistent artifacts, or LibreOffice proof runtime.
+
+KR-7H.9 adds minimal PresentationIR mapping temporary PPTX smoke with `presentation_renderer_worker_minimal_ir_mapping_smoke.v1`. It maps only title/body text from validated renderer input into temporary single-slide and multi-slide PPTX smoke files, deletes all temporary outputs, and keeps production_pptx_output_implemented=false, persistent_artifact_written=false, artifact_bundle_produced=false, proof_bundle_produced=false, libreoffice_executed=false, and visual_qa_executed=false.

@@ -1,20 +1,21 @@
 {
   "name": "kw-studio-renderer-worker",
-  "version": "0.0.0-kr7h8-static-slide-output-smoke",
+  "version": "0.0.0-kr7h9-minimal-ir-mapping-smoke",
   "private": true,
   "type": "module",
-  "description": "KR-7H isolated renderer worker package; validates protocol, controlled PptxGenJS capability, in-memory construction, temporary empty PPTX output, and temporary static single-slide PPTX output smoke without production rendering.",
+  "description": "KR-7H isolated renderer worker package; validates protocol, controlled PptxGenJS capability, in-memory construction, temporary PPTX output, static slide output, and minimal PresentationIR title/body mapping smoke without production rendering.",
   "scripts": {
     "protocol:preflight": "node ./kw_renderer_worker_protocol_preflight.mjs --capabilities",
     "dependency:capability": "node ./kw_renderer_worker_pptxgenjs_capability.mjs --json",
     "pptxgenjs:in-memory": "node ./kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs --json",
     "pptxgenjs:empty-output": "node ./kw_renderer_worker_empty_pptx_output_smoke.mjs --json",
     "pptxgenjs:static-slide": "node ./kw_renderer_worker_static_slide_output_smoke.mjs --json",
-    "check": "node --check ./kw_renderer_worker_protocol_preflight.mjs && node --check ./kw_renderer_worker_pptxgenjs_capability.mjs && node --check ./kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs && node --check ./kw_renderer_worker_empty_pptx_output_smoke.mjs && node --check ./kw_renderer_worker_static_slide_output_smoke.mjs && npm run protocol:preflight && npm run dependency:capability && npm run pptxgenjs:in-memory && npm run pptxgenjs:empty-output && npm run pptxgenjs:static-slide"
+    "check": "node --check ./kw_renderer_worker_protocol_preflight.mjs && node --check ./kw_renderer_worker_pptxgenjs_capability.mjs && node --check ./kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs && node --check ./kw_renderer_worker_empty_pptx_output_smoke.mjs && node --check ./kw_renderer_worker_static_slide_output_smoke.mjs && node --check ./kw_renderer_worker_minimal_ir_mapping_smoke.mjs && npm run protocol:preflight && npm run dependency:capability && npm run pptxgenjs:in-memory && npm run pptxgenjs:empty-output && npm run pptxgenjs:static-slide && npm run pptxgenjs:minimal-ir-smoke",
+    "pptxgenjs:minimal-ir-smoke": "node ./kw_renderer_worker_minimal_ir_mapping_smoke.mjs --json --fixture"
   },
   "kwStudio": {
     "schema_version": "presentation_renderer_worker_package_preflight.v1",
-    "phase": "KR-7H.8 controlled static single-slide PPTX output smoke",
+    "phase": "KR-7H.9 minimal PresentationIR mapping + temporary PPTX smoke",
     "renderer_worker_package_boundary": true,
     "frontend_package_boundary": false,
     "protocol_preflight_script": "kw_renderer_worker_protocol_preflight.mjs",
@@ -34,20 +35,24 @@
       "persist_pptx_artifact",
       "generate_user_visible_deck",
       "call_pptxgenjs_write_or_output_api_for_production",
-      "generate_editable_pptx_artifact"
+      "generate_editable_pptx_artifact",
+      "map_charts_tables_images",
+      "run_professional_layout_engine",
+      "use_arbitrary_prompt_passthrough"
     ],
     "non_goals": [
       "no_artifact_bundle_storage",
       "no_frontend_package_changes",
       "no_libreoffice_execution",
       "no_persistent_filesystem_output",
-      "no_presentation_ir_mapping",
       "no_production_pptx_generation",
-      "no_slide_content_generation",
       "no_production_quality_output_claims",
       "no_proof_bundle_generation",
       "no_user_prompt_content",
-      "no_visual_qa_scoring"
+      "no_visual_qa_scoring",
+      "no_charts_tables_images_mapping",
+      "no_professional_layout_engine",
+      "no_gigachat_runtime_changes"
     ],
     "pptxgenjs_capability_schema_version": "presentation_renderer_worker_pptxgenjs_capability.v1",
     "pptxgenjs_dependency_declared": true,
@@ -66,7 +71,7 @@
     "temporary_pptx_written": true,
     "temporary_pptx_deleted": true,
     "temporary_pptx_file_size_nonzero": true,
-    "presentation_ir_mapping_implemented": false,
+    "presentation_ir_mapping_implemented": true,
     "persistent_artifact_written": false,
     "libreoffice_executed": false,
     "visual_qa_executed": false,
@@ -79,7 +84,28 @@
     "static_slide_count": 1,
     "static_slide_content_added": true,
     "static_slide_uses_user_content": false,
-    "static_slide_uses_presentation_ir": false
+    "static_slide_uses_presentation_ir": false,
+    "minimal_ir_mapping_smoke_schema_version": "presentation_renderer_worker_minimal_ir_mapping_smoke.v1",
+    "minimal_ir_mapping_smoke_implemented": true,
+    "title_body_mapping_implemented": true,
+    "mapped_fields": [
+      "title",
+      "body"
+    ],
+    "mapped_block_types": [
+      "text"
+    ],
+    "single_slide_smoke_executed": true,
+    "multi_slide_smoke_executed": true,
+    "temporary_minimal_ir_pptx_written": true,
+    "temporary_minimal_ir_pptx_deleted": true,
+    "temporary_minimal_ir_pptx_file_size_nonzero": true,
+    "chart_mapping_implemented": false,
+    "table_mapping_implemented": false,
+    "image_mapping_implemented": false,
+    "theme_mapping_implemented": false,
+    "professional_layout_engine_implemented": false,
+    "user_prompt_passthrough_allowed": false
   },
   "dependencies": {
     "pptxgenjs": "4.0.1"

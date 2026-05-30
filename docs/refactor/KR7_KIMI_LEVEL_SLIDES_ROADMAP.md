@@ -732,3 +732,40 @@ KR-7H.7 controlled empty PPTX file output smoke defines `presentation_renderer_w
 Implementation note after KR-7H.8:
 
 KR-7H.8 controlled static single-slide PPTX output smoke defines `presentation_renderer_worker_static_slide_output_smoke.v1`. The smoke may write a temporary `.pptx` containing exactly one fixed technical smoke slide only as local capability evidence, verify non-zero size, and delete the temporary file before returning ready. KR-7H.8 still has no PresentationIR mapping, no user/evidence content, no user-visible deck content, no persistent artifact, no LibreOffice proof, no artifact/proof bundles, no visual QA, and no quality scoring.
+
+Implementation note after KR-7H.9:
+
+KR-7H.9 minimal PresentationIR mapping temporary PPTX smoke defines `presentation_renderer_worker_minimal_ir_mapping_smoke.v1`. The smoke may map only title/body text from validated renderer input / source-backed dry-run payloads into temporary single-slide and multi-slide `.pptx` files, verify non-zero sizes, and delete all temporary outputs before returning ready. KR-7H.9 still has no persistent PPTX artifact, no LibreOffice proof, no artifact/proof bundles, no visual QA, no chart/table/image/theme/brand mapping, and no production-quality output claim.
+
+### KR-7H.9 minimal PresentationIR mapping + single/multi-slide temporary PPTX smoke
+
+KR-7H.9 introduces `presentation_renderer_worker_minimal_ir_mapping_smoke.v1` after the static single-slide output smoke. It is the first controlled renderer mapping smoke, but it is still not a production renderer.
+
+Scope:
+
+```text
+validated renderer input / source-backed dry-run payload;
+map only title/body text;
+execute single-slide temporary PPTX smoke;
+execute multi-slide temporary PPTX smoke;
+verify non-zero temporary file sizes;
+delete temporary PPTX files and temp directory;
+return deterministic JSON report.
+```
+
+Non-goals:
+
+```text
+no persistent PPTX artifact;
+no backend artifact bundle;
+no LibreOffice proof;
+no proof bundle;
+no visual QA/scoring;
+no chart/table/image mapping;
+no theme/brand/professional layout engine;
+no frontend UI/package changes;
+no GigaChat/runtime changes;
+no production-quality output claim.
+```
+
+KR-7H.9 must be validated by `scripts/kw_renderer_worker_minimal_ir_mapping_check.py`, targeted service tests, full runner, Docker smoke, and remote HEAD verification.
