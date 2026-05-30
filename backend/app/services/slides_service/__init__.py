@@ -206,6 +206,21 @@ from backend.app.services.slides_service.source_asset_registry import (
     StoredSourceAsset,
     build_source_asset_registry_manifest,
 )
+
+from backend.app.services.slides_service.template_brand_profile import (
+    TEMPLATE_BRAND_PROFILE_SCHEMA_VERSION,
+    TemplateBrandProfileResult,
+    TemplateLayoutProfile,
+    TemplateMediaAssetProfile,
+    TemplateSlideSize,
+    TemplateThemeProfile,
+    build_sample_template_pptx_bytes,
+    inspect_pptx_template_brand_profile,
+    inspect_pptx_template_brand_profile_bytes,
+    sample_template_brand_profile_report,
+    validate_template_reference,
+)
+
 from backend.app.services.slides_service.source_grounding import (
     SlideCitation,
     SourceFragment,
@@ -324,6 +339,17 @@ __all__ = [
     "VisualGrammarValidationIssue",
     "VisualGrammarValidationResult",
     "visual_grammar_catalog_payload",
+    "TEMPLATE_BRAND_PROFILE_SCHEMA_VERSION",
+    "TemplateBrandProfileResult",
+    "TemplateLayoutProfile",
+    "TemplateMediaAssetProfile",
+    "TemplateSlideSize",
+    "TemplateThemeProfile",
+    "build_sample_template_pptx_bytes",
+    "inspect_pptx_template_brand_profile",
+    "inspect_pptx_template_brand_profile_bytes",
+    "sample_template_brand_profile_report",
+    "validate_template_reference",
     "PRESENTATION_IR_SCHEMA_VERSION",
     "SOURCE_ASSET_REGISTRY_SCHEMA_VERSION",
     "SOURCE_ASSET_STORAGE_SCHEMA_VERSION",

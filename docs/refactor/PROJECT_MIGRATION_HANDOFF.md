@@ -1805,3 +1805,9 @@ KR-7H.13 adds `presentation_renderer_worker_kr7h_closure_gate.v1` as the KR-7H c
 ### KR-7H.13 KR-7H closure gate
 
 KR-7H.13 closes the KR-7H renderer-worker foundation phase only. It must keep `renderer_runtime_implemented=false`, `production_pptx_output_implemented=false`, `production_renderer_closure_implemented=false`, `visual_qa_executed=false`, `visual_quality_score=null`, `kimi_level_quality_claimed=false`, `source_image_selection_implemented=false`, and `image_mapping_implemented=false`. Validation must include `kw_renderer_worker_kr7h_closure_gate_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. The next phase is KR-7I template and brand understanding.
+
+## KR-7I implementation note — template and brand understanding
+
+KR-7I adds `presentation_template_brand_profile.v1` as the first uploaded-PPTX template and brand understanding contract after KR-7H closure. The contract inspects PPTX OOXML/ZIP parts for slide size, theme colors, fonts, masters/layouts/placeholders, source media asset metadata, role-to-layout-family hints, and unsupported-feature warnings. It is intentionally a deterministic profile/contract layer, not a generator. It keeps `no_template_clone_rewrite_mode`, old-template-content copying, no_production_layout_engine, renderer runtime changes, visual QA/scoring, source image selection runtime, image/chart/table mapping, UI changes, GigaChat/runtime changes, Docker/deploy/Postgres changes, and Kimi-level claims out of scope.
+
+Project-resident validation for KR-7I is `scripts/kw_template_brand_profile_check.py` plus `backend/tests/services/test_kr7i_template_brand_profile.py`. Full closure still requires targeted apply-log review, committed full runner, Docker smoke, clean working tree, push, and remote HEAD verification. The next phase after KR-7I remains KR-7J source image selection.

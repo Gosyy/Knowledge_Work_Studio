@@ -74,3 +74,7 @@ KR-7H.10 adds persistent PPTX artifact bundle and render report contract with `p
 KR-7H.12 hardens renderer input validation with `presentation_renderer_worker_source_image_hardening.v1`: generated/fake/fallback/placeholder/random/web/synthetic/inline image payloads fail closed, image-requiring slides must bind source image refs/assets, and image mapping/source-image selection remain not implemented.
 
 KR-7H.13 adds the KR-7H closure gate with `presentation_renderer_worker_kr7h_closure_gate.v1`. It closes the renderer-worker foundation phase after KR-7H.1 through KR-7H.12 checks, while keeping production renderer closure, visual QA/scoring, Kimi-level quality, source image selection, image mapping, template/brand understanding, professional layout, UI, and GigaChat/runtime changes out of scope.
+
+KR-7I adds `presentation_template_brand_profile.v1` as a deterministic uploaded-PPTX template and brand understanding contract. It parses template slide size, theme colors, fonts, masters/layouts/placeholders, and source media asset metadata without copying old template content, without a template clone/rewrite mode, without a production layout engine, without renderer runtime changes, without visual QA/scoring, and without Kimi-level claims.
+
+KR-7I template and brand understanding guardrails: `presentation_template_brand_profile.v1` is a profile/contract layer with `no_template_clone_rewrite_mode` and `no_production_layout_engine`; it does not copy old template content, change renderer runtime, execute visual QA/scoring, or claim Kimi-level quality.

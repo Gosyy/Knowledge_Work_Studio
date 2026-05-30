@@ -263,3 +263,19 @@ treat the KR-7H closure gate as a waiver for KR-7I/KR-7J/KR-7K/KR-7L implementat
 ```
 
 KR-7H.13 may only add `presentation_renderer_worker_kr7h_closure_gate.v1` and project-resident validation that the KR-7H.1 through KR-7H.12 renderer-worker foundation contracts are present. It must keep production renderer closure, visual QA/scoring, Kimi-level quality, source image selection, image mapping, template/brand understanding, professional layout, UI, GigaChat/runtime, and Docker/deploy/Postgres changes out of scope.
+
+## KR-7I template and brand understanding prohibitions
+
+During KR-7I it is forbidden to:
+
+```text
+claim KR-7I implements template clone/rewrite mode;
+claim KR-7I copies old template text or slide content into generated output;
+claim KR-7I implements the production layout engine;
+claim KR-7I maps images/charts/tables into final user decks;
+claim KR-7I performs visual QA, quality scoring, or human review;
+claim KR-7I reaches Kimi-level quality;
+change UI, GigaChat/runtime, Docker/deploy/Postgres behavior, or run npm audit fix as part of KR-7I.
+```
+
+KR-7I may add `presentation_template_brand_profile.v1` as a deterministic uploaded-PPTX template and brand profile contract. It may inspect PPTX OOXML/ZIP parts for slide size, theme colors, fonts, masters/layouts/placeholders, source media assets, and unsupported-feature warnings. It must keep `no_template_clone_rewrite_mode`, `no_production_layout_engine`, renderer runtime, visual QA/scoring, source image selection, and Kimi-level claims out of scope.

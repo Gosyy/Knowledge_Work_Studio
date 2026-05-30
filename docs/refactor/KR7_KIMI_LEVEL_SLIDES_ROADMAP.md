@@ -397,6 +397,12 @@ Acceptance:
 - unsupported template features are warned;
 - generated deck stays within template grid/style constraints.
 
+Implementation note after KR-7I:
+
+KR-7I adds `presentation_template_brand_profile.v1` as the first uploaded-PPTX template and brand understanding contract after the KR-7H renderer-worker foundation closure. The profile inspects PPTX OOXML/ZIP parts for slide size, theme colors, fonts, masters/layouts/placeholders, source media assets, role-to-layout-family hints, and unsupported-feature warnings. It explicitly keeps `no_template_clone_rewrite_mode`, old-template-content copying, no_production_layout_engine, renderer runtime changes, visual QA/scoring, source image selection runtime, image/chart/table mapping, UI changes, GigaChat/runtime changes, Docker/deploy/Postgres changes, and Kimi-level claims out of scope.
+
+KR-7I validation includes `kw_template_brand_profile_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. The next phase remains KR-7J source image selection.
+
 ## Phase KR-7J — source image selection
 
 Goal: reuse images from uploaded docs/templates only.

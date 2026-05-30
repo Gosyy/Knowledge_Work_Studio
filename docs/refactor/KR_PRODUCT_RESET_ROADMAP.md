@@ -1255,3 +1255,9 @@ Implementation note after KR-7H.13:
 KR-7H.13 adds `presentation_renderer_worker_kr7h_closure_gate.v1` as the KR-7H closure gate. It records that the KR-7H renderer-worker foundation layers KR-7H.1 through KR-7H.12 are present and covered by project-resident checks, but it does not claim production renderer closure, visual QA/scoring, Kimi-level quality, source image selection, image mapping, professional layout, UI changes, GigaChat/runtime changes, or Docker/deploy/Postgres behavior changes.
 
 KR-7H.13 is validated by `kw_renderer_worker_kr7h_closure_gate_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. After KR-7H.13 is closed, the next phase is KR-7I template and brand understanding.
+
+Implementation note after KR-7I:
+
+KR-7I adds `presentation_template_brand_profile.v1` and `kw_template_brand_profile_check.py` as the first template and brand understanding contract after KR-7H closure. The implementation inspects uploaded PPTX templates as OOXML/ZIP packages and builds a deterministic template profile with slide size, theme colors, fonts, masters/layouts/placeholders, source media asset metadata, role-to-layout-family hints, and unsupported-feature warnings. It does not implement `no_template_clone_rewrite_mode` as a generation path, does not copy old template text/content, does not implement the no_production_layout_engine, does not change renderer runtime, does not perform visual QA/scoring, does not select source images for user decks, and does not claim Kimi-level quality.
+
+KR-7I is validated by the template brand profile checker, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. The next phase is KR-7J source image selection.
