@@ -39,7 +39,7 @@ REQUIRED_PHRASES = {
         '"renderer_runtime_implemented": false',
         '"production_pptx_output_implemented": false',
         '"pptx_generation_executed": false',
-        '"proof_bundle_produced": false',
+        '"proof_bundle_produced": true',
     ],
     "renderer_worker/CONTRACT.md": [
         "KR-7H.6 extends that boundary with an in-memory PptxGenJS construction preflight",
@@ -171,7 +171,10 @@ def _validate_package(repo_root: Path, problems: list[str]) -> None:
         "renderer_runtime_implemented": False,
         "production_pptx_output_implemented": False,
         "pptx_generation_executed": False,
-        "proof_bundle_produced": False,
+        # renderer_worker/package.json is cumulative package metadata. After KR-7H.11
+        # the package advertises a real LibreOffice proof-bundle smoke while this
+        # KR-7H.6 in-memory script still returns proof_bundle_produced=false.
+        "proof_bundle_produced": True,
     }
     for key, expected_value in expected.items():
         if metadata.get(key) != expected_value:

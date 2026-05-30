@@ -16,6 +16,8 @@ KR-7H.8 extends that boundary with a controlled static single-slide PPTX output 
 
 KR-7H.9 extends that boundary with minimal PresentationIR mapping plus single-slide and multi-slide temporary PPTX smoke. The smoke may map only `title` and `body` text from validated renderer input / source-backed dry-run payloads, write temporary single-slide and multi-slide `.pptx` files, verify non-zero size, and delete all temporary outputs before returning ready. It does not map charts, tables, images, theme, brand, or professional layout; it does not persist PPTX artifacts, run LibreOffice, create proof bundles, or claim production renderer readiness.
 
+KR-7H.11 extends the KR-7H.10 persistent PPTX artifact bundle path with a controlled LibreOffice + `pdftoppm` proof bundle smoke. It may run LibreOffice headless to export the existing controlled PPTX artifact to PDF, run `pdftoppm` to render PNG proof files, and write `presentation_renderer_worker_libreoffice_proof_bundle.v1`. It must fail closed when LibreOffice, `pdftoppm`, the PDF proof, any PNG proof, or the proof-bundle JSON is absent or empty. It still does not perform visual QA/scoring, map charts/tables/images/theme/brand/professional layout, change UI/frontend/GigaChat runtime, or claim production-quality renderer closure.
+
 ## Contract identifiers
 
 - `presentation_renderer_worker_package_preflight.v1`
@@ -26,6 +28,9 @@ KR-7H.9 extends that boundary with minimal PresentationIR mapping plus single-sl
 - `presentation_renderer_worker_empty_pptx_output_smoke.v1`
 - `presentation_renderer_worker_static_slide_output_smoke.v1`
 - `presentation_renderer_worker_minimal_ir_mapping_smoke.v1`
+- `presentation_renderer_worker_pptx_artifact_bundle.v1`
+- `presentation_renderer_worker_render_report.v1`
+- `presentation_renderer_worker_libreoffice_proof_bundle.v1`
 
 ## Required package scripts
 
@@ -35,9 +40,11 @@ KR-7H.9 extends that boundary with minimal PresentationIR mapping plus single-sl
 - `npm run pptxgenjs:empty-output --prefix renderer_worker`
 - `npm run pptxgenjs:static-slide --prefix renderer_worker`
 - `npm run pptxgenjs:minimal-ir-smoke --prefix renderer_worker`
+- `npm run pptxgenjs:artifact-bundle --prefix renderer_worker`
+- `npm run pptxgenjs:libreoffice-proof-bundle --prefix renderer_worker`
 - `npm run check --prefix renderer_worker`
 
-The `check` script confirms package isolation, protocol preflight readiness, controlled PptxGenJS capability, in-memory construction, temporary empty output smoke, temporary static single-slide output smoke, and temporary minimal PresentationIR title/body mapping smoke only. It does not generate production PPTX, does not persist artifacts, does not map charts/tables/images or professional layouts, does not start a long-running worker service, and does not execute LibreOffice.
+The `check` script confirms package isolation, protocol preflight readiness, controlled PptxGenJS capability, in-memory construction, temporary empty output smoke, temporary static single-slide output smoke, temporary minimal PresentationIR title/body mapping smoke, persistent PPTX artifact bundle, and LibreOffice proof bundle smoke. It does not generate production PPTX, does not perform visual QA/scoring, does not map charts/tables/images or professional layouts, does not start a long-running worker service, and does not use fake/fallback proof renderers as success evidence.
 
 ## Runtime flags
 
@@ -46,8 +53,8 @@ The package contract must keep these claims false:
 - `renderer_runtime_implemented=false`
 - `production_pptx_output_implemented=false`
 - `pptx_generation_executed=false`
-- `artifact_bundle_produced=false`
-- `proof_bundle_produced=false`
+- `artifact_bundle_produced=true` after KR-7H.10
+- `proof_bundle_produced=true` after KR-7H.11 proof-bundle smoke
 - `slide_content_added=false`
 - `pptxgenjs_write_api_called=false`
 - `filesystem_output_written=false`
@@ -112,8 +119,8 @@ Required claims for `presentation_renderer_worker_empty_pptx_output_smoke.v1`:
 - `filesystem_output_written=false`
 - `presentation_ir_mapping_implemented=false`
 - `production_pptx_output_implemented=false`
-- `artifact_bundle_produced=false`
-- `proof_bundle_produced=false`
+- `artifact_bundle_produced=true` after KR-7H.10
+- `proof_bundle_produced=true` after KR-7H.11 proof-bundle smoke
 - `libreoffice_executed=false`
 - `visual_qa_executed=false`
 
@@ -147,8 +154,8 @@ Required claims for `presentation_renderer_worker_static_slide_output_smoke.v1`:
 - `filesystem_output_written=false`
 - `presentation_ir_mapping_implemented=false`
 - `production_pptx_output_implemented=false`
-- `artifact_bundle_produced=false`
-- `proof_bundle_produced=false`
+- `artifact_bundle_produced=true` after KR-7H.10
+- `proof_bundle_produced=true` after KR-7H.11 proof-bundle smoke
 - `libreoffice_executed=false`
 - `visual_qa_executed=false`
 
@@ -182,8 +189,8 @@ Required claims for `presentation_renderer_worker_minimal_ir_mapping_smoke.v1`:
 - `persistent_artifact_written=false`
 - `filesystem_output_written=false`
 - `production_pptx_output_implemented=false`
-- `artifact_bundle_produced=false`
-- `proof_bundle_produced=false`
+- `artifact_bundle_produced=true` after KR-7H.10
+- `proof_bundle_produced=true` after KR-7H.11 proof-bundle smoke
 - `libreoffice_executed=false`
 - `visual_qa_executed=false`
 
@@ -225,3 +232,55 @@ professional_layout_engine_implemented=false
 ```
 
 KR-7H.10 does not run LibreOffice, does not create PDF/PNG proofs, does not write proof bundles, does not perform visual QA or quality scoring, does not map charts/tables/images/theme/brand, does not change frontend package dependencies, and does not claim production-quality or Kimi-level output.
+
+
+## KR-7H.11 LibreOffice proof bundle smoke
+
+KR-7H.11 introduces `presentation_renderer_worker_libreoffice_proof_bundle.v1` on top of the KR-7H.10 persistent PPTX artifact bundle. The smoke may only use the existing minimal title/body mapped PPTX artifact, LibreOffice headless PDF export, and `pdftoppm` PNG rendering.
+
+Required command:
+
+```bash
+npm run pptxgenjs:libreoffice-proof-bundle --prefix renderer_worker
+```
+
+Required files in the controlled output directory:
+
+```text
+kr7h10-minimal-ir-rendered.pptx
+kr7h10-render-report.json
+kr7h11-rendered-proof.pdf
+kr7h11-png-proof/slide_*.png
+kr7h11-proof-bundle.json
+```
+
+Required flags and boundaries:
+
+```text
+proof_bundle_schema_version=presentation_renderer_worker_libreoffice_proof_bundle.v1
+artifact_bundle_schema_version=presentation_renderer_worker_pptx_artifact_bundle.v1
+render_report_schema_version=presentation_renderer_worker_render_report.v1
+artifact_bundle_produced=true
+artifact_bundle_verified=true
+proof_bundle_produced=true
+proof_bundle_verified=true
+libreoffice_required=true
+pdftoppm_required=true
+libreoffice_executed=true
+pdftoppm_executed=true
+pdf_proof_written=true
+png_proofs_written=true
+fake_proof_used=false
+fallback_renderer_used=false
+python_pptx_proof_used=false
+visual_qa_executed=false
+visual_quality_score=null
+production_pptx_output_implemented=false
+chart_mapping_implemented=false
+table_mapping_implemented=false
+image_mapping_implemented=false
+theme_mapping_implemented=false
+professional_layout_engine_implemented=false
+```
+
+KR-7H.11 must return `blocked` and a non-zero process exit when LibreOffice/`soffice`, `pdftoppm`, the PDF proof, the PNG proofs, or `kr7h11-proof-bundle.json` are missing or empty. Python-pptx, fake images, placeholder PDFs, and fallback renderers are forbidden as success evidence. KR-7H.11 still does not perform visual QA/scoring, does not broaden mapping beyond title/body text, does not close the production renderer, and does not change UI, GigaChat/runtime, Docker/deploy/Postgres behavior, or frontend package dependencies.

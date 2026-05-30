@@ -1783,3 +1783,12 @@ KR-7H.10 adds `presentation_renderer_worker_pptx_artifact_bundle.v1` and `presen
 ### KR-7H.10 persistent PPTX artifact bundle + render report contract
 
 KR-7H.10 is the persistent artifact-bundle step in the consolidated KR-7H plan. It may create a controlled PPTX artifact bundle and render report contract, but it must not run LibreOffice, generate proof images, produce proof bundles, broaden renderer mapping beyond title/body text, or claim production renderer closure. Validation must include exact package self-test, `kw_renderer_worker_pptx_artifact_bundle_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.
+
+
+Implementation note after KR-7H.11:
+
+KR-7H.11 adds the controlled LibreOffice proof-bundle smoke for the renderer worker. The new contract is `presentation_renderer_worker_libreoffice_proof_bundle.v1`; it runs only on the existing KR-7H.10 persistent PPTX artifact bundle path, writes a real LibreOffice PDF proof, real `pdftoppm` PNG proofs, and `kr7h11-proof-bundle.json`, and fails closed when required proof dependencies or proof files are absent. The proof smoke explicitly keeps `visual_qa_executed=false`, `visual_quality_score=null`, `production_pptx_output_implemented=false`, and chart/table/image/theme/professional-layout mapping flags false.
+
+### KR-7H.11 LibreOffice proof bundle smoke contract
+
+KR-7H.11 adds `renderer_worker/kw_renderer_worker_libreoffice_proof_bundle_smoke.mjs`, `scripts/kw_renderer_worker_libreoffice_proof_bundle_check.py`, `backend/tests/services/test_kr7h_renderer_worker_libreoffice_proof_bundle.py`, a renderer-worker package script `pptxgenjs:libreoffice-proof-bundle`, and a project full-runner step `29h11-renderer-worker-libreoffice-proof-bundle-check`. It does not change UI, GigaChat/runtime, Docker/deploy/Postgres behavior, frontend dependencies, or production renderer closure. KR-7H.12 remains source-image-only/fail-closed/no-fake-artifacts hardening, and KR-7H.13 remains the closure gate.

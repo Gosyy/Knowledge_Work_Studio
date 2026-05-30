@@ -158,6 +158,7 @@ run_shell_step "29h7-renderer-worker-empty-pptx-output-check" "cd '${REPO_ROOT}'
 run_shell_step "29h8-renderer-worker-static-slide-output-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_static_slide_output_check.py --repo-root . --require-ready"
 run_shell_step "29h9-renderer-worker-minimal-ir-mapping-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_minimal_ir_mapping_check.py --repo-root . --require-ready"
 run_shell_step "29h10-renderer-worker-pptx-artifact-bundle-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_pptx_artifact_bundle_check.py --repo-root . --require-ready"
+run_shell_step "29h11-renderer-worker-libreoffice-proof-bundle-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_libreoffice_proof_bundle_check.py --repo-root . --require-ready"
 run_shell_step "30-production-readiness-gate" "cd '${REPO_ROOT}' && source .venv/bin/activate && export NO_PROXY='${LOCAL_NO_PROXY}' no_proxy='${LOCAL_NO_PROXY}' && unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy && python scripts/kw_production_readiness_gate.py --repo-root ."
 run_shell_step "40-docker-compose-check-only" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_fullstack_compose_smoke.py --repo-root . --check-only --timeout 1200"
 run_shell_step "99-git-status-after" "cd '${REPO_ROOT}' && git status --short && git branch --show-current && git rev-parse HEAD"

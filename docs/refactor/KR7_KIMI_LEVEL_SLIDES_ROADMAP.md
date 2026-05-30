@@ -778,3 +778,12 @@ KR-7H.10 adds `presentation_renderer_worker_pptx_artifact_bundle.v1` and `presen
 ### KR-7H.10 persistent PPTX artifact bundle + render report contract
 
 KR-7H.10 is the persistent artifact-bundle step in the consolidated KR-7H plan. It may create a controlled PPTX artifact bundle and render report contract, but it must not run LibreOffice, generate proof images, produce proof bundles, broaden renderer mapping beyond title/body text, or claim production renderer closure. Validation must include exact package self-test, `kw_renderer_worker_pptx_artifact_bundle_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.
+
+
+Implementation note after KR-7H.11:
+
+KR-7H.11 adds `presentation_renderer_worker_libreoffice_proof_bundle.v1` on top of the KR-7H.10 controlled persistent PPTX artifact bundle. It uses LibreOffice/`soffice` headless export to produce a real PDF proof and `pdftoppm` to produce real PNG proof files, then writes `kr7h11-proof-bundle.json` with file-size and checksum evidence. It fails closed if LibreOffice/`soffice`, `pdftoppm`, the PDF proof, PNG proofs, or proof-bundle JSON are missing or empty. KR-7H.11 still does not perform visual QA/scoring, does not broaden mapping beyond title/body text, does not map charts/tables/images/theme/brand/professional layout, does not change UI or GigaChat/runtime behavior, and does not claim production-quality/Kimi-level output.
+
+### KR-7H.11 LibreOffice proof bundle smoke contract
+
+KR-7H.11 validation must include exact package self-test through `npm run pptxgenjs:libreoffice-proof-bundle --prefix renderer_worker`, `kw_renderer_worker_libreoffice_proof_bundle_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. The next KR-7H.12 step remains renderer hardening: source-image-only, fail-closed, no fake artifacts; KR-7H.13 remains the KR-7H closure gate.

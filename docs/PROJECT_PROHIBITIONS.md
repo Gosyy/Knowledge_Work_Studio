@@ -90,6 +90,23 @@ run npm audit fix or unrelated dependency/security cleanup as part of KR-7H.10.
 
 ```text
 KR-7H.10 may write a persistent PPTX artifact only in an explicit controlled renderer-worker output directory and must write a deterministic render report JSON beside it. This is an artifact bundle contract step, not LibreOffice proof, visual QA, or production-quality renderer closure.
+
+
+## KR-7H.11 renderer worker LibreOffice proof bundle prohibitions
+
+During KR-7H.11 it is forbidden to:
+
+```text
+claim KR-7H.11 closes the production renderer;
+claim KR-7H.11 performs visual QA, quality scoring, or human review;
+claim KR-7H.11 maps charts, tables, images, theme, brand, or professional layouts;
+claim KR-7H.11 uses any proof renderer other than LibreOffice PDF export plus pdftoppm PNG rendering;
+use python-pptx, generated placeholder images, placeholder PDFs, or fake files as successful proof evidence;
+treat missing LibreOffice/soffice, missing pdftoppm, missing PDF, missing PNGs, or missing proof-bundle JSON as success;
+change frontend package/dependency policy, UI, GigaChat/runtime, Docker/deploy/Postgres behavior, or run npm audit fix as part of KR-7H.11.
+```
+
+KR-7H.11 may create `presentation_renderer_worker_libreoffice_proof_bundle.v1` only from the existing controlled KR-7H.10 PPTX artifact path. It must fail closed when proof dependencies or proof files are unavailable, and it must keep `visual_qa_executed=false`, `visual_quality_score=null`, `production_pptx_output_implemented=false`, and all chart/table/image/theme/pro-layout mapping flags false.
 ```
 
 ## Runtime and deploy prohibitions

@@ -26,6 +26,7 @@ STATIC_SLIDE_SCHEMA_VERSION = "presentation_renderer_worker_static_slide_output_
 MINIMAL_IR_MAPPING_SCHEMA_VERSION = "presentation_renderer_worker_minimal_ir_mapping_smoke.v1"
 PPTX_ARTIFACT_BUNDLE_SCHEMA_VERSION = "presentation_renderer_worker_pptx_artifact_bundle.v1"
 RENDER_REPORT_SCHEMA_VERSION = "presentation_renderer_worker_render_report.v1"
+LIBREOFFICE_PROOF_BUNDLE_SCHEMA_VERSION = "presentation_renderer_worker_libreoffice_proof_bundle.v1"
 EXPECTED_PPTXGENJS_VERSION = "4.0.1"
 
 REQUIRED_FILES = [
@@ -39,10 +40,13 @@ REQUIRED_FILES = [
     "renderer_worker/kw_renderer_worker_static_slide_output_smoke.mjs",
     "renderer_worker/kw_renderer_worker_minimal_ir_mapping_smoke.mjs",
     "renderer_worker/kw_renderer_worker_pptx_artifact_bundle_smoke.mjs",
+    "renderer_worker/kw_renderer_worker_libreoffice_proof_bundle_smoke.mjs",
     "backend/tests/services/test_kr7h_renderer_worker_package.py",
+    "backend/tests/services/test_kr7h_renderer_worker_libreoffice_proof_bundle.py",
     "scripts/kw_renderer_worker_package_check.py",
     "scripts/kw_renderer_worker_minimal_ir_mapping_check.py",
     "scripts/kw_renderer_worker_pptx_artifact_bundle_check.py",
+    "scripts/kw_renderer_worker_libreoffice_proof_bundle_check.py",
 ]
 
 REQUIRED_PHRASES = {
@@ -57,6 +61,7 @@ REQUIRED_PHRASES = {
         '"presentation_renderer_worker_pptxgenjs_capability.v1"',
         '"presentation_renderer_worker_static_slide_output_smoke.v1"',
         '"presentation_renderer_worker_minimal_ir_mapping_smoke.v1"',
+        '"presentation_renderer_worker_libreoffice_proof_bundle.v1"',
         '"renderer_worker_package_boundary": true',
         '"frontend_package_boundary": false',
         '"pptxgenjs_dependency_declared": true',
@@ -66,7 +71,13 @@ REQUIRED_PHRASES = {
         '"pptx_generation_executed": false',
         '"minimal_ir_mapping_smoke_implemented": true',
         '"artifact_bundle_produced": true',
-        '"proof_bundle_produced": false',
+        '"proof_bundle_produced": true',
+        '"libreoffice_executed": true',
+        '"pdftoppm_executed": true',
+        '"libreoffice_proof_bundle_smoke_implemented": true',
+        '"fake_proof_used": false',
+        '"fallback_renderer_used": false',
+        '"python_pptx_proof_used": false',
         '"no_frontend_package_changes"',
     ],
     "renderer_worker/package-lock.json": [
@@ -86,6 +97,8 @@ REQUIRED_PHRASES = {
         "npm run pptxgenjs:static-slide --prefix renderer_worker",
         "npm run pptxgenjs:minimal-ir-smoke --prefix renderer_worker",
         "npm run pptxgenjs:artifact-bundle --prefix renderer_worker",
+        "npm run pptxgenjs:libreoffice-proof-bundle --prefix renderer_worker",
+        "presentation_renderer_worker_libreoffice_proof_bundle.v1",
         "npm run check --prefix renderer_worker",
         "renderer_runtime_implemented=false",
         "production_pptx_output_implemented=false",
@@ -130,6 +143,8 @@ REQUIRED_PHRASES = {
         "kw_renderer_worker_minimal_ir_mapping_check.py --repo-root . --require-ready",
         "29h10-renderer-worker-pptx-artifact-bundle-check",
         "kw_renderer_worker_pptx_artifact_bundle_check.py --repo-root . --require-ready",
+        "29h11-renderer-worker-libreoffice-proof-bundle-check",
+        "kw_renderer_worker_libreoffice_proof_bundle_check.py --repo-root . --require-ready",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7H.5 controlled PptxGenJS capability preflight",
@@ -277,8 +292,11 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
             or "pptxgenjs:empty-output" not in check_script
             or "pptxgenjs:static-slide" not in check_script
             or "pptxgenjs:minimal-ir-smoke" not in check_script
+            or "pptxgenjs:artifact-bundle" not in check_script
+            or "pptxgenjs:libreoffice-proof-bundle" not in check_script
+            or "kw_renderer_worker_libreoffice_proof_bundle_smoke.mjs" not in check_script
         ):
-            problems.append("check script must run node --check, protocol:preflight, dependency:capability, pptxgenjs:in-memory, pptxgenjs:empty-output, pptxgenjs:static-slide, and pptxgenjs:minimal-ir-smoke")
+            problems.append("check script must run node --check, protocol:preflight, dependency:capability, pptxgenjs:in-memory, pptxgenjs:empty-output, pptxgenjs:static-slide, pptxgenjs:minimal-ir-smoke, pptxgenjs:artifact-bundle, and pptxgenjs:libreoffice-proof-bundle")
 
     dependencies = package.get("dependencies")
     if not isinstance(dependencies, dict) or dependencies.get("pptxgenjs") != EXPECTED_PPTXGENJS_VERSION:
@@ -344,7 +362,8 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
         "artifact_bundle_verified": True,
         "render_report_written": True,
         "render_report_deterministic": True,
-        "libreoffice_executed": False,
+        "libreoffice_executed": True,
+        "pdftoppm_executed": True,
         "visual_qa_executed": False,
         "slide_content_added": False,
         "pptxgenjs_write_api_called": False,
@@ -353,13 +372,23 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
         "production_pptx_output_implemented": False,
         "pptx_generation_executed": False,
         "artifact_bundle_produced": True,
-        "proof_bundle_produced": False,
+        "proof_bundle_produced": True,
+        "libreoffice_proof_bundle_schema_version": LIBREOFFICE_PROOF_BUNDLE_SCHEMA_VERSION,
+        "libreoffice_proof_bundle_smoke_implemented": True,
+        "libreoffice_required_for_proof_bundle": True,
+        "pdftoppm_required_for_proof_bundle": True,
+        "proof_bundle_verified": True,
+        "pdf_proof_written": True,
+        "png_proofs_written": True,
+        "fake_proof_used": False,
+        "fallback_renderer_used": False,
+        "python_pptx_proof_used": False,
     }
     for key, expected_value in expected.items():
         if metadata.get(key) != expected_value:
             problems.append(f"renderer_worker kwStudio.{key} expected {expected_value!r}, got {metadata.get(key)!r}")
     non_goals = metadata.get("non_goals") if isinstance(metadata.get("non_goals"), list) else []
-    for non_goal in ("no_charts_tables_images_mapping", "no_libreoffice_execution", "no_frontend_package_changes", "no_pdf_png_proof_generation", "no_proof_bundle_generation"):
+    for non_goal in ("no_charts_tables_images_mapping", "no_frontend_package_changes", "no_fake_proof_artifacts", "no_fallback_renderer_as_success", "no_visual_qa_scoring"):
         if non_goal not in non_goals:
             problems.append(f"renderer_worker kwStudio.non_goals missing {non_goal}")
 
@@ -399,7 +428,7 @@ def _run_package_scripts(repo_root: Path, problems: list[str]) -> None:
         return
 
     worker_root = repo_root / "renderer_worker"
-    for script_name in ("kw_renderer_worker_protocol_preflight.mjs", "kw_renderer_worker_pptxgenjs_capability.mjs", "kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs", "kw_renderer_worker_empty_pptx_output_smoke.mjs", "kw_renderer_worker_static_slide_output_smoke.mjs", "kw_renderer_worker_minimal_ir_mapping_smoke.mjs", "kw_renderer_worker_pptx_artifact_bundle_smoke.mjs"):
+    for script_name in ("kw_renderer_worker_protocol_preflight.mjs", "kw_renderer_worker_pptxgenjs_capability.mjs", "kw_renderer_worker_pptxgenjs_in_memory_preflight.mjs", "kw_renderer_worker_empty_pptx_output_smoke.mjs", "kw_renderer_worker_static_slide_output_smoke.mjs", "kw_renderer_worker_minimal_ir_mapping_smoke.mjs", "kw_renderer_worker_pptx_artifact_bundle_smoke.mjs", "kw_renderer_worker_libreoffice_proof_bundle_smoke.mjs"):
         syntax = subprocess.run(
             ["node", "--check", script_name],
             cwd=worker_root,

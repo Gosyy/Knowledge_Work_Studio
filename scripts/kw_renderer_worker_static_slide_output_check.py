@@ -43,8 +43,8 @@ REQUIRED_PHRASES = {
         '"static_slide_uses_presentation_ir": false',
         '"renderer_runtime_implemented": false',
         '"production_pptx_output_implemented": false',
-        '"proof_bundle_produced": false',
-        '"libreoffice_executed": false',
+        '"proof_bundle_produced": true',
+        '"libreoffice_executed": true',
         '"visual_qa_executed": false',
     ],
     "renderer_worker/CONTRACT.md": [
@@ -214,8 +214,11 @@ def _validate_package(repo_root: Path, problems: list[str]) -> None:
         "static_slide_uses_presentation_ir": False,
         "renderer_runtime_implemented": False,
         "production_pptx_output_implemented": False,
-        "proof_bundle_produced": False,
-        "libreoffice_executed": False,
+        # renderer_worker/package.json is cumulative package metadata. After KR-7H.11
+        # the package advertises the real proof-bundle smoke, while this KR-7H.8
+        # static-slide script still returns proof/libreoffice=false in its own payload.
+        "proof_bundle_produced": True,
+        "libreoffice_executed": True,
         "visual_qa_executed": False,
     }
     for key, expected_value in expected.items():

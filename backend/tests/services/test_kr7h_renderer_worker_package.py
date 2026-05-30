@@ -52,7 +52,8 @@ def test_kr7h4_package_json_declares_isolated_renderer_worker_boundary() -> None
     assert metadata["production_pptx_output_implemented"] is False
     assert metadata["pptx_generation_executed"] is False
     assert metadata["artifact_bundle_produced"] is True
-    assert metadata["proof_bundle_produced"] is False
+    assert metadata["proof_bundle_produced"] is True
+    assert metadata["libreoffice_proof_bundle_smoke_implemented"] is True
     assert metadata["pptx_artifact_bundle_contract_implemented"] is True
     assert metadata["render_report_contract_implemented"] is True
     assert "no_frontend_package_changes" in metadata["non_goals"]
@@ -100,7 +101,19 @@ def test_kr7h5_package_declares_controlled_pptxgenjs_dependency_only_in_worker()
     assert metadata["image_mapping_implemented"] is False
     assert metadata["professional_layout_engine_implemented"] is False
     assert metadata["persistent_artifact_written"] is True
-    assert metadata["libreoffice_executed"] is False
+    assert metadata["libreoffice_executed"] is True
+    assert metadata["pdftoppm_executed"] is True
+    assert metadata["libreoffice_proof_bundle_schema_version"] == "presentation_renderer_worker_libreoffice_proof_bundle.v1"
+    assert metadata["libreoffice_proof_bundle_smoke_implemented"] is True
+    assert metadata["libreoffice_required_for_proof_bundle"] is True
+    assert metadata["pdftoppm_required_for_proof_bundle"] is True
+    assert metadata["proof_bundle_produced"] is True
+    assert metadata["proof_bundle_verified"] is True
+    assert metadata["pdf_proof_written"] is True
+    assert metadata["png_proofs_written"] is True
+    assert metadata["fake_proof_used"] is False
+    assert metadata["fallback_renderer_used"] is False
+    assert metadata["python_pptx_proof_used"] is False
     assert metadata["visual_qa_executed"] is False
     assert metadata["artifact_bundle_schema_version"] == "presentation_renderer_worker_pptx_artifact_bundle.v1"
     assert metadata["render_report_schema_version"] == "presentation_renderer_worker_render_report.v1"
