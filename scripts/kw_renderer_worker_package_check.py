@@ -28,6 +28,7 @@ PPTX_ARTIFACT_BUNDLE_SCHEMA_VERSION = "presentation_renderer_worker_pptx_artifac
 RENDER_REPORT_SCHEMA_VERSION = "presentation_renderer_worker_render_report.v1"
 LIBREOFFICE_PROOF_BUNDLE_SCHEMA_VERSION = "presentation_renderer_worker_libreoffice_proof_bundle.v1"
 SOURCE_IMAGE_HARDENING_SCHEMA_VERSION = "presentation_renderer_worker_source_image_hardening.v1"
+KR7H_CLOSURE_GATE_SCHEMA_VERSION = "presentation_renderer_worker_kr7h_closure_gate.v1"
 EXPECTED_PPTXGENJS_VERSION = "4.0.1"
 
 REQUIRED_FILES = [
@@ -45,8 +46,10 @@ REQUIRED_FILES = [
     "backend/tests/services/test_kr7h_renderer_worker_package.py",
     "backend/tests/services/test_kr7h_renderer_worker_libreoffice_proof_bundle.py",
     "backend/tests/services/test_kr7h_renderer_worker_source_image_hardening.py",
+    "backend/tests/services/test_kr7h_renderer_worker_kr7h_closure_gate.py",
     "scripts/kw_renderer_worker_package_check.py",
     "scripts/kw_renderer_worker_source_image_hardening_check.py",
+    "scripts/kw_renderer_worker_kr7h_closure_gate_check.py",
     "scripts/kw_renderer_worker_minimal_ir_mapping_check.py",
     "scripts/kw_renderer_worker_pptx_artifact_bundle_check.py",
     "scripts/kw_renderer_worker_libreoffice_proof_bundle_check.py",
@@ -66,6 +69,7 @@ REQUIRED_PHRASES = {
         '"presentation_renderer_worker_minimal_ir_mapping_smoke.v1"',
         '"presentation_renderer_worker_libreoffice_proof_bundle.v1"',
         '"presentation_renderer_worker_source_image_hardening.v1"',
+        '"presentation_renderer_worker_kr7h_closure_gate.v1"',
         '"renderer_worker_package_boundary": true',
         '"frontend_package_boundary": false',
         '"pptxgenjs_dependency_declared": true',
@@ -89,6 +93,12 @@ REQUIRED_PHRASES = {
         '"fake_artifacts_allowed": false',
         '"inline_image_payloads_allowed": false',
         '"source_image_selection_implemented": false',
+        '"kr7h_closure_gate_implemented": true',
+        '"kr7h_phase_closed": true',
+        '"closed_through_phase": "KR-7H.13"',
+        '"production_renderer_closure_implemented": false',
+        '"kimi_level_quality_claimed": false',
+        '"next_phase": "KR-7I template and brand understanding"',
         '"no_frontend_package_changes"',
     ],
     "renderer_worker/package-lock.json": [
@@ -158,6 +168,8 @@ REQUIRED_PHRASES = {
         "kw_renderer_worker_libreoffice_proof_bundle_check.py --repo-root . --require-ready",
         "29h12-renderer-worker-source-image-hardening-check",
         "kw_renderer_worker_source_image_hardening_check.py --repo-root . --require-ready",
+        "29h13-renderer-worker-kr7h-closure-gate-check",
+        "kw_renderer_worker_kr7h_closure_gate_check.py --repo-root . --require-ready",
     ],
     "docs/refactor/KR_PRODUCT_RESET_ROADMAP.md": [
         "KR-7H.5 controlled PptxGenJS capability preflight",
@@ -404,12 +416,20 @@ def _validate_package_json(repo_root: Path, problems: list[str]) -> None:
         "fake_artifacts_allowed": False,
         "inline_image_payloads_allowed": False,
         "source_image_selection_implemented": False,
+        "kr7h_closure_gate_schema_version": KR7H_CLOSURE_GATE_SCHEMA_VERSION,
+        "kr7h_closure_gate_implemented": True,
+        "kr7h_phase_closed": True,
+        "closed_through_phase": "KR-7H.13",
+        "production_renderer_closure_implemented": False,
+        "kimi_level_quality_claimed": False,
+        "fallback_renderer_allowed": False,
+        "next_phase": "KR-7I template and brand understanding",
     }
     for key, expected_value in expected.items():
         if metadata.get(key) != expected_value:
             problems.append(f"renderer_worker kwStudio.{key} expected {expected_value!r}, got {metadata.get(key)!r}")
     non_goals = metadata.get("non_goals") if isinstance(metadata.get("non_goals"), list) else []
-    for non_goal in ("no_charts_tables_images_mapping", "no_frontend_package_changes", "no_fake_proof_artifacts", "no_fallback_renderer_as_success", "no_visual_qa_scoring", "no_source_image_selection_runtime", "no_image_mapping_runtime", "no_generated_images", "no_fake_artifacts", "no_inline_image_payloads"):
+    for non_goal in ("no_charts_tables_images_mapping", "no_frontend_package_changes", "no_fake_proof_artifacts", "no_fallback_renderer_as_success", "no_visual_qa_scoring", "no_source_image_selection_runtime", "no_image_mapping_runtime", "no_generated_images", "no_fake_artifacts", "no_inline_image_payloads", "no_production_renderer_closure", "no_kimi_level_quality_claim", "no_template_or_brand_understanding", "no_docker_deploy_postgres_changes"):
         if non_goal not in non_goals:
             problems.append(f"renderer_worker kwStudio.non_goals missing {non_goal}")
 

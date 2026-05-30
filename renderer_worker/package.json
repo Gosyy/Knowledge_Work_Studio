@@ -1,9 +1,9 @@
 {
   "name": "kw-studio-renderer-worker",
-  "version": "0.0.0-kr7h12-source-image-hardening",
+  "version": "0.0.0-kr7h13-closure-gate",
   "private": true,
   "type": "module",
-  "description": "KR-7H isolated renderer worker package; validates protocol, controlled PptxGenJS capability, minimal title/body mapping, artifact/proof bundles, and KR-7H.12 source-image-only fail-closed hardening without visual QA or production renderer closure.",
+  "description": "KR-7H isolated renderer worker package; closes the KR-7H renderer-worker foundation gate while keeping production renderer, visual QA, Kimi-level quality, source-image selection, and professional layout out of scope.",
   "scripts": {
     "protocol:preflight": "node ./kw_renderer_worker_protocol_preflight.mjs --capabilities",
     "dependency:capability": "node ./kw_renderer_worker_pptxgenjs_capability.mjs --json",
@@ -17,7 +17,7 @@
   },
   "kwStudio": {
     "schema_version": "presentation_renderer_worker_package_preflight.v1",
-    "phase": "KR-7H.12 renderer hardening: source-image-only, fail-closed, no fake artifacts",
+    "phase": "KR-7H.13 KR-7H closure gate",
     "renderer_worker_package_boundary": true,
     "frontend_package_boundary": false,
     "protocol_preflight_script": "kw_renderer_worker_protocol_preflight.mjs",
@@ -42,7 +42,13 @@
       "use_placeholder_images",
       "use_fallback_images_as_success",
       "write_fake_artifact_manifest_entries",
-      "treat_inline_image_bytes_as_source_asset"
+      "treat_inline_image_bytes_as_source_asset",
+      "start_production_renderer_worker_service",
+      "claim_production_renderer_closure",
+      "claim_kimi_level_output",
+      "select_source_images_for_user_deck",
+      "change_frontend_ui",
+      "change_gigachat_runtime"
     ],
     "non_goals": [
       "no_frontend_package_changes",
@@ -58,7 +64,11 @@
       "no_image_mapping_runtime",
       "no_generated_images",
       "no_fake_artifacts",
-      "no_inline_image_payloads"
+      "no_inline_image_payloads",
+      "no_production_renderer_closure",
+      "no_kimi_level_quality_claim",
+      "no_template_or_brand_understanding",
+      "no_docker_deploy_postgres_changes"
     ],
     "pptxgenjs_capability_schema_version": "presentation_renderer_worker_pptxgenjs_capability.v1",
     "pptxgenjs_dependency_declared": true,
@@ -140,7 +150,31 @@
     "fallback_images_allowed": false,
     "fake_artifacts_allowed": false,
     "inline_image_payloads_allowed": false,
-    "source_image_selection_implemented": false
+    "source_image_selection_implemented": false,
+    "kr7h_closure_gate_schema_version": "presentation_renderer_worker_kr7h_closure_gate.v1",
+    "kr7h_closure_gate_implemented": true,
+    "kr7h_phase_closed": true,
+    "closed_through_phase": "KR-7H.13",
+    "kr7h_completed_phases": [
+      "KR-7H.1",
+      "KR-7H.2",
+      "KR-7H.3",
+      "KR-7H.4",
+      "KR-7H.5",
+      "KR-7H.6",
+      "KR-7H.7",
+      "KR-7H.8",
+      "KR-7H.9",
+      "KR-7H.10",
+      "KR-7H.11",
+      "KR-7H.12",
+      "KR-7H.13"
+    ],
+    "production_renderer_closure_implemented": false,
+    "visual_quality_score": null,
+    "kimi_level_quality_claimed": false,
+    "fallback_renderer_allowed": false,
+    "next_phase": "KR-7I template and brand understanding"
   },
   "dependencies": {
     "pptxgenjs": "4.0.1"

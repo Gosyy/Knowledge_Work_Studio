@@ -248,3 +248,18 @@ Do not:
 ## KR-7H.12 renderer source-image hardening prohibitions
 
 Do not claim KR-7H.12 implements source image selection, image mapping, visual QA/scoring, professional layout, or production renderer closure. Do not treat generated, fake, fallback, placeholder, random, web, synthetic, inline data URI, base64, or raw-byte image payloads as valid renderer assets. If a slide requires an image and no source image asset/ref is bound, renderer input must fail closed instead of inventing or substituting an image.
+
+## KR-7H.13 renderer worker closure gate prohibitions
+
+During KR-7H.13 it is forbidden to:
+
+```text
+claim KR-7H.13 closes the production renderer;
+claim KR-7H.13 reaches Kimi-level quality;
+claim KR-7H.13 performs visual QA, quality scoring, or human review;
+claim KR-7H.13 implements source image selection, image mapping, template understanding, brand understanding, professional layout, or production renderer service startup;
+change UI, GigaChat/runtime, Docker/deploy/Postgres behavior, or run npm audit fix as part of KR-7H.13;
+treat the KR-7H closure gate as a waiver for KR-7I/KR-7J/KR-7K/KR-7L implementation work.
+```
+
+KR-7H.13 may only add `presentation_renderer_worker_kr7h_closure_gate.v1` and project-resident validation that the KR-7H.1 through KR-7H.12 renderer-worker foundation contracts are present. It must keep production renderer closure, visual QA/scoring, Kimi-level quality, source image selection, image mapping, template/brand understanding, professional layout, UI, GigaChat/runtime, and Docker/deploy/Postgres changes out of scope.

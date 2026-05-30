@@ -1797,3 +1797,11 @@ KR-7H.11 adds `renderer_worker/kw_renderer_worker_libreoffice_proof_bundle_smoke
 ### KR-7H.12 continuation note
 
 KR-7H.12 starts after remote `8d68b5b` and must remain a renderer hardening patch: source-image-only, fail-closed, no fake artifacts. It should add `presentation_renderer_worker_source_image_hardening.v1`, checker/test/full-runner coverage, and docs. It must not implement source image selection, image mapping, visual QA/scoring, professional layout, UI changes, GigaChat/runtime changes, or production renderer closure. Generated/fake/fallback/placeholder/random/web/synthetic/inline image payloads must fail closed.
+
+Implementation note after KR-7H.13:
+
+KR-7H.13 adds `presentation_renderer_worker_kr7h_closure_gate.v1` as the KR-7H closure gate. It verifies that KR-7H.1 through KR-7H.12 renderer-worker foundation contracts are present and covered by project-resident checks, including boundary/dry-run/protocol/package, PptxGenJS capability and smoke layers, minimal title/body mapping, controlled PPTX artifact bundle, LibreOffice PDF/PNG proof bundle, and source-image-only fail-closed hardening.
+
+### KR-7H.13 KR-7H closure gate
+
+KR-7H.13 closes the KR-7H renderer-worker foundation phase only. It must keep `renderer_runtime_implemented=false`, `production_pptx_output_implemented=false`, `production_renderer_closure_implemented=false`, `visual_qa_executed=false`, `visual_quality_score=null`, `kimi_level_quality_claimed=false`, `source_image_selection_implemented=false`, and `image_mapping_implemented=false`. Validation must include `kw_renderer_worker_kr7h_closure_gate_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. The next phase is KR-7I template and brand understanding.

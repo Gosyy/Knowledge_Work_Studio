@@ -18,6 +18,7 @@ RENDERER_WORKER_INPUT_SCHEMA_VERSION = "presentation_renderer_worker_input.v1"
 RENDERER_WORKER_ARTIFACT_BUNDLE_SCHEMA_VERSION = "presentation_renderer_artifact_bundle.v1"
 RENDERER_WORKER_PROOF_BUNDLE_SCHEMA_VERSION = "presentation_renderer_proof_bundle.v1"
 RENDERER_WORKER_SOURCE_IMAGE_HARDENING_SCHEMA_VERSION = "presentation_renderer_worker_source_image_hardening.v1"
+RENDERER_WORKER_KR7H_CLOSURE_GATE_SCHEMA_VERSION = "presentation_renderer_worker_kr7h_closure_gate.v1"
 RENDERER_WORKER_RUNTIME_IMPLEMENTED = False
 RENDERER_WORKER_ENGINE = "node_pptxgenjs_worker_contract_only"
 RENDERER_WORKER_PROOF_PIPELINE = "libreoffice_pdf_png_proof_contract_only"
@@ -425,6 +426,135 @@ def renderer_worker_source_image_hardening_payload() -> dict[str, Any]:
             "no_production_renderer_closure",
             "no_frontend_changes",
             "no_gigachat_runtime_changes",
+        ],
+    }
+
+
+def renderer_worker_kr7h_closure_gate_payload() -> dict[str, Any]:
+    """Return the KR-7H closure-gate contract payload.
+
+    KR-7H.13 closes the native renderer-worker foundation phase only. It
+    confirms that KR-7H.1 through KR-7H.12 guardrails/checkers are in place,
+    but it does not claim a production renderer service, professional layout,
+    visual QA/scoring, Kimi-level quality, source-image selection, or image
+    mapping.
+    """
+
+    completed_layers = [
+        {
+            "phase": "KR-7H.1",
+            "schema_version": RENDERER_WORKER_CONTRACT_SCHEMA_VERSION,
+            "capability": "renderer_boundary_contract",
+        },
+        {
+            "phase": "KR-7H.2",
+            "schema_version": "presentation_renderer_worker_dry_run.v1",
+            "capability": "dry_run_invocation_manifest",
+        },
+        {
+            "phase": "KR-7H.3",
+            "schema_version": "presentation_renderer_worker_protocol_preflight.v1",
+            "capability": "node_protocol_preflight",
+        },
+        {
+            "phase": "KR-7H.4",
+            "schema_version": "presentation_renderer_worker_package_preflight.v1",
+            "capability": "isolated_renderer_worker_package",
+        },
+        {
+            "phase": "KR-7H.5",
+            "schema_version": "presentation_renderer_worker_pptxgenjs_capability.v1",
+            "capability": "pptxgenjs_dependency_capability",
+        },
+        {
+            "phase": "KR-7H.6",
+            "schema_version": "presentation_renderer_worker_pptxgenjs_in_memory_preflight.v1",
+            "capability": "pptxgenjs_in_memory_preflight",
+        },
+        {
+            "phase": "KR-7H.7",
+            "schema_version": "presentation_renderer_worker_empty_pptx_output_smoke.v1",
+            "capability": "temporary_empty_pptx_output_smoke",
+        },
+        {
+            "phase": "KR-7H.8",
+            "schema_version": "presentation_renderer_worker_static_slide_output_smoke.v1",
+            "capability": "temporary_static_slide_output_smoke",
+        },
+        {
+            "phase": "KR-7H.9",
+            "schema_version": "presentation_renderer_worker_minimal_ir_mapping_smoke.v1",
+            "capability": "minimal_title_body_ir_mapping_smoke",
+        },
+        {
+            "phase": "KR-7H.10",
+            "schema_version": "presentation_renderer_worker_pptx_artifact_bundle.v1",
+            "capability": "controlled_pptx_artifact_bundle",
+        },
+        {
+            "phase": "KR-7H.11",
+            "schema_version": "presentation_renderer_worker_libreoffice_proof_bundle.v1",
+            "capability": "libreoffice_pdf_png_proof_bundle_smoke",
+        },
+        {
+            "phase": "KR-7H.12",
+            "schema_version": RENDERER_WORKER_SOURCE_IMAGE_HARDENING_SCHEMA_VERSION,
+            "capability": "source_image_only_fail_closed_hardening",
+        },
+    ]
+
+    return {
+        "schema_version": RENDERER_WORKER_KR7H_CLOSURE_GATE_SCHEMA_VERSION,
+        "phase": "KR-7H.13 KR-7H closure gate",
+        "status": "ready",
+        "kr7h_closure_gate_implemented": True,
+        "kr7h_phase_closed": True,
+        "closed_through_phase": "KR-7H.13",
+        "completed_layer_count": len(completed_layers),
+        "completed_layers": completed_layers,
+        "required_full_runner_step": "29h13-renderer-worker-kr7h-closure-gate-check",
+        "required_checker": "scripts/kw_renderer_worker_kr7h_closure_gate_check.py",
+        "targeted_checks_required": True,
+        "full_runner_required": True,
+        "docker_smoke_required": True,
+        "remote_verification_required": True,
+        "renderer_runtime_implemented": RENDERER_WORKER_RUNTIME_IMPLEMENTED,
+        "production_pptx_output_implemented": False,
+        "production_renderer_closure_implemented": False,
+        "visual_qa_executed": False,
+        "visual_quality_score": None,
+        "source_image_selection_implemented": False,
+        "image_mapping_implemented": False,
+        "chart_mapping_implemented": False,
+        "table_mapping_implemented": False,
+        "theme_mapping_implemented": False,
+        "professional_layout_engine_implemented": False,
+        "kimi_level_quality_claimed": False,
+        "fake_artifacts_allowed": False,
+        "fallback_renderer_allowed": False,
+        "next_phase": "KR-7I template and brand understanding",
+        "blocked_runtime_actions": [
+            "start_production_renderer_worker_service",
+            "claim_production_renderer_closure",
+            "claim_visual_quality_score",
+            "claim_kimi_level_output",
+            "map_charts_tables_images",
+            "select_source_images_for_user_deck",
+            "run_professional_layout_engine",
+            "change_frontend_ui",
+            "change_gigachat_runtime",
+        ],
+        "non_goals": [
+            "no_production_renderer_closure",
+            "no_visual_qa_scoring",
+            "no_kimi_level_quality_claim",
+            "no_source_image_selection_runtime",
+            "no_image_mapping_runtime",
+            "no_charts_tables_images_mapping",
+            "no_template_or_brand_understanding",
+            "no_frontend_changes",
+            "no_gigachat_runtime_changes",
+            "no_docker_deploy_postgres_changes",
         ],
     }
 

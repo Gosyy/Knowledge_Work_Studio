@@ -792,3 +792,11 @@ KR-7H.11 validation must include exact package self-test through `npm run pptxge
 ### KR-7H.12 renderer source-image hardening contract
 
 KR-7H.12 adds `presentation_renderer_worker_source_image_hardening.v1` as a guardrail/checker layer after the LibreOffice proof bundle smoke. It enforces source-image-only renderer input validation and fails closed for generated, fake, fallback, placeholder, random, web, synthetic, inline data URI, base64, or raw-byte image payloads. It also blocks `requires_image=true` slides unless a source image asset/ref is bound. It does not implement source image selection, image mapping, visual QA/scoring, professional layout, UI changes, GigaChat/runtime changes, or production renderer closure. Validation must include `kw_renderer_worker_source_image_hardening_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.
+
+Implementation note after KR-7H.13:
+
+KR-7H.13 adds `presentation_renderer_worker_kr7h_closure_gate.v1` as the KR-7H closure gate. It verifies that KR-7H.1 through KR-7H.12 renderer-worker foundation contracts are present and covered by project-resident checks, including boundary/dry-run/protocol/package, PptxGenJS capability and smoke layers, minimal title/body mapping, controlled PPTX artifact bundle, LibreOffice PDF/PNG proof bundle, and source-image-only fail-closed hardening.
+
+### KR-7H.13 KR-7H closure gate
+
+KR-7H.13 closes the KR-7H renderer-worker foundation phase only. It must keep `renderer_runtime_implemented=false`, `production_pptx_output_implemented=false`, `production_renderer_closure_implemented=false`, `visual_qa_executed=false`, `visual_quality_score=null`, `kimi_level_quality_claimed=false`, `source_image_selection_implemented=false`, and `image_mapping_implemented=false`. Validation must include `kw_renderer_worker_kr7h_closure_gate_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. The next phase is KR-7I template and brand understanding.

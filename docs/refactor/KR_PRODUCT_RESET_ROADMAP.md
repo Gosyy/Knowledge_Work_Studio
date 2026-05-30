@@ -1249,3 +1249,9 @@ KR-7H.10 is the persistent artifact-bundle step in the consolidated KR-7H plan. 
 
 
 KR-7H.12 renderer hardening adds `presentation_renderer_worker_source_image_hardening.v1` to enforce source-image-only fail-closed renderer input guardrails and to forbid fake/generated/fallback image artifacts without implementing image mapping or source image selection runtime.
+
+Implementation note after KR-7H.13:
+
+KR-7H.13 adds `presentation_renderer_worker_kr7h_closure_gate.v1` as the KR-7H closure gate. It records that the KR-7H renderer-worker foundation layers KR-7H.1 through KR-7H.12 are present and covered by project-resident checks, but it does not claim production renderer closure, visual QA/scoring, Kimi-level quality, source image selection, image mapping, professional layout, UI changes, GigaChat/runtime changes, or Docker/deploy/Postgres behavior changes.
+
+KR-7H.13 is validated by `kw_renderer_worker_kr7h_closure_gate_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. After KR-7H.13 is closed, the next phase is KR-7I template and brand understanding.

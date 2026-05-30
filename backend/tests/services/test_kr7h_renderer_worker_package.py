@@ -417,3 +417,41 @@ def test_kr7h4_frontend_package_is_not_used_for_renderer_worker_boundary() -> No
 
     assert "pptxgenjs" not in frontend_package
     assert "kw-studio-renderer-worker" not in frontend_package
+
+
+def test_kr7h13_package_metadata_declares_closure_gate_without_production_claims() -> None:
+    package = _package_json()
+    metadata = package["kwStudio"]
+
+    assert metadata["kr7h_closure_gate_schema_version"] == "presentation_renderer_worker_kr7h_closure_gate.v1"
+    assert metadata["kr7h_closure_gate_implemented"] is True
+    assert metadata["kr7h_phase_closed"] is True
+    assert metadata["closed_through_phase"] == "KR-7H.13"
+    assert metadata["kr7h_completed_phases"] == [
+        "KR-7H.1",
+        "KR-7H.2",
+        "KR-7H.3",
+        "KR-7H.4",
+        "KR-7H.5",
+        "KR-7H.6",
+        "KR-7H.7",
+        "KR-7H.8",
+        "KR-7H.9",
+        "KR-7H.10",
+        "KR-7H.11",
+        "KR-7H.12",
+        "KR-7H.13",
+    ]
+    assert metadata["production_renderer_closure_implemented"] is False
+    assert metadata["renderer_runtime_implemented"] is False
+    assert metadata["production_pptx_output_implemented"] is False
+    assert metadata["visual_qa_executed"] is False
+    assert metadata["visual_quality_score"] is None
+    assert metadata["kimi_level_quality_claimed"] is False
+    assert metadata["source_image_selection_implemented"] is False
+    assert metadata["image_mapping_implemented"] is False
+    assert metadata["fake_artifacts_allowed"] is False
+    assert metadata["fallback_renderer_allowed"] is False
+    assert metadata["next_phase"] == "KR-7I template and brand understanding"
+    assert "no_production_renderer_closure" in metadata["non_goals"]
+    assert "no_kimi_level_quality_claim" in metadata["non_goals"]

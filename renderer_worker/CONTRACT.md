@@ -322,3 +322,26 @@ KR-7H.11 must return `blocked` and a non-zero process exit when LibreOffice/`sof
 KR-7H.12 is a renderer guardrail layer, not source image selection or image rendering. It introduces `presentation_renderer_worker_source_image_hardening.v1` and validates that renderer input stays source-image-only before later KR-7J/K/L phases add selection/layout behavior. Generated images, fake images, fallback images, placeholder images, random/web/synthetic images, inline data URIs, and raw base64/byte image payloads must fail closed. A slide with `visual_plan.requires_image=true` must have source image refs/assets; otherwise the renderer input is blocked rather than filled with fake artifacts.
 
 KR-7H.12 still keeps `image_mapping_implemented=false`, `source_image_selection_implemented=false`, `visual_qa_executed=false`, `production_pptx_output_implemented=false`, and `renderer_runtime_implemented=false`.
+
+## KR-7H.13 closure gate
+
+KR-7H.13 introduces `presentation_renderer_worker_kr7h_closure_gate.v1` as the closure gate for the KR-7H renderer-worker foundation phase. The gate records that KR-7H.1 through KR-7H.12 contract layers are present and covered by project-resident checks, including the renderer boundary, dry-run manifest, Node protocol preflight, isolated package boundary, PptxGenJS capability/in-memory/output smokes, minimal title/body mapping, controlled PPTX artifact bundle, LibreOffice PDF/PNG proof bundle, and source-image-only fail-closed hardening.
+
+The closure gate is deliberately not production renderer closure:
+
+```text
+renderer_runtime_implemented=false
+production_pptx_output_implemented=false
+production_renderer_closure_implemented=false
+visual_qa_executed=false
+visual_quality_score=null
+kimi_level_quality_claimed=false
+source_image_selection_implemented=false
+image_mapping_implemented=false
+chart_mapping_implemented=false
+table_mapping_implemented=false
+theme_mapping_implemented=false
+professional_layout_engine_implemented=false
+```
+
+The KR-7H closure gate must be validated by `scripts/kw_renderer_worker_kr7h_closure_gate_check.py`, the full-runner step `29h13-renderer-worker-kr7h-closure-gate-check`, Docker smoke, reviewed logs, push, and remote HEAD verification. The next phase remains `KR-7I template and brand understanding`; KR-7H.13 must not claim template/brand understanding, visual QA/scoring, source image selection, professional layout, production renderer service readiness, Kimi-level quality, UI changes, GigaChat/runtime changes, or Docker/deploy/Postgres behavior changes.
