@@ -221,6 +221,16 @@ from backend.app.services.slides_service.template_brand_profile import (
     validate_template_reference,
 )
 
+
+from backend.app.services.slides_service.source_image_selection import (
+    SOURCE_IMAGE_SELECTION_SCHEMA_VERSION,
+    SourceImageCandidate,
+    SourceImageSelectionResult,
+    SourceImageSlideBinding,
+    SourceImageSlideRequest,
+    sample_source_image_selection_report,
+    select_source_images_for_slides,
+)
 from backend.app.services.slides_service.source_grounding import (
     SlideCitation,
     SourceFragment,
@@ -339,6 +349,13 @@ __all__ = [
     "VisualGrammarValidationIssue",
     "VisualGrammarValidationResult",
     "visual_grammar_catalog_payload",
+    "SOURCE_IMAGE_SELECTION_SCHEMA_VERSION",
+    "SourceImageCandidate",
+    "SourceImageSelectionResult",
+    "SourceImageSlideBinding",
+    "SourceImageSlideRequest",
+    "sample_source_image_selection_report",
+    "select_source_images_for_slides",
     "TEMPLATE_BRAND_PROFILE_SCHEMA_VERSION",
     "TemplateBrandProfileResult",
     "TemplateLayoutProfile",

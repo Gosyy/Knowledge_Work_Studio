@@ -424,6 +424,12 @@ Acceptance:
 - no generated image;
 - if no relevant image exists, the slide remains typographic or diagrammatic.
 
+Implementation note after KR-7J:
+
+KR-7J adds `presentation_source_image_selection.v1` as the first deterministic source image selection contract. It selects only reusable image candidates from uploaded document assets and uploaded PPTX template media, requires citation/provenance/checksum evidence for every selected image, rejects generated/random/fake/inline/external image candidates fail-closed, and returns typographic fallback bindings when no relevant source image exists. KR-7J does not implement renderer image mapping, source image retrieval UI, generated images, visual QA/scoring, professional layout, GigaChat/runtime changes, Docker/deploy/Postgres changes, or Kimi-level quality claims.
+
+KR-7J validation includes `kw_source_image_selection_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification. The next phase remains KR-7K data-backed charts.
+
 ## Phase KR-7K — data-backed charts
 
 Goal: charts only from real data.

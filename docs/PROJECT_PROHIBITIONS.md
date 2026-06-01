@@ -279,3 +279,14 @@ change UI, GigaChat/runtime, Docker/deploy/Postgres behavior, or run npm audit f
 ```
 
 KR-7I may add `presentation_template_brand_profile.v1` as a deterministic uploaded-PPTX template and brand profile contract. It may inspect PPTX OOXML/ZIP parts for slide size, theme colors, fonts, masters/layouts/placeholders, source media assets, and unsupported-feature warnings. It must keep `no_template_clone_rewrite_mode`, `no_production_layout_engine`, renderer runtime, visual QA/scoring, source image selection, and Kimi-level claims out of scope.
+
+## KR-7J source image selection prohibitions
+
+During KR-7J it is forbidden to:
+
+- use generated, random, fake, placeholder, fallback, web, external URL, inline data URI, or raw/base64 image payloads as selected image success evidence;
+- select an image without citation, provenance reference, checksum, and source kind;
+- claim renderer image placement, production layout, visual QA/scoring, source image UI retrieval, image generation, or Kimi-level quality;
+- change UI, GigaChat/runtime, Docker/deploy/Postgres behavior, or run npm audit/dependency cleanup as part of KR-7J.
+
+KR-7J may only produce deterministic source-image selection bindings from uploaded document assets and uploaded PPTX template media. If no relevant source image exists, the slide must remain typographic or diagrammatic.
