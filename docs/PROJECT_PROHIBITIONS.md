@@ -290,3 +290,18 @@ During KR-7J it is forbidden to:
 - change UI, GigaChat/runtime, Docker/deploy/Postgres behavior, or run npm audit/dependency cleanup as part of KR-7J.
 
 KR-7J may only produce deterministic source-image selection bindings from uploaded document assets and uploaded PPTX template media. If no relevant source image exists, the slide must remain typographic or diagrammatic.
+
+## KR-7K data-backed charts prohibitions
+
+During KR-7K it is forbidden to:
+
+```text
+claim chart rendering or native PPTX chart placement is implemented;
+create charts from fake, generated, random, prompt-only, or unsupported values;
+accept a chart binding without data_ref, provenance_ref, source_id, labels, and numeric finite series;
+turn bullet lists or long prose into chart values;
+claim visual QA/scoring, production layout, UI, GigaChat/runtime, Docker/deploy/Postgres changes, or Kimi-level quality;
+run npm audit/dependency cleanup as part of KR-7K.
+```
+
+KR-7K may only add `presentation_data_backed_charts.v1` as a deterministic chart data-binding/spec contract. It must fail closed for missing or non-numeric source data and keep renderer chart mapping/rendering runtime out of scope.

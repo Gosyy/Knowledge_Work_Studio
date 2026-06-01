@@ -231,6 +231,16 @@ from backend.app.services.slides_service.source_image_selection import (
     sample_source_image_selection_report,
     select_source_images_for_slides,
 )
+from backend.app.services.slides_service.data_backed_charts import (
+    DATA_BACKED_CHARTS_SCHEMA_VERSION,
+    DataBackedChartResult,
+    DataChartBinding,
+    DataChartRequest,
+    DataChartSeries,
+    DataChartSourceCandidate,
+    bind_data_backed_charts,
+    sample_data_backed_chart_report,
+)
 from backend.app.services.slides_service.source_grounding import (
     SlideCitation,
     SourceFragment,

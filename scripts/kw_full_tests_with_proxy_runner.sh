@@ -163,6 +163,7 @@ run_shell_step "29h12-renderer-worker-source-image-hardening-check" "cd '${REPO_
 run_shell_step "29h13-renderer-worker-kr7h-closure-gate-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_renderer_worker_kr7h_closure_gate_check.py --repo-root . --require-ready"
 run_shell_step "29i-template-brand-profile-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_template_brand_profile_check.py --repo-root . --require-ready"
 run_shell_step "29j-source-image-selection-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_source_image_selection_check.py --repo-root . --require-ready"
+run_shell_step "29k-data-backed-charts-check" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_data_backed_charts_check.py --repo-root . --require-ready"
 run_shell_step "30-production-readiness-gate" "cd '${REPO_ROOT}' && source .venv/bin/activate && export NO_PROXY='${LOCAL_NO_PROXY}' no_proxy='${LOCAL_NO_PROXY}' && unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy && python scripts/kw_production_readiness_gate.py --repo-root ."
 run_shell_step "40-docker-compose-check-only" "cd '${REPO_ROOT}' && source .venv/bin/activate && python scripts/kw_fullstack_compose_smoke.py --repo-root . --check-only --timeout 1200"
 run_shell_step "99-git-status-after" "cd '${REPO_ROOT}' && git status --short && git branch --show-current && git rev-parse HEAD"

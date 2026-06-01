@@ -81,3 +81,5 @@ KR-7I template and brand understanding guardrails: `presentation_template_brand_
 
 
 KR-7J adds deterministic source image selection with `presentation_source_image_selection.v1`. It selects only uploaded document assets or uploaded template media assets, requires citation/provenance/checksum evidence for every selected image, rejects generated/random/fake/inline/external image candidates, and falls back to typographic/diagrammatic slides when no relevant source image exists. It keeps renderer runtime changes, image mapping, visual QA/scoring, UI/GigaChat/Docker/Postgres changes, and Kimi-level claims out of scope.
+
+KR-7K adds `presentation_data_backed_charts.v1` as a deterministic data-backed chart binding contract. It binds chart intents only to real numeric source data from extracted tables, extracted chart candidates, or user-provided numeric data with provenance/data refs. It rejects fake/generated/random/non-numeric/bullet-length charts and keeps renderer chart mapping/rendering, visual QA/scoring, production layout, UI, GigaChat/runtime, Docker/deploy/Postgres changes, and Kimi-level claims out of scope.
