@@ -471,6 +471,10 @@ Acceptance:
 - readability/contrast/density score exists;
 - rendered PNG QA passes.
 
+
+
+KR-7L adds `presentation_professional_layout_engine.v1` as the first deterministic professional layout planning layer after template/brand understanding, source-image selection, and data-backed chart binding. It computes slide-size-aware grid boxes, margins, gutters, typography, text fitting, overlap detection, title-clipping prevention, and density/contrast/readability/layout scores. It must keep `no_renderer_runtime_mapping`, native PPTX placement, rendered PNG QA execution, visual QA/scoring runtime, production layout quality claims, UI, GigaChat/runtime, Docker/deploy/Postgres changes, and Kimi-level quality claims out of scope.
+
 ## Phase KR-7M — Presentation Studio UI
 
 Goal: independent frontend connected only by API.
@@ -815,3 +819,4 @@ KR-7H.13 closes the KR-7H renderer-worker foundation phase only. It must keep `r
 Implementation note after KR-7K:
 
 KR-7K adds `presentation_data_backed_charts.v1` as a deterministic data-backed chart binding/spec contract after KR-7J source image selection. It accepts only real numeric series from extracted tables, extracted chart data candidates with numeric metadata, or explicitly user-provided numeric data with provenance/data refs. It requires labels, numeric finite values, units or `unknown`, data_ref/provenance_ref, and source identifiers for every bound chart. It fails closed for missing data, fake/generated/random values, non-numeric values, bullet-length charts, and charts without source refs. KR-7K does not implement renderer chart placement, native PPTX chart rendering runtime, visual QA/scoring, UI changes, GigaChat/runtime changes, Docker/deploy/Postgres changes, or Kimi-level claims. Validation must include `kw_data_backed_charts_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.
+KR-7L professional layout engine contract phrase anchor: `presentation_professional_layout_engine.v1`, `no_renderer_runtime_mapping`, and `no_production_layout_quality_claim`.

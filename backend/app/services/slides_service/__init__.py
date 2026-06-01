@@ -241,6 +241,16 @@ from backend.app.services.slides_service.data_backed_charts import (
     bind_data_backed_charts,
     sample_data_backed_chart_report,
 )
+from backend.app.services.slides_service.professional_layout_engine import (
+    PROFESSIONAL_LAYOUT_SCHEMA_VERSION,
+    ProfessionalLayoutBlock,
+    ProfessionalLayoutBox,
+    ProfessionalLayoutResult,
+    ProfessionalLayoutSlidePlan,
+    ProfessionalLayoutSlideRequest,
+    sample_professional_layout_report,
+    solve_professional_layout,
+)
 from backend.app.services.slides_service.source_grounding import (
     SlideCitation,
     SourceFragment,

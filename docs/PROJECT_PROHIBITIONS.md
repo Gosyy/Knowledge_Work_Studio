@@ -305,3 +305,17 @@ run npm audit/dependency cleanup as part of KR-7K.
 ```
 
 KR-7K may only add `presentation_data_backed_charts.v1` as a deterministic chart data-binding/spec contract. It must fail closed for missing or non-numeric source data and keep renderer chart mapping/rendering runtime out of scope.
+
+## KR-7L professional layout engine prohibitions
+
+During KR-7L it is forbidden to:
+
+```text
+claim native PPTX renderer layout mapping or rendered PNG QA is implemented;
+claim production layout quality or Kimi-level quality;
+change renderer runtime, UI, GigaChat/runtime, Docker/deploy/Postgres behavior;
+use professional layout as a waiver for fake/generated charts or images;
+run npm audit/dependency cleanup as part of KR-7L.
+```
+
+KR-7L may add `presentation_professional_layout_engine.v1` as a deterministic layout planning and scoring contract with `no_renderer_runtime_mapping` and `no_production_layout_quality_claim`. It may compute grid boxes, typography, text fitting, overlap detection, and density/contrast/readability scores, but must keep native renderer placement, rendered PNG QA execution, visual QA/scoring runtime, UI, and Kimi-level claims out of scope.
