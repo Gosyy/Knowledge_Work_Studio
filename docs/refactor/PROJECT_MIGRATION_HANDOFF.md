@@ -1822,3 +1822,49 @@ KR-7K adds `presentation_data_backed_charts.v1` as a deterministic data-backed c
 
 KR-7L starts after remote `f7923de` and adds `presentation_professional_layout_engine.v1`, a deterministic professional layout planning contract. It computes slide-size-aware boxes, grid, margins, gutters, typography, text fitting, overlap detection, title-clipping prevention, and density/contrast/readability/layout scores. It keeps `no_renderer_runtime_mapping`, native PPTX layout placement, rendered PNG QA execution, visual QA/scoring runtime, production layout quality claims, UI, GigaChat/runtime, Docker/deploy/Postgres changes, and Kimi-level quality claims out of scope.
 KR-7L professional layout engine contract phrase anchor: `presentation_professional_layout_engine.v1`, `no_renderer_runtime_mapping`, and `no_production_layout_quality_claim`.
+
+## KR-7M — Presentation Studio UI contract
+
+KR-7M adds `presentation_studio_ui.v1` on top of the closed KR-7H renderer foundation and KR-7I/J/K/L source/template/data/layout contracts.
+
+Implemented surface:
+
+```text
+frontend/src/lib/api/presentation-studio.ts
+frontend/src/lib/api/presentation-studio.contract.ts
+frontend/src/components/presentations/presentation-studio-panel.tsx
+frontend/tests/e2e/presentation-studio-smoke.spec.ts
+scripts/kw_presentation_studio_ui_check.py
+```
+
+Contract facts:
+
+```text
+backend_url_configurable=true
+openapi_client_contract_implemented=true
+slide_thumbnail_shell_implemented=true
+canvas_preview_shell_implemented=true
+block_inspector_shell_implemented=true
+asset_tray_shell_implemented=true
+quality_warning_panel_implemented=true
+draft_persistence_uses_backend_api=true
+backend_side_export_only=true
+frontend_side_generation_allowed=false
+arbitrary_model_selector_allowed=false
+renderer_runtime_changed=false
+gigachat_runtime_changed=false
+docker_deploy_changed=false
+visual_qa_executed=false
+production_ui_quality_claimed=false
+kimi_level_quality_claimed=false
+```
+
+Important boundary: KR-7M is a frontend/API-contract smoke layer only. It does not add frontend-side generation as source of truth, arbitrary model selection, renderer runtime integration, final generated OpenAPI codegen, production backend studio endpoints, visual QA runtime, Docker/deploy/Postgres changes, GigaChat runtime changes, production UI quality claims, or Kimi-level claims.
+
+KR-7M Presentation Studio UI contract anchor:
+
+```text
+no_frontend_side_generation_as_source_of_truth
+no_arbitrary_model_selector
+backend_side_export_only
+```

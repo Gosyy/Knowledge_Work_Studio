@@ -1272,3 +1272,25 @@ KR-7K adds `presentation_data_backed_charts.v1` as a deterministic data-backed c
 
 KR-7L adds `presentation_professional_layout_engine.v1` as a deterministic layout-solver contract. It may produce professional layout plans and scores from source-backed slide intents, KR-7I template tokens, KR-7J source-image bindings, and KR-7K chart data bindings. It must not claim renderer runtime placement, rendered PNG QA, production layout quality, UI, GigaChat/runtime, Docker/deploy/Postgres changes, or Kimi-level output. Required validation includes `kw_professional_layout_engine_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote verification.
 KR-7L professional layout engine contract phrase anchor: `presentation_professional_layout_engine.v1`, `no_renderer_runtime_mapping`, and `no_production_layout_quality_claim`.
+
+## KR-7M status — Presentation Studio UI contract
+
+KR-7M adds `presentation_studio_ui.v1`, an independent frontend Presentation Studio UI surface connected through an API-client contract. The UI exposes slide thumbnails, canvas preview, block inspector, source asset tray, quality warnings, backend draft persistence intent, and backend-side export intent.
+
+Required non-goals remain explicit:
+
+```text
+no_frontend_side_generation_as_source_of_truth
+no_arbitrary_model_selector
+backend_side_export_only
+no_renderer_runtime_changes
+no_gigachat_runtime_changes
+no_docker_deploy_changes
+no_visual_qa_runtime_execution
+no_production_ui_quality_claim
+no_kimi_level_quality_claim
+```
+
+KR-7M is a UI contract/smoke layer, not a claim that final production Presentation Studio backend endpoints, generated OpenAPI client codegen, renderer runtime integration, or Kimi-level editing quality are complete.
+
+KR-7M Presentation Studio UI: contract anchor for `presentation_studio_ui.v1`.

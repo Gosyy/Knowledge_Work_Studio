@@ -319,3 +319,23 @@ run npm audit/dependency cleanup as part of KR-7L.
 ```
 
 KR-7L may add `presentation_professional_layout_engine.v1` as a deterministic layout planning and scoring contract with `no_renderer_runtime_mapping` and `no_production_layout_quality_claim`. It may compute grid boxes, typography, text fitting, overlap detection, and density/contrast/readability scores, but must keep native renderer placement, rendered PNG QA execution, visual QA/scoring runtime, UI, and Kimi-level claims out of scope.
+
+## KR-7M Presentation Studio UI prohibitions
+
+After KR-7M, Presentation Studio UI work must preserve the `presentation_studio_ui.v1` boundaries unless a later accepted roadmap patch explicitly changes them.
+
+Forbidden in KR-7M and earlier UI-contract work:
+
+```text
+no_frontend_side_generation_as_source_of_truth
+no_arbitrary_model_selector
+no_frontend_pptx_pdf_file_writes
+no_renderer_runtime_changes
+no_gigachat_runtime_changes
+no_docker_deploy_changes
+no_visual_qa_runtime_execution
+no_production_ui_quality_claim
+no_kimi_level_quality_claim
+```
+
+Presentation Studio export must remain `backend_side_export_only`; backend APIs and artifact bundles remain the source of truth.

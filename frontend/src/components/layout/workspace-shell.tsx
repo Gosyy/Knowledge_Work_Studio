@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { ArtifactsPanel } from "@/components/artifacts/artifacts-panel";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { PresentationRegistryPanel } from "@/components/presentations/presentation-registry-panel";
+import { PresentationStudioPanel } from "@/components/presentations/presentation-studio-panel";
 import { SlidesPlanEditorPanel } from "@/components/presentations/slides-plan-editor-panel";
 import { TaskStatusPanel } from "@/components/task-status/task-status-panel";
 import { UploadPanel } from "@/components/upload/upload-panel";
@@ -61,6 +62,10 @@ export function WorkspaceShell() {
 
         <section style={widePanelStyle}>
           <SlidesPlanEditorPanel />
+        </section>
+
+        <section style={widePanelStyle}>
+          <PresentationStudioPanel />
         </section>
       </div>
     </main>

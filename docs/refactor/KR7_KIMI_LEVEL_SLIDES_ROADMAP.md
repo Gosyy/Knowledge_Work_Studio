@@ -820,3 +820,27 @@ Implementation note after KR-7K:
 
 KR-7K adds `presentation_data_backed_charts.v1` as a deterministic data-backed chart binding/spec contract after KR-7J source image selection. It accepts only real numeric series from extracted tables, extracted chart data candidates with numeric metadata, or explicitly user-provided numeric data with provenance/data refs. It requires labels, numeric finite values, units or `unknown`, data_ref/provenance_ref, and source identifiers for every bound chart. It fails closed for missing data, fake/generated/random values, non-numeric values, bullet-length charts, and charts without source refs. KR-7K does not implement renderer chart placement, native PPTX chart rendering runtime, visual QA/scoring, UI changes, GigaChat/runtime changes, Docker/deploy/Postgres changes, or Kimi-level claims. Validation must include `kw_data_backed_charts_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.
 KR-7L professional layout engine contract phrase anchor: `presentation_professional_layout_engine.v1`, `no_renderer_runtime_mapping`, and `no_production_layout_quality_claim`.
+
+## KR-7M implementation note — Presentation Studio UI contract
+
+KR-7M adds `presentation_studio_ui.v1` as the first API-first Presentation Studio UI contract after KR-7L. It introduces a frontend Presentation Studio surface for slide thumbnails, canvas preview, block inspector, asset provenance tray, deck quality warnings, backend draft persistence, and backend-side export requests.
+
+Scope boundaries:
+
+```text
+backend_url_configurable
+openapi_client_contract_implemented
+backend_side_export_only
+no_frontend_side_generation_as_source_of_truth
+no_arbitrary_model_selector
+no_renderer_runtime_changes
+no_gigachat_runtime_changes
+no_docker_deploy_changes
+no_visual_qa_runtime_execution
+no_production_ui_quality_claim
+no_kimi_level_quality_claim
+```
+
+KR-7M does not implement final generated OpenAPI codegen, production backend studio endpoints, frontend-side deck generation, renderer placement, visual QA/scoring, GigaChat/runtime changes, or Docker/deploy/Postgres changes. Backend APIs remain the source of truth for draft persistence and export.
+
+KR-7M Presentation Studio UI: contract anchor for `presentation_studio_ui.v1`.

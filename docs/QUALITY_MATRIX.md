@@ -86,3 +86,34 @@ KR-7K adds `presentation_data_backed_charts.v1` as a deterministic data-backed c
 
 KR-7L adds `presentation_professional_layout_engine.v1` as a deterministic professional layout planning contract. It computes slide-size-aware layout boxes, grid/margins/gutters, typographic scale, text fitting, overlap detection, title-clipping prevention, and density/contrast/readability/layout scores, while keeping `no_renderer_runtime_mapping`, native PPTX placement, rendered PNG QA execution, production layout quality claims, visual QA/scoring runtime, UI, GigaChat/runtime, Docker/deploy/Postgres changes, and Kimi-level claims out of scope.
 KR-7L professional layout engine contract phrase anchor: `presentation_professional_layout_engine.v1`, `no_renderer_runtime_mapping`, and `no_production_layout_quality_claim`.
+
+## KR-7M Presentation Studio UI quality slice
+
+Contract: `presentation_studio_ui.v1`.
+
+Quality scope:
+
+```text
+backend_url_configurable
+openapi_client_contract_implemented
+slide_thumbnail_shell_implemented
+canvas_preview_shell_implemented
+block_inspector_shell_implemented
+asset_tray_shell_implemented
+quality_warning_panel_implemented
+draft_persistence_uses_backend_api
+backend_side_export_only
+```
+
+Non-goals/prohibitions:
+
+```text
+no_frontend_side_generation_as_source_of_truth
+no_arbitrary_model_selector
+no_renderer_runtime_changes
+no_gigachat_runtime_changes
+no_docker_deploy_changes
+no_visual_qa_runtime_execution
+no_production_ui_quality_claim
+no_kimi_level_quality_claim
+```
