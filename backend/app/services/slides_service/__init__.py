@@ -251,6 +251,15 @@ from backend.app.services.slides_service.professional_layout_engine import (
     sample_professional_layout_report,
     solve_professional_layout,
 )
+
+from backend.app.services.slides_service.professional_quality_evaluator import (
+    PROFESSIONAL_QUALITY_SCHEMA_VERSION,
+    ProfessionalQualityAxisScore,
+    ProfessionalQualityReport,
+    evaluate_professional_quality,
+    sample_export_proof_bundle_report,
+    sample_professional_quality_report,
+)
 from backend.app.services.slides_service.source_grounding import (
     SlideCitation,
     SourceFragment,

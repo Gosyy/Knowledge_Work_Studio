@@ -339,3 +339,9 @@ no_kimi_level_quality_claim
 ```
 
 Presentation Studio export must remain `backend_side_export_only`; backend APIs and artifact bundles remain the source of truth.
+
+## KR-7N professional quality evaluator prohibitions
+
+KR-7N quality reports must not claim production or Kimi-level quality without a deterministic quality pass. `presentation_professional_quality_evaluator.v1` may build a `quality_report.json` contract from existing source-backed reports, but it must not execute visual QA runtime, invent rendered proof, change renderer/frontend/GigaChat/runtime/deploy behavior, or accept missing proof/evidence/fake data as success.
+
+Required anchors: `no_visual_qa_runtime_execution`, `no_rendered_png_quality_scoring`, `no_production_quality_claim`, `no_kimi_level_quality_claim`.

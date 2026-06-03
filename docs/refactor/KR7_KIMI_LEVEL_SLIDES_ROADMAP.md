@@ -844,3 +844,11 @@ no_kimi_level_quality_claim
 KR-7M does not implement final generated OpenAPI codegen, production backend studio endpoints, frontend-side deck generation, renderer placement, visual QA/scoring, GigaChat/runtime changes, or Docker/deploy/Postgres changes. Backend APIs remain the source of truth for draft persistence and export.
 
 KR-7M Presentation Studio UI: contract anchor for `presentation_studio_ui.v1`.
+
+### KR-7N implementation note — professional quality evaluator contract
+
+KR-7N adds `presentation_professional_quality_evaluator.v1` and a deterministic `quality_report.json` contract. The quality evaluator scores content, design, coherence, data, assets, and export readiness from existing source-backed reports. `quality_pass=true` is required before any later professional/Kimi-level status may be claimed, but KR-7N itself keeps `kimi_level_quality_claimed=false` and `production_quality_claimed=false`.
+
+Non-goals: `no_visual_qa_runtime_execution`, `no_rendered_png_quality_scoring`, `no_renderer_runtime_changes`, `no_frontend_runtime_changes`, `no_gigachat_runtime_changes`, `no_docker_deploy_postgres_changes`, `no_production_quality_claim`, `no_kimi_level_quality_claim`.
+
+KR-7N professional quality evaluator anchors: `presentation_professional_quality_evaluator.v1`, `quality_report.json`, `no_visual_qa_runtime_execution`, `no_kimi_level_quality_claim`.

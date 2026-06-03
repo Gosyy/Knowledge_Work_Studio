@@ -1868,3 +1868,11 @@ no_frontend_side_generation_as_source_of_truth
 no_arbitrary_model_selector
 backend_side_export_only
 ```
+
+## KR-7N handoff note — professional quality evaluator contract
+
+KR-7N introduces `presentation_professional_quality_evaluator.v1`, a deterministic `quality_report.json` contract. The evaluator scores six axes: content, design, coherence, data, assets, and export. It consumes KR-7L layout reports, KR-7K data-backed chart reports, KR-7J source image selection reports, and KR-7H.11 LibreOffice PDF/PNG proof bundle evidence.
+
+The evaluator must fail closed or mark degraded decks accurately. It must not execute rendered PNG visual QA, change renderer/frontend/GigaChat/runtime/deploy behavior, or claim production/Kimi-level quality. Required validation includes `scripts/kw_professional_quality_evaluator_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.
+
+KR-7N professional quality evaluator anchors: `presentation_professional_quality_evaluator.v1`, `quality_report.json`, `no_visual_qa_runtime_execution`, `no_kimi_level_quality_claim`.

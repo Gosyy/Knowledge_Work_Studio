@@ -117,3 +117,7 @@ no_visual_qa_runtime_execution
 no_production_ui_quality_claim
 no_kimi_level_quality_claim
 ```
+
+## KR-7N professional quality evaluator quality gate
+
+`presentation_professional_quality_evaluator.v1` defines a deterministic `quality_report.json` with six axes: content, design, coherence, data, assets, and export. A professional/Kimi-level status in later phases requires `quality_pass=true`; degraded decks must be marked degraded; blocked upstream evidence must block the report. KR-7N keeps `visual_qa_runtime_executed=false`, `production_quality_claimed=false`, and `kimi_level_quality_claimed=false`.

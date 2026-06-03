@@ -78,6 +78,7 @@ PATH_CONTRACT_RULES: tuple[tuple[str, str, str], ...] = (
     (r"^scripts/kw_data_backed_charts_check\.py$", "slides_workflow", "KR-7K data-backed charts checker script"),
     (r"^scripts/kw_professional_layout_engine_check\.py$", "slides_workflow", "KR-7L professional layout engine checker script"),
     (r"^scripts/kw_presentation_studio_ui_check\.py$", "frontend_smoke", "KR-7M Presentation Studio UI checker script"),
+    (r"^scripts/kw_professional_quality_evaluator_check\.py$", "quality_contract", "KR-7N professional quality evaluator checker script"),
     (r"^scripts/kw_offline_source_ingestion_check\.py$", "source_mode_routing", "KR-7D offline source ingestion checker script"),
     (r"^scripts/kw_offline_evidence_index_check\.py$", "source_mode_routing", "KR-7E offline evidence index checker script"),
     (r"^scripts/kw_slides_", "slides_workflow", "Slides checker script path"),

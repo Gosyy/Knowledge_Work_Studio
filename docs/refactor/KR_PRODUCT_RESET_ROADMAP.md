@@ -1294,3 +1294,24 @@ no_kimi_level_quality_claim
 KR-7M is a UI contract/smoke layer, not a claim that final production Presentation Studio backend endpoints, generated OpenAPI client codegen, renderer runtime integration, or Kimi-level editing quality are complete.
 
 KR-7M Presentation Studio UI: contract anchor for `presentation_studio_ui.v1`.
+
+## KR-7N status — professional quality evaluator contract
+
+KR-7N adds `presentation_professional_quality_evaluator.v1` as a deterministic professional quality evaluator and `quality_report.json` contract. It evaluates content, design, coherence, data, assets, and export evidence from already-produced source-backed contract reports: KR-7L professional layout, KR-7K data-backed charts, KR-7J source image selection, and KR-7H.11 LibreOffice PDF/PNG proof bundle evidence.
+
+Required non-goals remain explicit:
+
+```text
+no_visual_qa_runtime_execution
+no_rendered_png_quality_scoring
+no_renderer_runtime_changes
+no_frontend_runtime_changes
+no_gigachat_runtime_changes
+no_docker_deploy_postgres_changes
+no_production_quality_claim
+no_kimi_level_quality_claim
+```
+
+Kimi-level/professional status requires a quality pass, but KR-7N does not itself claim Kimi-level quality. Degraded decks must be marked degraded rather than accepted as fake success. Missing export proof, missing evidence, fake chart data, unproven image assets, clipping, overlaps, or blocked upstream contracts must block or degrade the report.
+
+KR-7N professional quality evaluator: contract anchor for `presentation_professional_quality_evaluator.v1`.
