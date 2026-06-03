@@ -1876,3 +1876,11 @@ KR-7N introduces `presentation_professional_quality_evaluator.v1`, a determinist
 The evaluator must fail closed or mark degraded decks accurately. It must not execute rendered PNG visual QA, change renderer/frontend/GigaChat/runtime/deploy behavior, or claim production/Kimi-level quality. Required validation includes `scripts/kw_professional_quality_evaluator_check.py`, targeted pytest, inventory, `git diff --check`, full runner, Docker smoke, push, and remote HEAD verification.
 
 KR-7N professional quality evaluator anchors: `presentation_professional_quality_evaluator.v1`, `quality_report.json`, `no_visual_qa_runtime_execution`, `no_kimi_level_quality_claim`.
+
+## Product-slice governance update after KR-7N
+
+The operator identified a valid quality gap: recent KR-7I through KR-7N patches were process-correct and guardrail-safe, but several were too contract-centric and did not sufficiently improve the integrated product workflow. This is now a mandatory governance rule, not an optional preference.
+
+Future KR patches after KR-7H closure must be vertical product slices whenever feasible. A patch must connect its capability to planner/API/artifact/provenance/report/UI/runner paths or explicitly mark itself as phase-entry scaffold/governance repair and record the follow-up integration requirement.
+
+KR-7O must be re-planned as scenario-pack integration work, not only a `presentation_scenario_packs.v1` checker. The existing KR-7I/KR-7J/KR-7K/KR-7L/KR-7M/KR-7N layers must be brought up to product-slice quality through remediation patches that connect them into the actual Slides workflow while preserving fail-closed, no-fake-data, no-fake-image, offline/intranet, and no unsupported Kimi-level claim rules.

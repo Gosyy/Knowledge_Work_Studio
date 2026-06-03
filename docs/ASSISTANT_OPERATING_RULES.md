@@ -79,6 +79,22 @@ docs/PROJECT_PROHIBITIONS.md
 
 The patch must not jump ahead of its phase by claiming runtime behavior that belongs to a later phase. The post-patch report must state which phase requirement was satisfied and which roadmap items remain intentionally out of scope.
 
+## Mandatory vertical product-slice rule
+
+After a foundation or closure gate has established the safe contracts for a workflow, subsequent KR patches must be planned as complete vertical product slices inside their allowed scope, not as isolated contract-only islands. A patch may still be small and reversible, but it must connect its new capability to the nearest applicable product path: planner/API/artifact/provenance/report/UI/validation/runner. If a patch intentionally cannot connect to a runtime path yet, the pre-patch report must mark it as a phase-entry or scaffold patch, explain the missing upstream/downstream dependency, and add a dated remediation item to the roadmap and handoff.
+
+For KR-7 Slides work, every post-KR-7H patch must answer:
+
+```text
+which user-visible or artifact-visible workflow outcome changes;
+which existing KR-7I/KR-7J/KR-7K/KR-7L/KR-7M/KR-7N component it integrates with;
+which report, manifest, provenance record, API surface, or UI panel exposes the result;
+which incomplete prior contract is being upgraded toward product behavior;
+why any remaining limitation is honest degraded/partial behavior rather than a fake success claim.
+```
+
+A contract/checker-only patch is forbidden after KR-7H closure unless the roadmap explicitly labels it `phase-entry scaffold` or `governance repair` and includes the follow-up vertical-slice patch required to make it product-relevant.
+
 ## Mandatory pre-patch report
 
 Before changing files, produce or internally complete the pre-patch report defined in:
@@ -108,6 +124,7 @@ expected ACCEPT criteria.
 - Work at senior engineer level.
 - Solve the real issue; do not bypass it.
 - Prefer small, complete, reversible patches over broad risky rewrites.
+- Small does not mean shallow: after a foundation gate, prefer small vertical product slices over isolated contract-only layers.
 - Do not use brittle text anchors unless the script first proves the exact expected pre-state and exits before modifying anything on mismatch.
 - Do not weaken production/offline guardrails to make tests pass.
 - Do not hide product failures behind fallback text, fake metadata, fake charts, generated images, or misleading success states.

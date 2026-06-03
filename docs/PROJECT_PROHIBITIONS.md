@@ -345,3 +345,18 @@ Presentation Studio export must remain `backend_side_export_only`; backend APIs 
 KR-7N quality reports must not claim production or Kimi-level quality without a deterministic quality pass. `presentation_professional_quality_evaluator.v1` may build a `quality_report.json` contract from existing source-backed reports, but it must not execute visual QA runtime, invent rendered proof, change renderer/frontend/GigaChat/runtime/deploy behavior, or accept missing proof/evidence/fake data as success.
 
 Required anchors: `no_visual_qa_runtime_execution`, `no_rendered_png_quality_scoring`, `no_production_quality_claim`, `no_kimi_level_quality_claim`.
+
+## Product-slice quality prohibitions
+
+After a workflow foundation closure gate, including KR-7H.13 for Slides, it is forbidden to:
+
+```text
+close a roadmap phase with only an isolated contract/checker module when a vertical product slice is feasible;
+use "no production claim" as an excuse for shallow implementation;
+ship a feature layer that is not connected to planner/API/artifact/provenance/report/UI/runner paths and still call the phase complete;
+mark a contract-only scaffold as roadmap-complete without recording its mandatory follow-up integration work;
+allow repeated minimal layers to accumulate without an explicit remediation plan;
+claim quality from tests when no user-visible or artifact-visible behavior improved.
+```
+
+Allowed scope limits still apply. The correct alternative is a small, complete, fail-closed vertical slice with honest `partial`, `degraded`, or `not_production` status where needed.

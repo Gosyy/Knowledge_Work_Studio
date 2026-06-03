@@ -852,3 +852,19 @@ KR-7N adds `presentation_professional_quality_evaluator.v1` and a deterministic 
 Non-goals: `no_visual_qa_runtime_execution`, `no_rendered_png_quality_scoring`, `no_renderer_runtime_changes`, `no_frontend_runtime_changes`, `no_gigachat_runtime_changes`, `no_docker_deploy_postgres_changes`, `no_production_quality_claim`, `no_kimi_level_quality_claim`.
 
 KR-7N professional quality evaluator anchors: `presentation_professional_quality_evaluator.v1`, `quality_report.json`, `no_visual_qa_runtime_execution`, `no_kimi_level_quality_claim`.
+
+## Product-slice re-baseline after KR-7N
+
+KR-7H established renderer-worker foundations. KR-7I through KR-7N established deterministic template, image, data, layout, UI, and quality contracts. These contracts are necessary but not enough for Kimi-like Slides progress unless they are integrated into a vertical workflow.
+
+Effective immediately:
+
+```text
+post-KR-7H patches must prefer vertical product slices over isolated contracts;
+contract-only work must be labelled phase-entry scaffold or governance repair;
+phase closure must identify the artifact/API/UI/report outcome improved by the patch;
+limitations must be represented as honest degraded/partial states, not fake success;
+KR-7O scenario packs must include integration with PresentationIR, template/layout/data/image availability, provenance, and quality reporting.
+```
+
+The next KR-7O plan must include a remediation table for KR-7I through KR-7N and must not close with only scenario-pack schemas/checkers.

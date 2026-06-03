@@ -22,6 +22,14 @@
 
 ## Product contract affected
 
+## Vertical product-slice requirement
+
+- User-visible or artifact-visible outcome changed:
+- Existing workflow path integrated: planner / API / artifact / provenance / report / UI / runner:
+- Prior KR layer upgraded or connected:
+- If scaffold-only, explicit roadmap follow-up recorded:
+- Honest limitation/degraded state:
+
 ## Risks
 
 ## Non-goals

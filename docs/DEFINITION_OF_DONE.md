@@ -71,6 +71,17 @@ no unexpected divergence from the operator's active branch;
 acceptance logs reviewed after push if the operator reruns validation.
 ```
 
+## Product-slice DONE
+
+For post-foundation KR work, especially KR-7 Slides work after KR-7H closure, a patch is not product-DONE merely because a schema, checker, or isolated service module passes tests. The patch must either:
+
+```text
+connect the capability to an existing product path such as planner, API, artifact bundle, provenance manifest, quality report, UI surface, or runner; or
+be explicitly marked as phase-entry scaffold/governance repair with a concrete follow-up vertical-slice requirement recorded in the roadmap and handoff.
+```
+
+A patch that only introduces a disconnected contract layer is `TARGETED PASS` at most. It must not be treated as roadmap-complete for its phase until the related vertical-slice integration is implemented and validated.
+
 ## Product behavior rule
 
 Tests passing is necessary but not sufficient. A workflow is acceptable only if the user-facing product behavior satisfies the relevant workflow contract.

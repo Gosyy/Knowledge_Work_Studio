@@ -8,6 +8,13 @@
 
 ## Product behavior changed
 
+## Product-slice evidence
+
+- User-visible or artifact-visible outcome changed:
+- Integrated product path:
+- Prior KR layer upgraded or connected:
+- Remaining limitation and follow-up:
+
 ## Documentation updated
 
 ## Tests/checkers run

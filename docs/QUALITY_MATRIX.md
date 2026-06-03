@@ -121,3 +121,17 @@ no_kimi_level_quality_claim
 ## KR-7N professional quality evaluator quality gate
 
 `presentation_professional_quality_evaluator.v1` defines a deterministic `quality_report.json` with six axes: content, design, coherence, data, assets, and export. A professional/Kimi-level status in later phases requires `quality_pass=true`; degraded decks must be marked degraded; blocked upstream evidence must block the report. KR-7N keeps `visual_qa_runtime_executed=false`, `production_quality_claimed=false`, and `kimi_level_quality_claimed=false`.
+
+## Product-slice quality gate
+
+The quality matrix treats isolated schemas/checkers as foundation evidence, not as final product quality. After a foundation phase is closed, a workflow maturity increase requires a vertical product slice:
+
+```text
+input: source/user/template/data state consumed by the feature;
+planning: planner/scenario/layout/evaluator decision changed;
+artifact/report: manifest, bundle, provenance, report, or API output changed;
+validation: deterministic checker and targeted tests prove the path;
+operator evidence: full runner and Docker smoke remain clean before closure.
+```
+
+For Slides KR-7I through KR-7N, the existing contracts are necessary but incomplete until they are connected into the PresentationIR/API/artifact/provenance/UI workflow. KR-7O and later patches must prioritize these integrations before adding more disconnected feature islands.

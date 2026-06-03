@@ -1315,3 +1315,39 @@ no_kimi_level_quality_claim
 Kimi-level/professional status requires a quality pass, but KR-7N does not itself claim Kimi-level quality. Degraded decks must be marked degraded rather than accepted as fake success. Missing export proof, missing evidence, fake chart data, unproven image assets, clipping, overlaps, or blocked upstream contracts must block or degrade the report.
 
 KR-7N professional quality evaluator: contract anchor for `presentation_professional_quality_evaluator.v1`.
+
+## KR-7O re-baseline — product-slice quality mandate
+
+After KR-7N, the Slides roadmap is re-baselined: KR-7I through KR-7N are valid deterministic contracts, but they are not sufficient product completeness on their own. Starting with KR-7O, roadmap closure requires vertical product slices, not more disconnected contract-only layers.
+
+Mandatory rule:
+
+```text
+A post-KR-7H phase must improve a user-visible or artifact-visible workflow path, or be explicitly labelled phase-entry scaffold/governance repair with a concrete follow-up integration patch.
+```
+
+KR-7O scenario packs must therefore not be closed as only `presentation_scenario_packs.v1`. The acceptable KR-7O path is a scenario-pack integration slice:
+
+```text
+user intent or explicit scenario selection affects PresentationIR slide roles;
+scenario pack selects visual grammar and layout families using KR-7I/KR-7L inputs;
+scenario requirements are checked against KR-7J image and KR-7K data availability;
+missing required data/images produce blocked/degraded/typographic outcomes, not fake content;
+scenario_pack_report.json is persisted or exposed through an artifact/provenance/API path;
+quality evaluator inputs are updated so KR-7N can assess scenario fit.
+```
+
+### Required remediation for KR-7I through KR-7N
+
+Before or during KR-7O/KR-7P, bring the existing layers up to product-slice quality:
+
+```text
+KR-7I remediation: template brand profile must feed PresentationIR/layout hints or an artifact-visible profile report.
+KR-7J remediation: selected source images must be exposed to planner/artifact/provenance paths and degrade cleanly when absent.
+KR-7K remediation: chart specs must be connected to planner/artifact/report paths, with native renderer mapping deferred but explicitly tracked.
+KR-7L remediation: layout plans must influence slide/block placement decisions or be emitted as artifact-visible layout reports consumed by quality evaluation.
+KR-7M remediation: Presentation Studio UI must consume real backend/report data where available rather than only a shell/mock contract.
+KR-7N remediation: quality reports must be produced from actual artifact/report inputs and become an acceptance input for Slides workflow closure.
+```
+
+These remediations are mandatory roadmap work. They do not authorize fake data, fake assets, unsupported production claims, or weakened offline/intranet guardrails.
